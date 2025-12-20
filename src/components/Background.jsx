@@ -7,7 +7,8 @@ export function Background() {
           backgroundImage: 'url(/images/castell-background.jpg)',
         }}
       />
-      <div className="absolute inset-0 bg-cream/85" />
+      {/* More visible background - 70% cream overlay */}
+      <div className="absolute inset-0 bg-cream/70" />
     </div>
   );
 }
