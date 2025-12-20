@@ -13,15 +13,14 @@ export function NameEntryModal({ isOpen, onValidName }) {
     setError('');
     setIsValidating(true);
 
-    // Small delay for UX
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 600));
 
     const { valid, matchedName } = validateGuest(name);
 
     if (valid) {
       onValidName(matchedName);
     } else {
-      setError("We couldn't find that name. Please enter your name exactly as it appears on your invitation.");
+      setError("We couldn't find that name. Please try again.");
       setIsValidating(false);
     }
   };
@@ -30,15 +29,15 @@ export function NameEntryModal({ isOpen, onValidName }) {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center px-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.4 }}
         >
           {/* Backdrop */}
           <motion.div
-            className="absolute inset-0 bg-charcoal/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-charcoal/50 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -46,110 +45,154 @@ export function NameEntryModal({ isOpen, onValidName }) {
 
           {/* Modal */}
           <motion.div
-            className="relative bg-warm-white rounded-lg shadow-2xl max-w-md w-full overflow-hidden"
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="relative w-full max-w-md"
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Decorative top border */}
-            <div className="h-1 bg-gradient-to-r from-terracotta via-golden to-terracotta" />
+            {/* Decorative outer borders */}
+            <div className="absolute -inset-2 border border-golden/20" />
 
-            <div className="px-6 py-8 md:px-10 md:py-10">
-              {/* Title */}
-              <motion.h2
-                className="font-serif text-2xl md:text-3xl text-charcoal text-center italic font-light mb-2"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                Welcome
-              </motion.h2>
+            {/* Modal card */}
+            <div
+              className="relative shadow-2xl"
+              style={{
+                background: 'linear-gradient(135deg, #FFFEF9 0%, #FAF7F2 50%, #FFFEF9 100%)',
+              }}
+            >
+              {/* Top border */}
+              <div className="h-0.5 bg-gradient-to-r from-transparent via-golden to-transparent" />
 
-              <motion.p
-                className="text-charcoal-light text-center text-sm md:text-base mb-8"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                Please enter your name as it appears on your invitation
-              </motion.p>
-
-              {/* Form */}
-              <form onSubmit={handleSubmit}>
+              <div className="px-10 py-12 md:px-14 md:py-16">
+                {/* Decorative flourish */}
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  className="flex justify-center mb-8"
+                  initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ delay: 0.2 }}
                 >
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      setError('');
-                    }}
-                    placeholder="Your name"
-                    className="w-full px-4 py-3 border border-cream-dark rounded-sm font-sans text-charcoal placeholder-charcoal-light/50 focus:outline-none focus:border-terracotta focus:ring-1 focus:ring-terracotta transition-colors bg-cream/30"
-                    autoFocus
-                  />
+                  <svg width="60" height="30" viewBox="0 0 60 30" className="text-golden">
+                    <path
+                      d="M0 15 Q15 5, 30 15 T60 15"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      fill="none"
+                      opacity="0.5"
+                    />
+                    <circle cx="30" cy="15" r="2" fill="currentColor" opacity="0.4" />
+                  </svg>
                 </motion.div>
 
-                {/* Error message */}
-                <AnimatePresence mode="wait">
-                  {error && (
-                    <motion.p
-                      className="mt-3 text-terracotta text-sm text-center"
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {error}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-
-                {/* Submit button */}
-                <motion.button
-                  type="submit"
-                  disabled={isValidating || !name.trim()}
-                  className="w-full mt-6 px-6 py-3 bg-terracotta text-warm-white font-sans font-medium tracking-widest text-sm uppercase rounded-sm transition-all duration-300 hover:bg-terracotta-dark disabled:opacity-50 disabled:cursor-not-allowed"
+                {/* Title */}
+                <motion.h2
+                  className="font-serif text-3xl md:text-4xl text-charcoal text-center italic font-light mb-4"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  whileHover={{ scale: isValidating ? 1 : 1.01 }}
-                  whileTap={{ scale: isValidating ? 1 : 0.99 }}
+                  transition={{ delay: 0.1 }}
                 >
-                  {isValidating ? (
-                    <span className="flex items-center justify-center">
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-warm-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
+                  Welcome
+                </motion.h2>
+
+                <motion.p
+                  className="text-charcoal-light text-center text-sm tracking-wide mb-10"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  Please enter your name
+                </motion.p>
+
+                {/* Form */}
+                <form onSubmit={handleSubmit}>
+                  <motion.div
+                    className="mb-8"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        setError('');
+                      }}
+                      placeholder="Your name"
+                      className="w-full px-6 py-4 border border-cream-dark bg-warm-white/50 font-serif text-lg text-charcoal placeholder-charcoal-light/40 focus:outline-none focus:border-golden focus:bg-warm-white transition-all duration-300 text-center tracking-wide"
+                      autoFocus
+                    />
+                  </motion.div>
+
+                  {/* Error message */}
+                  <AnimatePresence mode="wait">
+                    {error && (
+                      <motion.p
+                        className="mb-6 text-terracotta text-sm text-center italic"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
                       >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                        />
-                      </svg>
-                      Verifying...
-                    </span>
-                  ) : (
-                    'Continue'
-                  )}
-                </motion.button>
-              </form>
+                        {error}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Submit button */}
+                  <motion.div
+                    className="flex justify-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <button
+                      type="submit"
+                      disabled={isValidating || !name.trim()}
+                      className="group relative px-12 py-4 bg-terracotta text-warm-white font-serif text-lg italic tracking-wide transition-all duration-500 hover:bg-terracotta-dark hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-terracotta disabled:hover:shadow-none"
+                    >
+                      {isValidating ? (
+                        <span className="flex items-center justify-center">
+                          <motion.span
+                            className="w-5 h-5 border-2 border-warm-white/30 border-t-warm-white rounded-full mr-3"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                          />
+                          Verifying...
+                        </span>
+                      ) : (
+                        'Continue'
+                      )}
+
+                      {/* Corner decorations */}
+                      <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-golden-light/50 transition-all duration-300 group-hover:w-3 group-hover:h-3 group-hover:border-golden-light" />
+                      <span className="absolute top-0 right-0 w-2 h-2 border-t border-r border-golden-light/50 transition-all duration-300 group-hover:w-3 group-hover:h-3 group-hover:border-golden-light" />
+                      <span className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-golden-light/50 transition-all duration-300 group-hover:w-3 group-hover:h-3 group-hover:border-golden-light" />
+                      <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-golden-light/50 transition-all duration-300 group-hover:w-3 group-hover:h-3 group-hover:border-golden-light" />
+                    </button>
+                  </motion.div>
+                </form>
+
+                {/* Bottom flourish */}
+                <motion.div
+                  className="flex justify-center mt-10"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <svg width="40" height="20" viewBox="0 0 40 20" className="text-golden opacity-40">
+                    <path
+                      d="M0 10 L15 10 M25 10 L40 10"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                    />
+                    <circle cx="20" cy="10" r="3" stroke="currentColor" strokeWidth="1" fill="none" />
+                  </svg>
+                </motion.div>
+              </div>
+
+              {/* Bottom border */}
+              <div className="h-0.5 bg-gradient-to-r from-transparent via-golden to-transparent" />
             </div>
           </motion.div>
         </motion.div>
