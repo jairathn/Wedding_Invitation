@@ -55,7 +55,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
           <div className="flex-shrink-0 space-y-6" style={{ marginTop: '1.5rem' }}>
             {/* Header - "Together with their families" */}
             <motion.p
-              className="text-center font-sans text-[10px] text-charcoal/40 tracking-[0.3em] uppercase"
+              className="text-center font-sans text-[10px] text-charcoal/60 tracking-[0.3em] uppercase"
               initial={{ opacity: 0, y: 15 }}
               animate={{
                 opacity: isVisible && emergenceProgress > 0.1 ? 1 : 0,
@@ -84,7 +84,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
 
             {/* Subtitle - "Request the pleasure of your company" */}
             <motion.p
-              className="text-center font-sans text-[10px] text-charcoal/45 tracking-[0.25em] uppercase"
+              className="text-center font-sans text-[10px] text-charcoal/60 tracking-[0.25em] uppercase"
               initial={{ opacity: 0, y: 15 }}
               animate={{
                 opacity: isVisible && emergenceProgress > 0.2 ? 1 : 0,
