@@ -3,36 +3,37 @@ import { VideoPlayer } from './VideoPlayer';
 import { RSVPButton } from './RSVPButton';
 import { PaperTexture } from './PaperTexture';
 
-export function InvitationCard({ isVisible }) {
+export function InvitationCard({ isVisible, animateUp }) {
   return (
     <motion.div
       className="relative"
-      initial={{ opacity: 0, scale: 0.96 }}
+      initial={{ opacity: 0, y: animateUp ? 200 : 0 }}
       animate={{
         opacity: isVisible ? 1 : 0,
-        scale: isVisible ? 1 : 0.96,
+        y: isVisible ? 0 : (animateUp ? 200 : 0),
       }}
       transition={{
-        duration: 0.9,
-        delay: isVisible ? 0.3 : 0,
+        duration: 1.2,
+        delay: isVisible ? 0.2 : 0,
         ease: [0.4, 0, 0.2, 1],
       }}
     >
       {/* Card shadow - layered for depth */}
       <div
-        className="absolute -bottom-8 left-1/2 -translate-x-1/2 pointer-events-none"
+        className="absolute -bottom-10 left-1/2 -translate-x-1/2 pointer-events-none"
         style={{
-          width: '90%',
-          height: '50px',
-          background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, transparent 70%)',
-          filter: 'blur(16px)',
+          width: '85%',
+          height: '60px',
+          background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.12) 0%, transparent 70%)',
+          filter: 'blur(20px)',
         }}
       />
 
-      {/* Main card */}
+      {/* Main card - portrait proportions (approximately 8.5 x 11 ratio = 0.77) */}
       <div
-        className="relative w-[520px] max-w-[92vw] overflow-hidden rounded-sm"
+        className="relative w-[480px] max-w-[92vw] overflow-hidden rounded-sm"
         style={{
+          aspectRatio: '0.75',
           boxShadow: '0 4px 20px rgba(0,0,0,0.06), 0 12px 48px rgba(0,0,0,0.1)',
         }}
       >
@@ -43,147 +44,154 @@ export function InvitationCard({ isVisible }) {
         <div
           className="relative h-[3px]"
           style={{
-            background: 'linear-gradient(90deg, rgba(212,168,83,0.3) 0%, rgba(212,168,83,0.7) 50%, rgba(212,168,83,0.3) 100%)',
+            background: 'linear-gradient(90deg, rgba(212,168,83,0.2) 0%, rgba(212,168,83,0.6) 50%, rgba(212,168,83,0.2) 100%)',
           }}
         />
 
         {/* Card content with generous padding */}
-        <div className="relative px-12 py-16 md:px-16 md:py-20">
-          {/* Header */}
-          <motion.p
-            className="text-center font-sans text-[11px] text-charcoal/45 tracking-[0.25em] uppercase mb-4"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 15 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-          >
-            Together with their families
-          </motion.p>
+        <div className="relative h-full flex flex-col px-12 py-14 md:px-16 md:py-16">
 
-          {/* Names - THE HERO */}
-          <motion.h1
-            className="text-center font-serif text-5xl md:text-6xl text-charcoal italic tracking-wide mb-3"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
-          >
-            Shriya & Neil
-          </motion.h1>
+          {/* Top section */}
+          <div className="flex-shrink-0">
+            {/* Header */}
+            <motion.p
+              className="text-center font-sans text-[10px] text-charcoal/40 tracking-[0.3em] uppercase mb-6"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 15 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+            >
+              Together with their families
+            </motion.p>
 
-          {/* Subtitle */}
-          <motion.p
-            className="text-center font-sans text-[11px] text-charcoal/50 tracking-[0.2em] uppercase mb-10"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 15 }}
-            transition={{ delay: 0.7, duration: 0.6 }}
-          >
-            Request the pleasure of your company
-          </motion.p>
+            {/* Names - THE HERO */}
+            <motion.h1
+              className="text-center font-serif text-5xl md:text-6xl text-charcoal italic tracking-wide mb-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+              transition={{ delay: 0.6, duration: 0.6 }}
+            >
+              Shriya & Neil
+            </motion.h1>
 
-          {/* Decorative divider */}
+            {/* Subtitle */}
+            <motion.p
+              className="text-center font-sans text-[10px] text-charcoal/45 tracking-[0.25em] uppercase mb-10"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 15 }}
+              transition={{ delay: 0.7, duration: 0.6 }}
+            >
+              Request the pleasure of your company
+            </motion.p>
+
+            {/* Decorative divider */}
+            <motion.div
+              className="flex items-center justify-center mb-10"
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: isVisible ? 1 : 0, scaleX: isVisible ? 1 : 0 }}
+              transition={{ delay: 0.75, duration: 0.5 }}
+            >
+              <div className="h-px w-12 bg-gradient-to-r from-transparent to-golden/40" />
+              <div className="mx-3">
+                <svg width="8" height="8" viewBox="0 0 8 8" className="text-golden/60">
+                  <path
+                    fill="currentColor"
+                    d="M4 0L4.9 3.1L8 4L4.9 4.9L4 8L3.1 4.9L0 4L3.1 3.1L4 0Z"
+                  />
+                </svg>
+              </div>
+              <div className="h-px w-12 bg-gradient-to-l from-transparent to-golden/40" />
+            </motion.div>
+          </div>
+
+          {/* Middle section - Video (flex-grow to take available space) */}
           <motion.div
-            className="flex items-center justify-center mb-10"
-            initial={{ opacity: 0, scaleX: 0 }}
-            animate={{ opacity: isVisible ? 1 : 0, scaleX: isVisible ? 1 : 0 }}
-            transition={{ delay: 0.75, duration: 0.5 }}
-          >
-            <div className="h-px w-16 bg-gradient-to-r from-transparent to-golden/40" />
-            <div className="mx-4">
-              <svg width="10" height="10" viewBox="0 0 10 10" className="text-golden/70">
-                <path
-                  fill="currentColor"
-                  d="M5 0L6.12 3.88L10 5L6.12 6.12L5 10L3.88 6.12L0 5L3.88 3.88L5 0Z"
-                />
-              </svg>
-            </div>
-            <div className="h-px w-16 bg-gradient-to-l from-transparent to-golden/40" />
-          </motion.div>
-
-          {/* Video section */}
-          <motion.div
-            className="mb-12"
+            className="flex-grow flex flex-col justify-center mb-10"
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 25 }}
             transition={{ delay: 0.85, duration: 0.6 }}
           >
             {/* Video label */}
-            <p className="text-center font-sans text-[10px] text-charcoal/40 tracking-[0.25em] uppercase mb-5">
+            <p className="text-center font-sans text-[9px] text-charcoal/35 tracking-[0.3em] uppercase mb-4">
               Our Story
             </p>
 
-            {/* Video container - 80% width, centered */}
+            {/* Video container - centered with frame */}
             <div className="flex justify-center">
-              <div className="relative w-[85%]">
+              <div className="relative w-[80%]">
                 {/* Elegant frame */}
                 <div
                   className="absolute -inset-3 rounded-sm pointer-events-none"
                   style={{
-                    border: '1px solid rgba(212, 168, 83, 0.25)',
+                    border: '1px solid rgba(212, 168, 83, 0.2)',
                   }}
                 />
-                <div className="rounded-sm overflow-hidden shadow-sm">
+                <div className="rounded-sm overflow-hidden">
                   <VideoPlayer />
                 </div>
               </div>
             </div>
           </motion.div>
 
-          {/* Date */}
-          <motion.p
-            className="text-center font-serif text-2xl md:text-3xl text-charcoal italic mb-2"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 15 }}
-            transition={{ delay: 0.95, duration: 0.5 }}
-          >
-            September 9 – 11, 2026
-          </motion.p>
+          {/* Bottom section */}
+          <div className="flex-shrink-0">
+            {/* Date */}
+            <motion.p
+              className="text-center font-serif text-2xl md:text-3xl text-charcoal italic mb-3"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 15 }}
+              transition={{ delay: 0.95, duration: 0.5 }}
+            >
+              September 9 – 11, 2026
+            </motion.p>
 
-          {/* Location */}
-          <motion.p
-            className="text-center font-sans text-sm text-charcoal/60 tracking-wide mb-10"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 10 }}
-            transition={{ delay: 1.0, duration: 0.5 }}
-          >
-            Barcelona, Spain
-          </motion.p>
+            {/* Location */}
+            <motion.p
+              className="text-center font-sans text-xs text-charcoal/55 tracking-wider mb-8"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 10 }}
+              transition={{ delay: 1.0, duration: 0.5 }}
+            >
+              Barcelona, Spain
+            </motion.p>
 
-          {/* Hashtag */}
-          <motion.p
-            className="text-center font-serif text-lg italic mb-10"
-            style={{ color: '#B8943F' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isVisible ? 1 : 0 }}
-            transition={{ delay: 1.05, duration: 0.5 }}
-          >
-            #JayWalkingToJairath
-          </motion.p>
+            {/* Hashtag */}
+            <motion.p
+              className="text-center font-serif text-base italic mb-8"
+              style={{ color: '#B8943F' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: isVisible ? 1 : 0 }}
+              transition={{ delay: 1.05, duration: 0.5 }}
+            >
+              #JayWalkingToJairath
+            </motion.p>
 
-          {/* Subtle divider before RSVP */}
-          <motion.div
-            className="flex justify-center mb-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isVisible ? 1 : 0 }}
-            transition={{ delay: 1.1, duration: 0.4 }}
-          >
-            <div className="h-px w-20 bg-gradient-to-r from-transparent via-golden/30 to-transparent" />
-          </motion.div>
+            {/* Subtle divider before RSVP */}
+            <motion.div
+              className="flex justify-center mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: isVisible ? 1 : 0 }}
+              transition={{ delay: 1.1, duration: 0.4 }}
+            >
+              <div className="h-px w-16 bg-gradient-to-r from-transparent via-golden/25 to-transparent" />
+            </motion.div>
 
-          {/* RSVP Button */}
-          <motion.div
-            className="flex justify-center"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 15 }}
-            transition={{ delay: 1.15, duration: 0.5 }}
-          >
-            <RSVPButton />
-          </motion.div>
+            {/* RSVP Button */}
+            <motion.div
+              className="flex justify-center"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 15 }}
+              transition={{ delay: 1.15, duration: 0.5 }}
+            >
+              <RSVPButton />
+            </motion.div>
+          </div>
         </div>
 
         {/* Bottom gold accent line */}
         <div
-          className="relative h-[3px]"
+          className="absolute bottom-0 left-0 right-0 h-[3px]"
           style={{
-            background: 'linear-gradient(90deg, rgba(212,168,83,0.3) 0%, rgba(212,168,83,0.7) 50%, rgba(212,168,83,0.3) 100%)',
+            background: 'linear-gradient(90deg, rgba(212,168,83,0.2) 0%, rgba(212,168,83,0.6) 50%, rgba(212,168,83,0.2) 100%)',
           }}
         />
       </div>
