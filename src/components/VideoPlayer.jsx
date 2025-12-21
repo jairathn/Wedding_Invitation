@@ -1,20 +1,30 @@
-import { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function VideoPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasVideo, setHasVideo] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const videoRef = useRef(null);
 
   const handlePlayClick = () => {
-    if (videoRef.current && hasVideo) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play().catch(() => setHasVideo(false));
-      }
-      setIsPlaying(!isPlaying);
+    if (hasVideo) {
+      setIsFullscreen(true);
+      // Auto-play when fullscreen opens
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.play().catch(() => setHasVideo(false));
+        }
+      }, 100);
     }
+  };
+
+  const handleCloseFullscreen = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+    setIsFullscreen(false);
+    setIsPlaying(false);
   };
 
   const handleCanPlay = () => {
@@ -25,75 +35,156 @@ export function VideoPlayer() {
     setHasVideo(false);
   };
 
+  // ESC key to close fullscreen
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        handleCloseFullscreen();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isFullscreen]);
+
+  // Prevent body scroll when fullscreen is open
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isFullscreen]);
+
   return (
-    <div
-      className="relative aspect-video overflow-hidden cursor-pointer"
-      onClick={handlePlayClick}
-      style={{
-        background: 'linear-gradient(135deg, #3D4A5C 0%, #2C3542 100%)',
-      }}
-    >
-      {/* Video element (hidden if no video) */}
-      <video
-        ref={videoRef}
-        className={`w-full h-full object-cover ${hasVideo ? 'block' : 'hidden'}`}
-        onCanPlay={handleCanPlay}
-        onError={handleError}
-        onEnded={() => setIsPlaying(false)}
-        onPause={() => setIsPlaying(false)}
-        onPlay={() => setIsPlaying(true)}
-        playsInline
-        preload="metadata"
-      >
-        <source src="/video/Invitation_Video.mp4" type="video/mp4" />
-      </video>
-
-      {/* Placeholder when no video */}
-      {!hasVideo && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {/* Decorative element */}
-          <div className="mb-6">
-            <svg width="60" height="60" viewBox="0 0 60 60" className="text-warm-white/30">
-              <circle cx="30" cy="30" r="28" stroke="currentColor" strokeWidth="1" fill="none" />
-              <path d="M24 20 L24 40 L44 30 Z" fill="currentColor" />
-            </svg>
-          </div>
-
-          <p className="font-serif text-xl text-warm-white/80 italic mb-2">
-            Video Coming Soon
-          </p>
-          <p className="font-sans text-xs text-warm-white/50 tracking-wide">
-            Check back for our story
-          </p>
-        </div>
-      )}
-
-      {/* Play button overlay (when video exists but not playing) */}
-      {hasVideo && !isPlaying && (
-        <motion.div
-          className="absolute inset-0 flex items-center justify-center bg-charcoal/30"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <motion.div
-            className="w-16 h-16 rounded-full bg-warm-white/90 flex items-center justify-center"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <svg className="w-6 h-6 text-terracotta ml-1" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </motion.div>
-        </motion.div>
-      )}
-
-      {/* Vignette */}
+    <>
+      {/* Thumbnail/Preview */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="relative aspect-video overflow-hidden cursor-pointer"
+        onClick={handlePlayClick}
         style={{
-          boxShadow: 'inset 0 0 50px rgba(0,0,0,0.3)',
+          background: 'linear-gradient(135deg, #3D4A5C 0%, #2C3542 100%)',
         }}
-      />
-    </div>
+      >
+        {/* Video element (hidden, just for loading check) */}
+        <video
+          ref={videoRef}
+          className="hidden"
+          onCanPlay={handleCanPlay}
+          onError={handleError}
+          onEnded={() => setIsPlaying(false)}
+          onPause={() => setIsPlaying(false)}
+          onPlay={() => setIsPlaying(true)}
+          playsInline
+          preload="metadata"
+        >
+          <source src="/video/Invitation_Video.mp4" type="video/mp4" />
+        </video>
+
+        {/* Placeholder when no video */}
+        {!hasVideo && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            {/* Decorative element */}
+            <div className="mb-6">
+              <svg width="60" height="60" viewBox="0 0 60 60" className="text-warm-white/30">
+                <circle cx="30" cy="30" r="28" stroke="currentColor" strokeWidth="1" fill="none" />
+                <path d="M24 20 L24 40 L44 30 Z" fill="currentColor" />
+              </svg>
+            </div>
+
+            <p className="font-serif text-xl text-warm-white/80 italic mb-2">
+              Video Coming Soon
+            </p>
+            <p className="font-sans text-xs text-warm-white/50 tracking-wide">
+              Check back for our story
+            </p>
+          </div>
+        )}
+
+        {/* Play button overlay */}
+        {hasVideo && (
+          <motion.div
+            className="absolute inset-0 flex items-center justify-center bg-charcoal/30"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <motion.div
+              className="w-16 h-16 rounded-full bg-warm-white/90 flex items-center justify-center"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <svg className="w-6 h-6 text-terracotta ml-1" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Vignette */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            boxShadow: 'inset 0 0 50px rgba(0,0,0,0.3)',
+          }}
+        />
+      </div>
+
+      {/* Fullscreen Modal */}
+      <AnimatePresence>
+        {isFullscreen && (
+          <motion.div
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Dimmed background overlay */}
+            <div
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              onClick={handleCloseFullscreen}
+            />
+
+            {/* Video container */}
+            <motion.div
+              className="relative w-[95vw] h-[95vh] md:w-[90vw] md:h-[90vh] flex items-center justify-center"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Close button */}
+              <motion.button
+                className="absolute top-4 right-4 z-10 w-12 h-12 rounded-full bg-warm-white/10 hover:bg-warm-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
+                onClick={handleCloseFullscreen}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <svg className="w-6 h-6 text-warm-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </motion.button>
+
+              {/* Video player */}
+              <video
+                ref={videoRef}
+                className="w-full h-full object-contain rounded-sm"
+                controls
+                playsInline
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                }}
+              >
+                <source src="/video/Invitation_Video.mp4" type="video/mp4" />
+              </video>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
