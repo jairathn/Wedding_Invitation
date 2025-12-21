@@ -196,6 +196,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             top: 0,
             height: '55%',
             transformStyle: 'preserve-3d',
+            zIndex: 20,
           }}
           animate={{
             rotateX: isOpen ? -180 : 0,
@@ -233,41 +234,27 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               }}
             />
 
-            {/* Enhanced edge shadow for 3D effect - stronger for visibility */}
+            {/* DRAMATICALLY stronger edge shadows - visible dark outline */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
                 boxShadow: `
-                  inset 0 3px 12px rgba(0,0,0,0.08),
-                  inset 0 -2px 8px rgba(0,0,0,0.05),
-                  0 6px 20px rgba(0,0,0,0.2),
-                  0 2px 8px rgba(0,0,0,0.15)
+                  0 12px 40px rgba(0,0,0,0.6),
+                  0 8px 25px rgba(0,0,0,0.5),
+                  0 4px 15px rgba(0,0,0,0.4)
                 `,
               }}
             />
 
-            {/* Flap edge definition - creates visible border */}
+            {/* STRONG visible border on flap edges */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
-                boxShadow: 'inset 0 0 0 0.5px rgba(139, 119, 101, 0.2)',
+                boxShadow: 'inset 0 0 0 2px rgba(80, 60, 40, 0.5)',
               }}
             />
-
-            {/* Wax Seal - at the TIP of the flap where it seals */}
-            <div
-              className="absolute left-1/2 -translate-x-1/2"
-              style={{
-                top: '85%',
-                transform: 'translateX(-50%) translateZ(10px)',
-                transformStyle: 'preserve-3d',
-                zIndex: 50,
-              }}
-            >
-              <WaxSeal onClick={handleSealClick} isVisible={!sealClicked && !isOpen} />
-            </div>
           </div>
 
           {/* Flap back (gold liner - visible when open) */}
@@ -297,6 +284,22 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               }}
             />
           </div>
+        </motion.div>
+
+        {/* Wax Seal - OUTSIDE flap container to ensure clickability */}
+        <motion.div
+          className="absolute left-1/2 -translate-x-1/2"
+          style={{
+            top: '54%', // Position at the tip of the flap (55% flap height - 1% for visual centering)
+            zIndex: 200, // HIGHEST z-index in the entire component
+            pointerEvents: 'auto',
+          }}
+          animate={{
+            rotateX: isOpen ? -180 : 0,
+          }}
+          transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+        >
+          <WaxSeal onClick={handleSealClick} isVisible={!sealClicked && !isOpen} />
         </motion.div>
       </div>
     </motion.div>
