@@ -44,28 +44,25 @@ export function WaxSeal({ onClick, isVisible = true }) {
           transition={{ duration: 0.3 }}
         />
 
-        {/* Wax seal - layered for depth */}
+        {/* Wax seal - pressed IN effect (depressed center, raised rim) */}
         <div
           className="absolute inset-0 rounded-full"
           style={{
             background: `
-              radial-gradient(circle at 30% 30%, rgba(220, 60, 50, 0.9) 0%, transparent 50%),
-              radial-gradient(circle at 70% 40%, rgba(180, 30, 30, 0.4) 0%, transparent 40%),
-              radial-gradient(ellipse at center, #A52A2A 0%, #8B1A1A 50%, #6B0F0F 100%)
+              radial-gradient(ellipse at center, #6B0F0F 0%, #8B1A1A 40%, #A52A2A 100%)
             `,
             boxShadow: `
-              inset 0 2px 8px rgba(255, 255, 255, 0.25),
-              inset 0 -3px 12px rgba(0, 0, 0, 0.5),
-              0 4px 12px rgba(0, 0, 0, 0.4),
-              0 8px 24px rgba(139, 26, 26, 0.3)
+              inset 0 3px 15px rgba(0, 0, 0, 0.6),
+              inset 0 -2px 8px rgba(255, 255, 255, 0.1),
+              0 2px 8px rgba(0, 0, 0, 0.3)
             `,
           }}
         >
-          {/* Glossy highlight */}
+          {/* Raised rim highlight */}
           <div
-            className="absolute inset-0 rounded-full opacity-40"
+            className="absolute inset-0 rounded-full"
             style={{
-              background: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,0.6) 0%, transparent 50%)',
+              background: 'radial-gradient(circle at center, transparent 70%, rgba(255,255,255,0.2) 85%, transparent 100%)',
             }}
           />
 
