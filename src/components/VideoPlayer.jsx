@@ -140,32 +140,37 @@ export function VideoPlayer() {
               </svg>
             </motion.button>
 
-            {/* Video player - fills entire screen */}
-            <motion.video
-              ref={videoRef}
-              className="object-contain"
-              controls
-              playsInline
-              autoPlay
-              onLoadedData={handleVideoLoaded}
-              onError={handleError}
-              onEnded={() => setIsPlaying(false)}
-              onPause={() => setIsPlaying(false)}
-              onPlay={() => setIsPlaying(true)}
+            {/* Video container - centered, 16:9, fills most of screen */}
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center p-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100vw',
-                height: '100vh',
-              }}
             >
-              <source src="/video/Invitation_Video.mp4" type="video/mp4" />
-            </motion.video>
+              <div
+                className="relative w-full max-w-[95vw]"
+                style={{
+                  aspectRatio: '16 / 9',
+                  maxHeight: '95vh',
+                }}
+              >
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-contain"
+                  controls
+                  playsInline
+                  autoPlay
+                  onLoadedData={handleVideoLoaded}
+                  onError={handleError}
+                  onEnded={() => setIsPlaying(false)}
+                  onPause={() => setIsPlaying(false)}
+                  onPlay={() => setIsPlaying(true)}
+                >
+                  <source src="/video/Invitation_Video.mp4" type="video/mp4" />
+                </video>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
