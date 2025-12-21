@@ -11,15 +11,17 @@ export function RSVPButton() {
       whileTap={{ scale: 0.97 }}
     >
       <div
-        className="px-38 py-12 bg-terracotta text-warm-white rounded-sm transition-all duration-300 group-hover:bg-terracotta/90 group-hover:shadow-2xl"
+        className="py-12 bg-terracotta text-warm-white rounded-sm transition-all duration-300 group-hover:bg-terracotta/90 group-hover:shadow-2xl"
         style={{
+          paddingLeft: '152px',
+          paddingRight: '152px',
           boxShadow: '0 6px 24px rgba(196, 114, 94, 0.45), 0 4px 12px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.15)',
         }}
       >
         <p className="font-serif text-4xl font-bold italic tracking-wide mb-2">
           RSVP
         </p>
-        <p className="font-sans text-sm text-warm-white/85 tracking-wider font-medium px-4">
+        <p className="font-sans text-sm text-warm-white/85 tracking-normal font-medium">
           Password: Barcelona2026
         </p>
       </div>
