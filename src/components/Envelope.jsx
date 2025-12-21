@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { PaperTexture } from './PaperTexture';
+import { WaxSeal } from './WaxSeal';
 
 export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [nameEntered, setNameEntered] = useState(false);
+  const [sealClicked, setSealClicked] = useState(false);
+
+  const handleSealClick = () => {
+    setSealClicked(true);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,6 +49,10 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
       setTimeout(() => {
         onNameSubmit(properName);
         setNameEntered(true);
+        // Auto-trigger opening after name is submitted
+        setTimeout(() => {
+          onOpen();
+        }, 800);
       }, found ? 0 : 1500);
 
     } catch (err) {
@@ -51,6 +61,10 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
         .join(' ');
       onNameSubmit(properName);
       setNameEntered(true);
+      // Auto-trigger opening after name is submitted
+      setTimeout(() => {
+        onOpen();
+      }, 800);
     }
 
     setIsValidating(false);
@@ -91,22 +105,37 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
         <div className="absolute inset-0 overflow-hidden rounded-sm">
           <PaperTexture />
 
-          {/* Subtle border */}
+          {/* Enhanced paper gradient - subtle color variation */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `
+                radial-gradient(ellipse at 20% 30%, rgba(245, 237, 220, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(235, 220, 195, 0.2) 0%, transparent 50%)
+              `,
+            }}
+          />
+
+          {/* Worn edges effect */}
           <div
             className="absolute inset-0 pointer-events-none rounded-sm"
             style={{
-              boxShadow: 'inset 0 0 0 1px rgba(139, 119, 101, 0.1)',
+              boxShadow: `
+                inset 0 0 0 1px rgba(139, 119, 101, 0.12),
+                inset 1px 1px 2px rgba(139, 119, 101, 0.08),
+                inset -1px -1px 2px rgba(139, 119, 101, 0.08)
+              `,
             }}
           />
 
           {/* Content area */}
           <div className="absolute inset-0 flex flex-col items-center justify-center px-10">
-            {!nameEntered ? (
+            {sealClicked && !nameEntered && (
               <motion.div
                 className="w-full max-w-[300px] text-center"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
               >
                 <p className="font-serif text-3xl md:text-4xl text-charcoal/80 italic mb-2">
                   Shriya & Neil
@@ -145,26 +174,6 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                   </button>
                 </form>
               </motion.div>
-            ) : (
-              <motion.div
-                className="text-center cursor-pointer w-full h-full flex flex-col items-center justify-center"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4 }}
-                onClick={onOpen}
-              >
-                <p className="font-serif text-4xl md:text-5xl text-charcoal italic tracking-wide">
-                  {guestName}
-                </p>
-                <motion.p
-                  className="mt-8 font-sans text-[10px] text-charcoal/45 tracking-[0.3em] uppercase"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5, duration: 0.5 }}
-                >
-                  Tap to open
-                </motion.p>
-              </motion.div>
             )}
           </div>
 
@@ -179,7 +188,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
 
         {/* Envelope flap - CLOSED position (folded down over front) */}
         <motion.div
-          className="absolute left-0 right-0 origin-top overflow-hidden"
+          className="absolute left-0 right-0 origin-top overflow-visible"
           style={{
             top: 0,
             height: '55%',
@@ -196,9 +205,22 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             style={{
               clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
               backfaceVisibility: 'hidden',
+              transformStyle: 'preserve-3d',
             }}
           >
             <PaperTexture />
+
+            {/* Enhanced paper gradient */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+                background: `
+                  radial-gradient(ellipse at 50% 80%, rgba(245, 237, 220, 0.3) 0%, transparent 60%),
+                  radial-gradient(ellipse at 30% 50%, rgba(235, 220, 195, 0.2) 0%, transparent 50%)
+                `,
+              }}
+            />
 
             {/* Subtle fold line at top */}
             <div
@@ -208,14 +230,28 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               }}
             />
 
-            {/* Edge shadow for 3D effect */}
+            {/* Enhanced edge shadow for 3D effect */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
-                boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.04)',
+                boxShadow: `
+                  inset 0 3px 12px rgba(0,0,0,0.08),
+                  inset 0 -2px 8px rgba(0,0,0,0.05),
+                  0 4px 16px rgba(0,0,0,0.12)
+                `,
               }}
             />
+
+            {/* Wax Seal - attached to flap front, raised */}
+            <div
+              style={{
+                transform: 'translateZ(10px)',
+                transformStyle: 'preserve-3d',
+              }}
+            >
+              <WaxSeal onClick={handleSealClick} isVisible={!sealClicked && !isOpen} />
+            </div>
           </div>
 
           {/* Flap back (gold liner - visible when open) */}
@@ -233,6 +269,15 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               className="absolute inset-0 opacity-30"
               style={{
                 background: 'linear-gradient(135deg, transparent 20%, rgba(255,255,255,0.5) 50%, transparent 80%)',
+              }}
+            />
+
+            {/* Enhanced depth shadows */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+                boxShadow: 'inset 0 4px 16px rgba(0,0,0,0.15)',
               }}
             />
           </div>
