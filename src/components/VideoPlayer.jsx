@@ -3,20 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export function VideoPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [hasVideo, setHasVideo] = useState(false);
+  const [hasVideo, setHasVideo] = useState(true); // Assume video exists, will handle error if not
   const [isFullscreen, setIsFullscreen] = useState(false);
   const videoRef = useRef(null);
 
   const handlePlayClick = () => {
-    if (hasVideo) {
-      setIsFullscreen(true);
-      // Auto-play when fullscreen opens
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.play().catch(() => setHasVideo(false));
-        }
-      }, 100);
-    }
+    setIsFullscreen(true);
   };
 
   const handleCloseFullscreen = () => {
@@ -27,8 +19,13 @@ export function VideoPlayer() {
     setIsPlaying(false);
   };
 
-  const handleCanPlay = () => {
-    setHasVideo(true);
+  const handleVideoLoaded = () => {
+    // Auto-play when video is loaded in fullscreen
+    if (videoRef.current && isFullscreen) {
+      videoRef.current.play().catch((error) => {
+        console.log('Auto-play prevented:', error);
+      });
+    }
   };
 
   const handleError = () => {
@@ -69,23 +66,8 @@ export function VideoPlayer() {
           background: 'linear-gradient(135deg, #3D4A5C 0%, #2C3542 100%)',
         }}
       >
-        {/* Video element (hidden, just for loading check) */}
-        <video
-          ref={videoRef}
-          className="hidden"
-          onCanPlay={handleCanPlay}
-          onError={handleError}
-          onEnded={() => setIsPlaying(false)}
-          onPause={() => setIsPlaying(false)}
-          onPlay={() => setIsPlaying(true)}
-          playsInline
-          preload="metadata"
-        >
-          <source src="/video/Invitation_Video.mp4" type="video/mp4" />
-        </video>
-
         {/* Placeholder when no video */}
-        {!hasVideo && (
+        {!hasVideo ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {/* Decorative element */}
             <div className="mb-6">
@@ -102,10 +84,8 @@ export function VideoPlayer() {
               Check back for our story
             </p>
           </div>
-        )}
-
-        {/* Play button overlay */}
-        {hasVideo && (
+        ) : (
+          /* Play button overlay */
           <motion.div
             className="absolute inset-0 flex items-center justify-center bg-charcoal/30"
             initial={{ opacity: 0 }}
@@ -174,6 +154,12 @@ export function VideoPlayer() {
                 className="w-full h-full object-contain rounded-sm"
                 controls
                 playsInline
+                autoPlay
+                onLoadedData={handleVideoLoaded}
+                onError={handleError}
+                onEnded={() => setIsPlaying(false)}
+                onPause={() => setIsPlaying(false)}
+                onPlay={() => setIsPlaying(true)}
                 style={{
                   maxWidth: '100%',
                   maxHeight: '100%',
