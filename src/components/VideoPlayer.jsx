@@ -140,34 +140,25 @@ export function VideoPlayer() {
               </svg>
             </motion.button>
 
-            {/* Video container - truly fullscreen */}
-            <motion.div
-              className="absolute inset-0 flex items-center justify-center"
+            {/* Video player - fills entire screen */}
+            <motion.video
+              ref={videoRef}
+              className="absolute inset-0 w-full h-full object-contain"
+              controls
+              playsInline
+              autoPlay
+              onLoadedData={handleVideoLoaded}
+              onError={handleError}
+              onEnded={() => setIsPlaying(false)}
+              onPause={() => setIsPlaying(false)}
+              onPlay={() => setIsPlaying(true)}
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Video player - fills viewport while maintaining aspect ratio */}
-              <video
-                ref={videoRef}
-                className="object-contain"
-                controls
-                playsInline
-                autoPlay
-                onLoadedData={handleVideoLoaded}
-                onError={handleError}
-                onEnded={() => setIsPlaying(false)}
-                onPause={() => setIsPlaying(false)}
-                onPlay={() => setIsPlaying(true)}
-                style={{
-                  width: '100vw',
-                  height: '100vh',
-                }}
-              >
-                <source src="/video/Invitation_Video.mp4" type="video/mp4" />
-              </video>
-            </motion.div>
+              <source src="/video/Invitation_Video.mp4" type="video/mp4" />
+            </motion.video>
           </motion.div>
         )}
       </AnimatePresence>
