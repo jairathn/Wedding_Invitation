@@ -128,9 +128,14 @@ export function VideoPlayer() {
               onClick={handleCloseFullscreen}
             />
 
-            {/* Video container */}
+            {/* Video container - 16:9 aspect ratio */}
             <motion.div
-              className="relative w-[95vw] h-[95vh] md:w-[90vw] md:h-[90vh] flex items-center justify-center"
+              className="relative w-[90vw] flex items-center justify-center"
+              style={{
+                aspectRatio: '16/9',
+                maxHeight: '90vh',
+                maxWidth: '90vw'
+              }}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
