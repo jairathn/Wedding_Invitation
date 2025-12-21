@@ -143,7 +143,7 @@ export function VideoPlayer() {
             {/* Video player - fills entire screen */}
             <motion.video
               ref={videoRef}
-              className="absolute inset-0 w-full h-full object-contain"
+              className="object-contain"
               controls
               playsInline
               autoPlay
@@ -152,10 +152,17 @@ export function VideoPlayer() {
               onEnded={() => setIsPlaying(false)}
               onPause={() => setIsPlaying(false)}
               onPlay={() => setIsPlaying(true)}
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+              }}
             >
               <source src="/video/Invitation_Video.mp4" type="video/mp4" />
             </motion.video>
