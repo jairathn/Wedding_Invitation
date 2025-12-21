@@ -6,8 +6,8 @@ export function WaxSeal({ onClick, isVisible = true }) {
       onClick={onClick}
       className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-pointer focus:outline-none z-20"
       style={{
-        width: '85px',
-        height: '85px',
+        width: '105px',
+        height: '105px',
         transformStyle: 'preserve-3d',
       }}
       initial={{ opacity: 0, scale: 0 }}
@@ -85,56 +85,17 @@ export function WaxSeal({ onClick, isVisible = true }) {
           />
         </div>
 
-        {/* Drip marks at base */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex gap-2">
-          {/* Left drip */}
-          <div
-            className="relative"
-            style={{
-              width: '8px',
-              height: '12px',
-              background: 'linear-gradient(180deg, #8B1A1A 0%, #6B0F0F 100%)',
-              borderRadius: '0 0 4px 4px',
-              transform: 'translateX(-15px)',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-            }}
-          />
-          {/* Center drip */}
-          <div
-            className="relative"
-            style={{
-              width: '6px',
-              height: '8px',
-              background: 'linear-gradient(180deg, #8B1A1A 0%, #6B0F0F 100%)',
-              borderRadius: '0 0 3px 3px',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-            }}
-          />
-          {/* Right drip */}
-          <div
-            className="relative"
-            style={{
-              width: '7px',
-              height: '10px',
-              background: 'linear-gradient(180deg, #8B1A1A 0%, #6B0F0F 100%)',
-              borderRadius: '0 0 3.5px 3.5px',
-              transform: 'translateX(12px)',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-            }}
-          />
-        </div>
-
         {/* Embossed text content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {/* S&N - larger, embossed */}
           <div
-            className="font-serif text-2xl font-bold tracking-wider mb-1"
+            className="font-serif text-3xl font-bold tracking-wider mb-1"
             style={{
-              color: '#5A0000',
+              color: '#9B3030',
               textShadow: `
-                0 1px 0 rgba(255,255,255,0.2),
-                0 -1px 0 rgba(0,0,0,0.5),
-                0 2px 3px rgba(0,0,0,0.3)
+                0 1px 0 rgba(255,255,255,0.4),
+                0 -1px 0 rgba(0,0,0,0.8),
+                0 2px 4px rgba(0,0,0,0.5)
               `,
               transform: 'translateZ(5px)',
             }}
@@ -144,15 +105,16 @@ export function WaxSeal({ onClick, isVisible = true }) {
 
           {/* Click to open - smaller, subtle */}
           <motion.div
-            className="font-sans text-[9px] tracking-wide uppercase"
+            className="font-sans text-[10px] tracking-wide uppercase"
             style={{
-              color: '#7A0F0F',
+              color: '#B54545',
               textShadow: `
-                0 1px 0 rgba(255,255,255,0.15),
-                0 -1px 0 rgba(0,0,0,0.4)
+                0 1px 0 rgba(255,255,255,0.3),
+                0 -1px 0 rgba(0,0,0,0.6),
+                0 1px 2px rgba(0,0,0,0.4)
               `,
             }}
-            initial={{ opacity: 0.7 }}
+            initial={{ opacity: 0.85 }}
             whileHover={{ opacity: 1 }}
           >
             Click to open
