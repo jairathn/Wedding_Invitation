@@ -142,22 +142,21 @@ export function VideoPlayer() {
 
             {/* Video container - centered, 16:9, fills most of screen */}
             <motion.div
-              className="absolute inset-0 flex items-center justify-center p-4"
+              className="absolute inset-0 flex items-center justify-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
               <div
-                className="relative w-full max-w-[95vw]"
                 style={{
-                  aspectRatio: '16 / 9',
-                  maxHeight: '95vh',
+                  width: 'min(90vw, calc(90vh * 16 / 9))',
+                  height: 'min(90vh, calc(90vw * 9 / 16))',
                 }}
               >
                 <video
                   ref={videoRef}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full"
                   controls
                   playsInline
                   autoPlay
