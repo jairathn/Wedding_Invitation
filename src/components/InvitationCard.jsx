@@ -197,7 +197,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             </motion.p>
 
             {/* Spacing before RSVP */}
-            <div style={{ height: '1.75rem' }} />
+            <div style={{ height: '1.5rem' }} />
 
             {/* RSVP Button - larger, more prominent, separated */}
             <motion.div
