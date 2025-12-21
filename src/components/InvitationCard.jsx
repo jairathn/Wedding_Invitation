@@ -3,198 +3,190 @@ import { VideoPlayer } from './VideoPlayer';
 import { RSVPButton } from './RSVPButton';
 import { PaperTexture } from './PaperTexture';
 
-export function InvitationCard({ guestName }) {
+export function InvitationCard({ isVisible }) {
   return (
-    <div className="relative">
-      {/* Card shadow */}
+    <motion.div
+      className="relative"
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{
+        opacity: isVisible ? 1 : 0,
+        scale: isVisible ? 1 : 0.96,
+      }}
+      transition={{
+        duration: 0.9,
+        delay: isVisible ? 0.3 : 0,
+        ease: [0.4, 0, 0.2, 1],
+      }}
+    >
+      {/* Card shadow - layered for depth */}
       <div
-        className="absolute -bottom-6 left-1/2 -translate-x-1/2"
+        className="absolute -bottom-8 left-1/2 -translate-x-1/2 pointer-events-none"
         style={{
-          width: '85%',
-          height: '40px',
-          background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.18) 0%, transparent 70%)',
-          filter: 'blur(10px)',
+          width: '90%',
+          height: '50px',
+          background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, transparent 70%)',
+          filter: 'blur(16px)',
         }}
       />
 
       {/* Main card */}
       <div
-        className="relative overflow-hidden"
+        className="relative w-[520px] max-w-[92vw] overflow-hidden rounded-sm"
         style={{
-          width: '400px',
-          maxWidth: '90vw',
-          borderRadius: '3px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.1), 0 8px 40px rgba(0,0,0,0.08)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.06), 0 12px 48px rgba(0,0,0,0.1)',
         }}
       >
-        {/* Deckled edge effect - subtle wavy border */}
-        <div
-          className="absolute inset-0 pointer-events-none z-20"
-          style={{
-            border: '1px solid rgba(139, 119, 101, 0.15)',
-            borderRadius: '3px',
-            // Deckled edge simulation with shadow
-            boxShadow: `
-              inset 1px 0 0 rgba(255,255,255,0.5),
-              inset -1px 0 0 rgba(255,255,255,0.5),
-              inset 0 1px 0 rgba(255,255,255,0.5),
-              inset 0 -1px 0 rgba(255,255,255,0.5)
-            `,
-          }}
-        />
-
         {/* Paper texture */}
         <PaperTexture />
 
-        {/* Gold foil top accent */}
+        {/* Top gold accent line */}
         <div
-          className="relative h-1"
+          className="relative h-[3px]"
           style={{
-            background: 'linear-gradient(90deg, transparent 0%, rgba(212,168,83,0.6) 20%, rgba(232,198,123,0.8) 50%, rgba(212,168,83,0.6) 80%, transparent 100%)',
+            background: 'linear-gradient(90deg, rgba(212,168,83,0.3) 0%, rgba(212,168,83,0.7) 50%, rgba(212,168,83,0.3) 100%)',
           }}
         />
 
-        {/* Card content */}
-        <div className="relative px-10 py-12 md:px-12 md:py-14">
-          {/* Welcome line */}
+        {/* Card content with generous padding */}
+        <div className="relative px-12 py-16 md:px-16 md:py-20">
+          {/* Header */}
           <motion.p
-            className="text-center font-sans text-xs text-charcoal/50 tracking-[0.25em] uppercase mb-2"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            className="text-center font-sans text-[11px] text-charcoal/45 tracking-[0.25em] uppercase mb-4"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 15 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
           >
             Together with their families
           </motion.p>
 
-          {/* Names - the hero */}
-          <motion.div
-            className="text-center mb-6"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
+          {/* Names - THE HERO */}
+          <motion.h1
+            className="text-center font-serif text-5xl md:text-6xl text-charcoal italic tracking-wide mb-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+            transition={{ delay: 0.6, duration: 0.6 }}
           >
-            <h1
-              className="font-serif text-4xl md:text-5xl text-charcoal italic mb-3"
-              style={{
-                // Gold foil shimmer effect
-                background: 'linear-gradient(135deg, #2C2C2C 0%, #4A4A4A 25%, #2C2C2C 50%, #4A4A4A 75%, #2C2C2C 100%)',
-                backgroundSize: '200% 200%',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                letterSpacing: '0.02em',
-              }}
-            >
-              Shriya & Neil
-            </h1>
-            <p className="font-sans text-xs text-charcoal/60 tracking-[0.2em] uppercase">
-              Request the pleasure of your company
-            </p>
-          </motion.div>
+            Shriya & Neil
+          </motion.h1>
+
+          {/* Subtitle */}
+          <motion.p
+            className="text-center font-sans text-[11px] text-charcoal/50 tracking-[0.2em] uppercase mb-10"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 15 }}
+            transition={{ delay: 0.7, duration: 0.6 }}
+          >
+            Request the pleasure of your company
+          </motion.p>
 
           {/* Decorative divider */}
           <motion.div
-            className="flex items-center justify-center mb-8"
+            className="flex items-center justify-center mb-10"
             initial={{ opacity: 0, scaleX: 0 }}
-            animate={{ opacity: 1, scaleX: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
+            animate={{ opacity: isVisible ? 1 : 0, scaleX: isVisible ? 1 : 0 }}
+            transition={{ delay: 0.75, duration: 0.5 }}
           >
-            <div className="h-px w-16 bg-gradient-to-r from-transparent to-golden/50" />
-            <div className="mx-3">
-              <svg width="12" height="12" viewBox="0 0 12 12" className="text-golden">
+            <div className="h-px w-16 bg-gradient-to-r from-transparent to-golden/40" />
+            <div className="mx-4">
+              <svg width="10" height="10" viewBox="0 0 10 10" className="text-golden/70">
                 <path
                   fill="currentColor"
-                  d="M6 0L7.5 4.5L12 6L7.5 7.5L6 12L4.5 7.5L0 6L4.5 4.5L6 0Z"
+                  d="M5 0L6.12 3.88L10 5L6.12 6.12L5 10L3.88 6.12L0 5L3.88 3.88L5 0Z"
                 />
               </svg>
             </div>
-            <div className="h-px w-16 bg-gradient-to-l from-transparent to-golden/50" />
+            <div className="h-px w-16 bg-gradient-to-l from-transparent to-golden/40" />
           </motion.div>
 
           {/* Video section */}
           <motion.div
-            className="mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
+            className="mb-12"
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 25 }}
+            transition={{ delay: 0.85, duration: 0.6 }}
           >
-            <p className="text-center font-sans text-xs text-charcoal/50 tracking-[0.2em] uppercase mb-4">
+            {/* Video label */}
+            <p className="text-center font-sans text-[10px] text-charcoal/40 tracking-[0.25em] uppercase mb-5">
               Our Story
             </p>
-            <div className="relative">
-              {/* Elegant frame */}
-              <div
-                className="absolute -inset-3 rounded"
-                style={{
-                  border: '1px solid rgba(212, 168, 83, 0.25)',
-                }}
-              />
-              <div className="rounded overflow-hidden">
-                <VideoPlayer />
+
+            {/* Video container - 80% width, centered */}
+            <div className="flex justify-center">
+              <div className="relative w-[85%]">
+                {/* Elegant frame */}
+                <div
+                  className="absolute -inset-3 rounded-sm pointer-events-none"
+                  style={{
+                    border: '1px solid rgba(212, 168, 83, 0.25)',
+                  }}
+                />
+                <div className="rounded-sm overflow-hidden shadow-sm">
+                  <VideoPlayer />
+                </div>
               </div>
             </div>
           </motion.div>
 
-          {/* Event details */}
-          <motion.div
-            className="text-center mb-8"
+          {/* Date */}
+          <motion.p
+            className="text-center font-serif text-2xl md:text-3xl text-charcoal italic mb-2"
             initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
+            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 15 }}
+            transition={{ delay: 0.95, duration: 0.5 }}
           >
-            <p className="font-serif text-2xl md:text-3xl text-charcoal italic mb-2">
-              September 9 – 11, 2026
-            </p>
-            <p className="font-sans text-sm text-charcoal/70 tracking-wide">
-              Barcelona, Spain
-            </p>
-          </motion.div>
+            September 9 – 11, 2026
+          </motion.p>
+
+          {/* Location */}
+          <motion.p
+            className="text-center font-sans text-sm text-charcoal/60 tracking-wide mb-10"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 10 }}
+            transition={{ delay: 1.0, duration: 0.5 }}
+          >
+            Barcelona, Spain
+          </motion.p>
 
           {/* Hashtag */}
-          <motion.div
-            className="text-center mb-8"
+          <motion.p
+            className="text-center font-serif text-lg italic mb-10"
+            style={{ color: '#B8943F' }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
+            animate={{ opacity: isVisible ? 1 : 0 }}
+            transition={{ delay: 1.05, duration: 0.5 }}
           >
-            <p
-              className="font-serif text-lg italic"
-              style={{
-                color: '#B8943F',
-              }}
-            >
-              #JayWalkingToJairath
-            </p>
+            #JayWalkingToJairath
+          </motion.p>
+
+          {/* Subtle divider before RSVP */}
+          <motion.div
+            className="flex justify-center mb-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isVisible ? 1 : 0 }}
+            transition={{ delay: 1.1, duration: 0.4 }}
+          >
+            <div className="h-px w-20 bg-gradient-to-r from-transparent via-golden/30 to-transparent" />
           </motion.div>
 
-          {/* Divider */}
-          <motion.div
-            className="flex items-center justify-center mb-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.75, duration: 0.4 }}
-          >
-            <div className="h-px w-24 bg-gradient-to-r from-transparent via-golden/40 to-transparent" />
-          </motion.div>
-
-          {/* RSVP */}
+          {/* RSVP Button */}
           <motion.div
             className="flex justify-center"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8, duration: 0.5 }}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 15 }}
+            transition={{ delay: 1.15, duration: 0.5 }}
           >
             <RSVPButton />
           </motion.div>
         </div>
 
-        {/* Gold foil bottom accent */}
+        {/* Bottom gold accent line */}
         <div
-          className="relative h-1"
+          className="relative h-[3px]"
           style={{
-            background: 'linear-gradient(90deg, transparent 0%, rgba(212,168,83,0.6) 20%, rgba(232,198,123,0.8) 50%, rgba(212,168,83,0.6) 80%, transparent 100%)',
+            background: 'linear-gradient(90deg, rgba(212,168,83,0.3) 0%, rgba(212,168,83,0.7) 50%, rgba(212,168,83,0.3) 100%)',
           }}
         />
       </div>
-    </div>
+    </motion.div>
   );
 }
