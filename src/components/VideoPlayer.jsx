@@ -128,35 +128,30 @@ export function VideoPlayer() {
               onClick={handleCloseFullscreen}
             />
 
-            {/* Video container - 16:9 aspect ratio */}
+            {/* Close button - positioned outside video container */}
+            <motion.button
+              className="absolute top-4 right-4 z-10 w-12 h-12 rounded-full bg-warm-white/10 hover:bg-warm-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
+              onClick={handleCloseFullscreen}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <svg className="w-6 h-6 text-warm-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </motion.button>
+
+            {/* Video container - fills entire viewport while maintaining 16:9 */}
             <motion.div
-              className="relative w-[90vw] flex items-center justify-center"
-              style={{
-                aspectRatio: '16/9',
-                maxHeight: '90vh',
-                maxWidth: '90vw'
-              }}
-              initial={{ scale: 0.9, opacity: 0 }}
+              className="relative w-screen h-screen flex items-center justify-center p-4"
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Close button */}
-              <motion.button
-                className="absolute top-4 right-4 z-10 w-12 h-12 rounded-full bg-warm-white/10 hover:bg-warm-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
-                onClick={handleCloseFullscreen}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <svg className="w-6 h-6 text-warm-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </motion.button>
-
-              {/* Video player */}
+              {/* Video player - takes maximum space while maintaining aspect ratio */}
               <video
                 ref={videoRef}
-                className="w-full h-full object-contain rounded-sm"
+                className="max-w-full max-h-full object-contain"
                 controls
                 playsInline
                 autoPlay
@@ -166,8 +161,8 @@ export function VideoPlayer() {
                 onPause={() => setIsPlaying(false)}
                 onPlay={() => setIsPlaying(true)}
                 style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
+                  width: '100%',
+                  height: '100%',
                 }}
               >
                 <source src="/video/Invitation_Video.mp4" type="video/mp4" />
