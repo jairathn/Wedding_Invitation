@@ -202,11 +202,11 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
           }}
           transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
         >
-          {/* Flap front (cream paper - visible when closed) */}
+          {/* Flap front (cream paper - visible when closed) - POINTS DOWN */}
           <div
             className="absolute inset-0"
             style={{
-              clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
+              clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
               backfaceVisibility: 'hidden',
               transformStyle: 'preserve-3d',
             }}
@@ -217,17 +217,17 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
+                clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
                 background: `
-                  radial-gradient(ellipse at 50% 20%, rgba(245, 237, 220, 0.3) 0%, transparent 60%),
+                  radial-gradient(ellipse at 50% 80%, rgba(245, 237, 220, 0.3) 0%, transparent 60%),
                   radial-gradient(ellipse at 30% 50%, rgba(235, 220, 195, 0.2) 0%, transparent 50%)
                 `,
               }}
             />
 
-            {/* Subtle fold line at bottom */}
+            {/* Subtle fold line at top */}
             <div
-              className="absolute bottom-0 left-0 right-0 h-[2px]"
+              className="absolute top-0 left-0 right-0 h-[2px]"
               style={{
                 background: 'linear-gradient(to right, transparent, rgba(139,119,101,0.15), transparent)',
               }}
@@ -237,22 +237,23 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
+                clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
                 boxShadow: `
-                  inset 0 -3px 12px rgba(0,0,0,0.08),
-                  inset 0 2px 8px rgba(0,0,0,0.05),
+                  inset 0 3px 12px rgba(0,0,0,0.08),
+                  inset 0 -2px 8px rgba(0,0,0,0.05),
                   0 4px 16px rgba(0,0,0,0.12)
                 `,
               }}
             />
 
-            {/* Wax Seal - attached to flap front, centered on triangle */}
+            {/* Wax Seal - at the TIP of the flap where it seals */}
             <div
               className="absolute left-1/2 -translate-x-1/2"
               style={{
-                top: '40%',
+                top: '85%',
                 transform: 'translateX(-50%) translateZ(10px)',
                 transformStyle: 'preserve-3d',
+                zIndex: 40,
               }}
             >
               <WaxSeal onClick={handleSealClick} isVisible={!sealClicked && !isOpen} />
@@ -263,7 +264,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
           <div
             className="absolute inset-0"
             style={{
-              clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
+              clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
               backfaceVisibility: 'hidden',
               transform: 'rotateX(180deg)',
               background: 'linear-gradient(180deg, #D4B870 0%, #C9A855 40%, #B8943F 100%)',
@@ -281,7 +282,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
+                clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
                 boxShadow: 'inset 0 4px 16px rgba(0,0,0,0.15)',
               }}
             />
