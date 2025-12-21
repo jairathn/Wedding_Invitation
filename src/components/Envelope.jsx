@@ -260,11 +260,11 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             />
           </div>
 
-          {/* Flap back (gold liner - visible when open) */}
+          {/* Flap back (gold liner - visible when open) - OPPOSITE polygon so it points DOWN when rotated */}
           <div
             className="absolute inset-0"
             style={{
-              clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+              clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
               backfaceVisibility: 'hidden',
               transform: 'rotateX(180deg)',
               background: 'linear-gradient(180deg, #D4B870 0%, #C9A855 40%, #B8943F 100%)',
@@ -282,7 +282,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+                clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
                 boxShadow: 'inset 0 4px 16px rgba(0,0,0,0.15)',
               }}
             />
