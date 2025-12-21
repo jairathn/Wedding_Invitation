@@ -234,20 +234,23 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               }}
             />
 
-            {/* DRAMATICALLY stronger edge shadows - visible dark outline */}
+            {/* Shadow along diagonal edges using drop-shadow */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
-                boxShadow: `
-                  0 12px 40px rgba(0,0,0,0.6),
-                  0 8px 25px rgba(0,0,0,0.5),
-                  0 4px 15px rgba(0,0,0,0.4)
+                filter: `
+                  drop-shadow(-4px 0px 8px rgba(0,0,0,0.6))
+                  drop-shadow(4px 0px 8px rgba(0,0,0,0.6))
+                  drop-shadow(-2px 0px 4px rgba(0,0,0,0.5))
+                  drop-shadow(2px 0px 4px rgba(0,0,0,0.5))
+                  drop-shadow(0px 4px 12px rgba(0,0,0,0.4))
                 `,
+                background: 'rgba(0,0,0,0.02)',
               }}
             />
 
-            {/* STRONG visible border on flap edges */}
+            {/* STRONG visible border on all flap edges */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
