@@ -48,11 +48,11 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
           }}
         />
 
-        {/* Card content with generous padding */}
-        <div className="relative h-full flex flex-col px-12 py-14 md:px-16 md:py-16" style={{ gap: '2rem' }}>
+        {/* Card content with generous padding and equal margins */}
+        <div className="relative h-full flex flex-col px-12 py-12 md:px-16 md:py-14">
 
           {/* Top section - separate elements for progressive reveal */}
-          <div className="flex-shrink-0 space-y-6">
+          <div className="flex-shrink-0 space-y-6" style={{ marginTop: '1.5rem' }}>
             {/* Header - "Together with their families" */}
             <motion.p
               className="text-center font-sans text-[10px] text-charcoal/40 tracking-[0.3em] uppercase"
@@ -78,6 +78,9 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             >
               Shriya & Neil
             </motion.h1>
+
+            {/* Extra spacing before subtitle */}
+            <div style={{ height: '1rem' }} />
 
             {/* Subtitle - "Request the pleasure of your company" */}
             <motion.p
@@ -125,11 +128,6 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             }}
             transition={{ delay: 0.85, duration: 0.6 }}
           >
-            {/* Video label */}
-            <p className="text-center font-sans text-[9px] text-charcoal/35 tracking-[0.3em] uppercase mb-4">
-              Our Story
-            </p>
-
             {/* Video container - centered with frame */}
             <div className="flex justify-center">
               <div className="relative w-[80%]">
@@ -148,7 +146,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
           </motion.div>
 
           {/* Bottom section - separate elements for progressive reveal */}
-          <div className="flex-shrink-0 space-y-6">
+          <div className="flex-shrink-0 space-y-3">
             {/* Date */}
             <motion.p
               className="text-center font-serif text-2xl md:text-3xl text-charcoal italic"
@@ -162,9 +160,12 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
               September 9 – 11, 2026
             </motion.p>
 
-            {/* Location */}
+            {/* Spacing after date */}
+            <div style={{ height: '0.75rem' }} />
+
+            {/* Location - larger text */}
             <motion.p
-              className="text-center font-sans text-xs text-charcoal/55 tracking-wider"
+              className="text-center font-sans text-base text-charcoal/55 tracking-wider"
               initial={{ opacity: 0, y: 10 }}
               animate={{
                 opacity: isVisible && emergenceProgress > 0.7 ? 1 : 0,
@@ -175,9 +176,12 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
               Barcelona, Spain
             </motion.p>
 
-            {/* Hashtag */}
+            {/* Spacing after location */}
+            <div style={{ height: '0.75rem' }} />
+
+            {/* Hashtag - larger text */}
             <motion.p
-              className="text-center font-serif text-base italic"
+              className="text-center font-serif text-lg italic"
               style={{ color: '#B8943F' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: isVisible && emergenceProgress > 0.75 ? 1 : 0 }}
@@ -186,19 +190,12 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
               #JayWalkingToJairath
             </motion.p>
 
-            {/* Subtle divider before RSVP */}
-            <motion.div
-              className="flex justify-center pt-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: isVisible && emergenceProgress > 0.8 ? 1 : 0 }}
-              transition={{ delay: 1.1, duration: 0.4 }}
-            >
-              <div className="h-px w-16 bg-gradient-to-r from-transparent via-golden/25 to-transparent" />
-            </motion.div>
+            {/* Significant spacing before RSVP */}
+            <div style={{ height: '2.5rem' }} />
 
             {/* RSVP Button - larger, more prominent, separated */}
             <motion.div
-              className="flex justify-center pt-6"
+              className="flex justify-center"
               initial={{ opacity: 0, y: 15 }}
               animate={{
                 opacity: isVisible && emergenceProgress > 0.85 ? 1 : 0,
