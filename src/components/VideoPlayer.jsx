@@ -116,7 +116,7 @@ export function VideoPlayer() {
       <AnimatePresence>
         {isFullscreen && (
           <motion.div
-            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            className="fixed inset-0 z-[9999]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -128,9 +128,9 @@ export function VideoPlayer() {
               onClick={handleCloseFullscreen}
             />
 
-            {/* Close button - positioned outside video container */}
+            {/* Close button */}
             <motion.button
-              className="absolute top-4 right-4 z-10 w-12 h-12 rounded-full bg-warm-white/10 hover:bg-warm-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
+              className="absolute top-4 right-4 z-20 w-12 h-12 rounded-full bg-warm-white/10 hover:bg-warm-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
               onClick={handleCloseFullscreen}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
@@ -140,18 +140,18 @@ export function VideoPlayer() {
               </svg>
             </motion.button>
 
-            {/* Video container - fills entire viewport while maintaining 16:9 */}
+            {/* Video container - truly fullscreen */}
             <motion.div
-              className="relative w-screen h-screen flex items-center justify-center p-4"
+              className="absolute inset-0 flex items-center justify-center"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Video player - takes maximum space while maintaining aspect ratio */}
+              {/* Video player - fills viewport while maintaining aspect ratio */}
               <video
                 ref={videoRef}
-                className="max-w-full max-h-full object-contain"
+                className="object-contain"
                 controls
                 playsInline
                 autoPlay
@@ -161,8 +161,8 @@ export function VideoPlayer() {
                 onPause={() => setIsPlaying(false)}
                 onPlay={() => setIsPlaying(true)}
                 style={{
-                  width: '100%',
-                  height: '100%',
+                  width: '100vw',
+                  height: '100vh',
                 }}
               >
                 <source src="/video/Invitation_Video.mp4" type="video/mp4" />
