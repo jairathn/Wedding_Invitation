@@ -118,6 +118,9 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             </motion.div>
           </div>
 
+          {/* Spacing before video */}
+          <div style={{ height: '2rem' }} />
+
           {/* Middle section - Video */}
           <motion.div
             className="flex-shrink-0 flex flex-col justify-center py-8"
@@ -144,6 +147,9 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
               </div>
             </div>
           </motion.div>
+
+          {/* Spacing after video */}
+          <div style={{ height: '2rem' }} />
 
           {/* Bottom section - separate elements for progressive reveal */}
           <div className="flex-shrink-0 space-y-3">
