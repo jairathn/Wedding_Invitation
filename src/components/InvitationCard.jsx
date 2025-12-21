@@ -49,7 +49,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
         />
 
         {/* Card content with generous padding */}
-        <div className="relative h-full flex flex-col justify-between px-12 py-14 md:px-16 md:py-16">
+        <div className="relative h-full flex flex-col px-12 py-14 md:px-16 md:py-16" style={{ gap: '2rem' }}>
 
           {/* Top section - separate elements for progressive reveal */}
           <div className="flex-shrink-0 space-y-6">

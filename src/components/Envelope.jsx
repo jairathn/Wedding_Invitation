@@ -129,7 +129,10 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
           />
 
           {/* Content area */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-10">
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center px-10"
+            style={{ zIndex: sealClicked ? 30 : 1 }}
+          >
             {sealClicked && !nameEntered && (
               <motion.div
                 className="w-full max-w-[300px] text-center"
@@ -203,7 +206,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
           <div
             className="absolute inset-0"
             style={{
-              clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+              clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
               backfaceVisibility: 'hidden',
               transformStyle: 'preserve-3d',
             }}
@@ -214,17 +217,17 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+                clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
                 background: `
-                  radial-gradient(ellipse at 50% 80%, rgba(245, 237, 220, 0.3) 0%, transparent 60%),
+                  radial-gradient(ellipse at 50% 20%, rgba(245, 237, 220, 0.3) 0%, transparent 60%),
                   radial-gradient(ellipse at 30% 50%, rgba(235, 220, 195, 0.2) 0%, transparent 50%)
                 `,
               }}
             />
 
-            {/* Subtle fold line at top */}
+            {/* Subtle fold line at bottom */}
             <div
-              className="absolute top-0 left-0 right-0 h-[2px]"
+              className="absolute bottom-0 left-0 right-0 h-[2px]"
               style={{
                 background: 'linear-gradient(to right, transparent, rgba(139,119,101,0.15), transparent)',
               }}
@@ -234,19 +237,21 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+                clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
                 boxShadow: `
-                  inset 0 3px 12px rgba(0,0,0,0.08),
-                  inset 0 -2px 8px rgba(0,0,0,0.05),
+                  inset 0 -3px 12px rgba(0,0,0,0.08),
+                  inset 0 2px 8px rgba(0,0,0,0.05),
                   0 4px 16px rgba(0,0,0,0.12)
                 `,
               }}
             />
 
-            {/* Wax Seal - attached to flap front, raised */}
+            {/* Wax Seal - attached to flap front, centered on triangle */}
             <div
+              className="absolute left-1/2 -translate-x-1/2"
               style={{
-                transform: 'translateZ(10px)',
+                top: '40%',
+                transform: 'translateX(-50%) translateZ(10px)',
                 transformStyle: 'preserve-3d',
               }}
             >
@@ -258,7 +263,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
           <div
             className="absolute inset-0"
             style={{
-              clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+              clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
               backfaceVisibility: 'hidden',
               transform: 'rotateX(180deg)',
               background: 'linear-gradient(180deg, #D4B870 0%, #C9A855 40%, #B8943F 100%)',
@@ -276,7 +281,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+                clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
                 boxShadow: 'inset 0 4px 16px rgba(0,0,0,0.15)',
               }}
             />
