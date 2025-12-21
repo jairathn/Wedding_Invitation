@@ -19,7 +19,7 @@ export function RSVPButton() {
         <p className="font-serif text-4xl font-bold italic tracking-wide mb-2">
           RSVP
         </p>
-        <p className="font-sans text-sm text-warm-white/85 tracking-wider font-medium">
+        <p className="font-sans text-sm text-warm-white/85 tracking-wider font-medium px-4">
           Password: Barcelona2026
         </p>
       </div>
