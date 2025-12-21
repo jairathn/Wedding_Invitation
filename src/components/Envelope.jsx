@@ -233,7 +233,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               }}
             />
 
-            {/* Enhanced edge shadow for 3D effect */}
+            {/* Enhanced edge shadow for 3D effect - stronger for visibility */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
@@ -241,8 +241,18 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                 boxShadow: `
                   inset 0 3px 12px rgba(0,0,0,0.08),
                   inset 0 -2px 8px rgba(0,0,0,0.05),
-                  0 4px 16px rgba(0,0,0,0.12)
+                  0 6px 20px rgba(0,0,0,0.2),
+                  0 2px 8px rgba(0,0,0,0.15)
                 `,
+              }}
+            />
+
+            {/* Flap edge definition - creates visible border */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+                boxShadow: 'inset 0 0 0 0.5px rgba(139, 119, 101, 0.2)',
               }}
             />
 
@@ -253,7 +263,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                 top: '85%',
                 transform: 'translateX(-50%) translateZ(10px)',
                 transformStyle: 'preserve-3d',
-                zIndex: 40,
+                zIndex: 50,
               }}
             >
               <WaxSeal onClick={handleSealClick} isVisible={!sealClicked && !isOpen} />
