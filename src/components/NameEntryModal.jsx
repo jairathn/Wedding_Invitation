@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGuestValidation } from '../hooks/useGuestValidation';
+import { PaperTexture } from './PaperTexture';
 
 export function NameEntryModal({ isOpen, onValidName }) {
   const [name, setName] = useState('');
@@ -46,26 +47,24 @@ export function NameEntryModal({ isOpen, onValidName }) {
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.4 }}
           >
-            {/* Decorative border */}
-            <div className="absolute -inset-2 border border-golden/20" />
+            {/* Decorative border - rounded */}
+            <div className="absolute -inset-2.5 border border-golden/20 rounded-xl" />
 
-            {/* Card */}
-            <div
-              className="relative shadow-xl"
-              style={{
-                background: 'linear-gradient(145deg, #FFFEF9 0%, #FAF7F2 100%)',
-              }}
-            >
+            {/* Card with paper texture */}
+            <div className="relative overflow-hidden rounded-lg shadow-xl">
+              {/* Paper texture */}
+              <PaperTexture />
+
               {/* Top line */}
-              <div className="h-px bg-gradient-to-r from-transparent via-golden to-transparent" />
+              <div className="relative h-px bg-gradient-to-r from-transparent via-golden/60 to-transparent" />
 
-              <div className="px-12 py-14">
+              <div className="relative px-10 py-12 md:px-12 md:py-14">
                 {/* Title */}
-                <h2 className="font-serif text-3xl text-charcoal text-center italic font-light mb-4">
+                <h2 className="font-serif text-3xl text-charcoal text-center italic font-light mb-3">
                   Welcome
                 </h2>
 
-                <p className="text-charcoal-light text-center text-sm tracking-wide mb-10">
+                <p className="text-charcoal-light text-center text-sm tracking-wide mb-8">
                   Please enter your name
                 </p>
 
@@ -79,7 +78,7 @@ export function NameEntryModal({ isOpen, onValidName }) {
                       setError('');
                     }}
                     placeholder="Your name"
-                    className="w-full px-5 py-4 border border-cream-dark bg-warm-white font-serif text-lg text-charcoal placeholder-charcoal-light/40 focus:outline-none focus:border-golden transition-colors text-center"
+                    className="w-full px-5 py-4 border border-golden/30 bg-warm-white/50 font-serif text-lg text-charcoal placeholder-charcoal-light/40 focus:outline-none focus:border-golden transition-colors text-center rounded-md"
                     autoFocus
                   />
 
@@ -97,27 +96,27 @@ export function NameEntryModal({ isOpen, onValidName }) {
                     )}
                   </AnimatePresence>
 
-                  {/* Button */}
+                  {/* Button - rounded */}
                   <div className="mt-8 flex justify-center">
                     <button
                       type="submit"
                       disabled={isValidating || !name.trim()}
-                      className="relative px-10 py-3 bg-terracotta text-warm-white font-serif text-lg italic tracking-wide transition-all duration-300 hover:bg-terracotta-dark disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="relative px-10 py-3.5 bg-terracotta text-warm-white font-serif text-lg italic tracking-wide rounded-md transition-all duration-300 hover:bg-terracotta-dark disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {isValidating ? 'Verifying...' : 'Continue'}
 
                       {/* Corner accents */}
-                      <span className="absolute -top-0.5 -left-0.5 w-2 h-2 border-t border-l border-golden-light/50" />
-                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 border-t border-r border-golden-light/50" />
-                      <span className="absolute -bottom-0.5 -left-0.5 w-2 h-2 border-b border-l border-golden-light/50" />
-                      <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 border-b border-r border-golden-light/50" />
+                      <span className="absolute -top-1 -left-1 w-2.5 h-2.5 border-t border-l border-golden-light/50 rounded-tl-sm" />
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 border-t border-r border-golden-light/50 rounded-tr-sm" />
+                      <span className="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b border-l border-golden-light/50 rounded-bl-sm" />
+                      <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b border-r border-golden-light/50 rounded-br-sm" />
                     </button>
                   </div>
                 </form>
               </div>
 
               {/* Bottom line */}
-              <div className="h-px bg-gradient-to-r from-transparent via-golden to-transparent" />
+              <div className="relative h-px bg-gradient-to-r from-transparent via-golden/60 to-transparent" />
             </div>
           </motion.div>
         </motion.div>
