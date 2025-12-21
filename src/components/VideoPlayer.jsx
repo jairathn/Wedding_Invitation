@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function VideoPlayer() {
@@ -112,67 +113,70 @@ export function VideoPlayer() {
         />
       </div>
 
-      {/* Fullscreen Modal */}
-      <AnimatePresence>
-        {isFullscreen && (
-          <motion.div
-            className="fixed inset-0 z-[9999]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {/* Dimmed background overlay */}
-            <div
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-              onClick={handleCloseFullscreen}
-            />
-
-            {/* Close button */}
-            <motion.button
-              className="absolute top-4 right-4 z-20 w-12 h-12 rounded-full bg-warm-white/10 hover:bg-warm-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
-              onClick={handleCloseFullscreen}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <svg className="w-6 h-6 text-warm-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </motion.button>
-
-            {/* Video container - centered, 16:9, fills most of screen */}
+      {/* Fullscreen Modal - rendered via Portal to escape card constraints */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {isFullscreen && (
             <motion.div
-              className="absolute inset-0 flex items-center justify-center"
+              className="fixed inset-0 z-[9999]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
+              {/* Dimmed background overlay */}
               <div
-                style={{
-                  width: 'min(90vw, calc(90vh * 16 / 9))',
-                  height: 'min(90vh, calc(90vw * 9 / 16))',
-                }}
+                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                onClick={handleCloseFullscreen}
+              />
+
+              {/* Close button */}
+              <motion.button
+                className="absolute top-4 right-4 z-20 w-12 h-12 rounded-full bg-warm-white/10 hover:bg-warm-white/20 backdrop-blur-md flex items-center justify-center transition-colors"
+                onClick={handleCloseFullscreen}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <video
-                  ref={videoRef}
-                  className="w-full h-full"
-                  controls
-                  playsInline
-                  autoPlay
-                  onLoadedData={handleVideoLoaded}
-                  onError={handleError}
-                  onEnded={() => setIsPlaying(false)}
-                  onPause={() => setIsPlaying(false)}
-                  onPlay={() => setIsPlaying(true)}
+                <svg className="w-6 h-6 text-warm-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </motion.button>
+
+              {/* Video container - centered, 16:9, fills most of screen */}
+              <motion.div
+                className="absolute inset-0 flex items-center justify-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div
+                  style={{
+                    width: 'min(90vw, calc(90vh * 16 / 9))',
+                    height: 'min(90vh, calc(90vw * 9 / 16))',
+                  }}
                 >
-                  <source src="/video/Invitation_Video.mp4" type="video/mp4" />
-                </video>
-              </div>
+                  <video
+                    ref={videoRef}
+                    className="w-full h-full"
+                    controls
+                    playsInline
+                    autoPlay
+                    onLoadedData={handleVideoLoaded}
+                    onError={handleError}
+                    onEnded={() => setIsPlaying(false)}
+                    onPause={() => setIsPlaying(false)}
+                    onPlay={() => setIsPlaying(true)}
+                  >
+                    <source src="/video/Invitation_Video.mp4" type="video/mp4" />
+                  </video>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 }
