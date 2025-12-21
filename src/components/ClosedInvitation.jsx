@@ -1,34 +1,34 @@
 import { motion } from 'framer-motion';
+import { PaperTexture } from './PaperTexture';
 
 export function ClosedInvitation({ onOpen }) {
   return (
-    <div className="min-h-screen flex items-center justify-center p-8">
+    <div className="min-h-screen flex items-center justify-center p-6">
       <motion.div
-        className="w-full max-w-2xl"
+        className="w-full max-w-xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
       >
-        {/* Outer decorative border */}
+        {/* Main card with rounded corners */}
         <div className="relative">
-          <div className="absolute -inset-3 border border-golden/30" />
+          {/* Outer decorative border - slightly rounded */}
+          <div className="absolute -inset-3 border border-golden/25 rounded-lg" />
 
-          {/* Main card */}
-          <div
-            className="relative shadow-2xl"
-            style={{
-              background: 'linear-gradient(145deg, #FFFEF9 0%, #FAF7F2 100%)',
-            }}
-          >
+          {/* Card with paper texture */}
+          <div className="relative overflow-hidden rounded-md shadow-2xl">
+            {/* Paper texture background */}
+            <PaperTexture />
+
             {/* Top gold line */}
-            <div className="h-px bg-gradient-to-r from-transparent via-golden to-transparent" />
+            <div className="relative h-px bg-gradient-to-r from-transparent via-golden/70 to-transparent" />
 
             {/* Content */}
-            <div className="px-16 py-14 md:px-20 md:py-16">
+            <div className="relative px-12 py-12 md:px-16 md:py-14">
 
               {/* Names */}
               <motion.div
-                className="text-center mb-10"
+                className="text-center mb-8"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.6 }}
@@ -43,30 +43,30 @@ export function ClosedInvitation({ onOpen }) {
 
               {/* Divider */}
               <motion.div
-                className="flex items-center justify-center mb-10"
+                className="flex items-center justify-center mb-8"
                 initial={{ opacity: 0, scaleX: 0 }}
                 animate={{ opacity: 1, scaleX: 1 }}
                 transition={{ delay: 0.4, duration: 0.6 }}
               >
-                <div className="h-px w-16 bg-gradient-to-r from-transparent to-golden/60" />
-                <div className="mx-4 text-golden">✦</div>
-                <div className="h-px w-16 bg-gradient-to-l from-transparent to-golden/60" />
+                <div className="h-px w-12 bg-gradient-to-r from-transparent to-golden/50" />
+                <div className="mx-4 text-golden text-lg">✦</div>
+                <div className="h-px w-12 bg-gradient-to-l from-transparent to-golden/50" />
               </motion.div>
 
-              {/* Engagement Photo - smaller with more breathing room */}
+              {/* Engagement Photo - with rounded corners and elegant frame */}
               <motion.div
-                className="flex justify-center mb-10"
+                className="flex justify-center mb-8"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.6 }}
               >
-                <div className="relative w-72 md:w-80">
-                  {/* Photo frame */}
-                  <div className="absolute -inset-3 border border-golden/20" />
-                  <div className="absolute -inset-1.5 border border-golden/10" />
+                <div className="relative">
+                  {/* Photo frame - rounded */}
+                  <div className="absolute -inset-3 border border-golden/20 rounded-md" />
+                  <div className="absolute -inset-1.5 border border-golden/10 rounded-sm" />
 
-                  {/* Photo */}
-                  <div className="relative aspect-[4/5] overflow-hidden">
+                  {/* Photo - slightly rounded corners */}
+                  <div className="relative w-64 md:w-72 aspect-[4/5] overflow-hidden rounded-sm">
                     <img
                       src="/images/engagement-photo.jpg"
                       alt="Shriya and Neil"
@@ -76,7 +76,7 @@ export function ClosedInvitation({ onOpen }) {
                     <div
                       className="absolute inset-0 pointer-events-none"
                       style={{
-                        boxShadow: 'inset 0 0 40px rgba(44,44,44,0.2)',
+                        boxShadow: 'inset 0 0 50px rgba(44,44,44,0.15)',
                       }}
                     />
                   </div>
@@ -85,17 +85,17 @@ export function ClosedInvitation({ onOpen }) {
 
               {/* Divider */}
               <motion.div
-                className="flex items-center justify-center mb-10"
+                className="flex items-center justify-center mb-8"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6, duration: 0.6 }}
               >
-                <div className="h-px w-12 bg-gradient-to-r from-transparent to-golden/40" />
+                <div className="h-px w-10 bg-gradient-to-r from-transparent to-golden/40" />
                 <div className="mx-3 text-golden text-sm">◆</div>
-                <div className="h-px w-12 bg-gradient-to-l from-transparent to-golden/40" />
+                <div className="h-px w-10 bg-gradient-to-l from-transparent to-golden/40" />
               </motion.div>
 
-              {/* Open Invitation Button */}
+              {/* Open Invitation Button - rounded */}
               <motion.div
                 className="flex justify-center"
                 initial={{ opacity: 0, y: 10 }}
@@ -104,21 +104,21 @@ export function ClosedInvitation({ onOpen }) {
               >
                 <button
                   onClick={onOpen}
-                  className="group relative px-12 py-4 border-2 border-terracotta text-terracotta font-serif text-lg italic tracking-wide transition-all duration-300 hover:bg-terracotta hover:text-warm-white"
+                  className="group relative px-10 py-3.5 border-2 border-terracotta text-terracotta font-serif text-lg italic tracking-wide rounded-md transition-all duration-300 hover:bg-terracotta hover:text-warm-white"
                 >
                   Open Invitation
 
-                  {/* Corner accents */}
-                  <span className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-golden" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-golden" />
-                  <span className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-golden" />
-                  <span className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-golden" />
+                  {/* Corner accents - adjusted for rounded corners */}
+                  <span className="absolute -top-1.5 -left-1.5 w-3 h-3 border-t-2 border-l-2 border-golden rounded-tl-sm" />
+                  <span className="absolute -top-1.5 -right-1.5 w-3 h-3 border-t-2 border-r-2 border-golden rounded-tr-sm" />
+                  <span className="absolute -bottom-1.5 -left-1.5 w-3 h-3 border-b-2 border-l-2 border-golden rounded-bl-sm" />
+                  <span className="absolute -bottom-1.5 -right-1.5 w-3 h-3 border-b-2 border-r-2 border-golden rounded-br-sm" />
                 </button>
               </motion.div>
             </div>
 
             {/* Bottom gold line */}
-            <div className="h-px bg-gradient-to-r from-transparent via-golden to-transparent" />
+            <div className="relative h-px bg-gradient-to-r from-transparent via-golden/70 to-transparent" />
           </div>
         </div>
       </motion.div>
