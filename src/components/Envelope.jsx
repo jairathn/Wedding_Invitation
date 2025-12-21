@@ -116,6 +116,57 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             }}
           />
 
+          {/* Interior of envelope - visible when flap opens - creates depth */}
+          <div
+            className="absolute left-0 right-0 pointer-events-none"
+            style={{
+              top: 0,
+              height: '55%',
+              clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+              zIndex: 2,
+            }}
+          >
+            {/* Rich gold interior - deeper and more luxurious than flap */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'linear-gradient(180deg, #B8943F 0%, #A8842F 30%, #98741F 60%, #88640F 100%)',
+              }}
+            />
+
+            {/* Deep inset shadows for recessed pocket effect */}
+            <div
+              className="absolute inset-0"
+              style={{
+                boxShadow: `
+                  inset 0 8px 24px rgba(0,0,0,0.4),
+                  inset 0 4px 12px rgba(0,0,0,0.3),
+                  inset 0 2px 6px rgba(0,0,0,0.2)
+                `,
+              }}
+            />
+
+            {/* Darker edges to emphasize depth */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `
+                  linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 20%),
+                  linear-gradient(to right, rgba(0,0,0,0.2) 0%, transparent 15%),
+                  linear-gradient(to left, rgba(0,0,0,0.2) 0%, transparent 15%)
+                `,
+              }}
+            />
+
+            {/* Subtle shimmer in center - catches light */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'radial-gradient(ellipse at 50% 60%, rgba(255,255,255,0.08) 0%, transparent 40%)',
+              }}
+            />
+          </div>
+
           {/* Worn edges effect */}
           <div
             className="absolute inset-0 pointer-events-none rounded-sm"
