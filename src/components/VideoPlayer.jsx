@@ -52,22 +52,36 @@ export function VideoPlayer() {
         >
           {/* Placeholder when no video */}
           {!hasVideo ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              {/* Decorative element */}
-              <div className="mb-6">
-                <svg width="60" height="60" viewBox="0 0 60 60" className="text-warm-white/30">
-                  <circle cx="30" cy="30" r="28" stroke="currentColor" strokeWidth="1" fill="none" />
-                  <path d="M24 20 L24 40 L44 30 Z" fill="currentColor" />
-                </svg>
+            <>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                {/* Decorative element */}
+                <div className="mb-6">
+                  <svg width="60" height="60" viewBox="0 0 60 60" className="text-warm-white/30">
+                    <circle cx="30" cy="30" r="28" stroke="currentColor" strokeWidth="1" fill="none" />
+                    <path d="M24 20 L24 40 L44 30 Z" fill="currentColor" />
+                  </svg>
+                </div>
+
+                <p className="font-serif text-xl text-warm-white/80 italic mb-2">
+                  Video Coming Soon
+                </p>
+                <p className="font-sans text-xs text-warm-white/50 tracking-wide">
+                  Check back for our story
+                </p>
               </div>
 
-              <p className="font-serif text-xl text-warm-white/80 italic mb-2">
-                Video Coming Soon
-              </p>
-              <p className="font-sans text-xs text-warm-white/50 tracking-wide">
-                Check back for our story
-              </p>
-            </div>
+              {/* Expand button - for testing even without video */}
+              <motion.button
+                className="absolute bottom-16 right-3 z-[100] w-11 h-11 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-colors shadow-lg"
+                onClick={handleExpandClick}
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+              </motion.button>
+            </>
           ) : (
             <>
               {/* Video element */}
