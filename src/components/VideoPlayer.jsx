@@ -83,14 +83,14 @@ export function VideoPlayer() {
                 <source src="/video/Invitation_Video.mp4" type="video/mp4" />
               </video>
 
-              {/* Expand button - bottom right */}
+              {/* Expand button - bottom right, above video controls */}
               <motion.button
-                className="absolute bottom-2 right-2 z-10 w-10 h-10 rounded bg-black/60 hover:bg-black/80 backdrop-blur-sm flex items-center justify-center transition-colors"
+                className="absolute bottom-16 right-3 z-[100] w-11 h-11 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-colors shadow-lg"
                 onClick={handleExpandClick}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.9 }}
               >
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                 </svg>
               </motion.button>
@@ -141,14 +141,14 @@ export function VideoPlayer() {
                     <source src="/video/Invitation_Video.mp4" type="video/mp4" />
                   </video>
 
-                  {/* Collapse button - bottom right */}
+                  {/* Collapse button - bottom right, above video controls */}
                   <motion.button
-                    className="absolute bottom-2 right-2 z-10 w-10 h-10 rounded bg-black/60 hover:bg-black/80 backdrop-blur-sm flex items-center justify-center transition-colors"
+                    className="absolute bottom-16 right-3 z-[100] w-11 h-11 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-colors shadow-lg"
                     onClick={handleExpandClick}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.9 }}
                   >
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M15 9h4.5M15 9V4.5M15 9l5.25-5.25M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
                     </svg>
                   </motion.button>
