@@ -45,7 +45,7 @@ export function VideoPlayer() {
       {/* Thumbnail/Preview - only show when not fullscreen */}
       {!isFullscreen && (
         <div
-          className="relative aspect-video overflow-hidden"
+          className="relative aspect-video overflow-hidden group"
           style={{
             background: 'linear-gradient(135deg, #3D4A5C 0%, #2C3542 100%)',
           }}
@@ -72,12 +72,12 @@ export function VideoPlayer() {
 
               {/* Expand button - for testing even without video */}
               <motion.button
-                className="absolute bottom-16 right-3 z-[100] w-11 h-11 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-colors shadow-lg"
+                className="absolute bottom-3 right-3 z-[100] w-9 h-9 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all shadow-lg opacity-0 group-hover:opacity-100"
                 onClick={handleExpandClick}
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}
               >
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                 </svg>
               </motion.button>
@@ -97,14 +97,14 @@ export function VideoPlayer() {
                 <source src="/video/Invitation_Video.mp4" type="video/mp4" />
               </video>
 
-              {/* Expand button - bottom right, above video controls */}
+              {/* Expand button - bottom right */}
               <motion.button
-                className="absolute bottom-16 right-3 z-[100] w-11 h-11 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-colors shadow-lg"
+                className="absolute bottom-3 right-3 z-[100] w-9 h-9 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all shadow-lg opacity-0 group-hover:opacity-100"
                 onClick={handleExpandClick}
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}
               >
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                 </svg>
               </motion.button>
@@ -136,7 +136,7 @@ export function VideoPlayer() {
                 transition={{ duration: 0.3 }}
               >
                 <div
-                  className="relative"
+                  className="relative group"
                   style={{
                     width: 'min(90vw, calc(90vh * 16 / 9))',
                     height: 'min(90vh, calc(90vw * 9 / 16))',
@@ -155,9 +155,9 @@ export function VideoPlayer() {
                     <source src="/video/Invitation_Video.mp4" type="video/mp4" />
                   </video>
 
-                  {/* Collapse button - bottom right, above video controls */}
+                  {/* Collapse button - bottom right */}
                   <motion.button
-                    className="absolute bottom-16 right-3 z-[100] w-11 h-11 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-colors shadow-lg"
+                    className="absolute bottom-3 right-3 z-[100] w-11 h-11 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all shadow-lg opacity-0 group-hover:opacity-100"
                     onClick={handleExpandClick}
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.9 }}
