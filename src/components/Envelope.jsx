@@ -28,18 +28,40 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
       const response = await fetch('/data/guests.json');
       const guests = await response.json();
 
-      const normalizedInput = name.trim().toLowerCase();
+      // Helper function to clean and normalize names (remove titles, extra spaces)
+      const cleanName = (str) => {
+        return str
+          .replace(/^(Dr\.?|Mr\.?|Mrs\.?|Ms\.?|Miss\.?)\s+/i, '') // Remove titles
+          .replace(/\s+/g, ' ') // Normalize spaces
+          .trim()
+          .toLowerCase();
+      };
+
+      const normalizedInput = cleanName(name);
+      const inputParts = normalizedInput.split(' ');
+
+      // Match if first and last name match (flexible - can include middle names)
       const found = guests.some(guest => {
-        const guestLower = guest.toLowerCase();
+        const normalizedGuest = cleanName(guest);
+        const guestParts = normalizedGuest.split(' ');
+
+        // Extract first and last name from input and guest
+        const inputFirst = inputParts[0];
+        const inputLast = inputParts[inputParts.length - 1];
+        const guestFirst = guestParts[0];
+        const guestLast = guestParts[guestParts.length - 1];
+
+        // Match if first and last names match
         return (
-          guestLower === normalizedInput ||
-          guestLower.includes(normalizedInput) ||
-          normalizedInput.includes(guestLower.split(' ')[0])
+          inputFirst === guestFirst && inputLast === guestLast ||
+          normalizedInput === normalizedGuest ||
+          normalizedGuest.includes(normalizedInput) ||
+          normalizedInput.includes(normalizedGuest)
         );
       });
 
       if (!found) {
-        setError("We couldn't find your name on our guest list. Please text Shriya or Neil if you think this is an error.");
+        setError("If you received this link directly, but your name isn't working, please text us!");
         setIsValidating(false);
         return;
       }
@@ -196,7 +218,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
+                    placeholder="First and Last Name"
                     className="w-full px-4 py-3 bg-white/40 border border-charcoal/15 rounded text-center font-serif text-charcoal placeholder:text-charcoal/35 focus:outline-none focus:border-golden/50 focus:bg-white/60 transition-all text-lg"
                     autoFocus
                     autoComplete="name"
