@@ -33,7 +33,7 @@ export function PhotoCarousel({ show }) {
     '2Q9A1787-2.jpg',
   ].map(name => `/images/${name}`);
 
-  // Bottom carousel photos (second half - 29 photos)
+  // Bottom carousel photos (second half - 29 photos) - reversed for proper starting position
   const bottomPhotos = [
     '2Q9A0558.jpg',
     '2Q9A3286.jpg',
@@ -64,7 +64,7 @@ export function PhotoCarousel({ show }) {
     '2Q9A6029-2.JPG',
     '2Q9A2463-2.jpg',
     '2Q9A3329.jpg',
-  ].map(name => `/images/${name}`);
+  ].map(name => `/images/${name}`).reverse();
 
   return (
     <motion.div
