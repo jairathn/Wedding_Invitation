@@ -59,7 +59,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
         >
 
           {/* Top section - separate elements for progressive reveal */}
-          <div className="flex-shrink-0" style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(3px, 0.9375vh, 6px)', marginTop: 'clamp(4px, 1vh, 8px)' }}>
+          <div className="flex-shrink-0" style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(1.5px, 0.46875vh, 3px)', marginTop: 'clamp(4px, 1vh, 8px)' }}>
             {/* Header - "Together with their families" */}
             <motion.p
               className="text-center font-sans text-charcoal/60 tracking-[0.3em] uppercase"
@@ -89,7 +89,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             </motion.h1>
 
             {/* Extra spacing before subtitle */}
-            <div style={{ height: 'clamp(2px, 0.625vh, 4px)' }} />
+            <div style={{ height: 'clamp(1px, 0.3125vh, 2px)' }} />
 
             {/* Subtitle - "Request the pleasure of your company" */}
             <motion.p
@@ -168,7 +168,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             {/* Date */}
             <motion.p
               className="text-center font-serif text-charcoal italic"
-              style={{ fontSize: 'clamp(24px, 5.5vw, 36px)' }}
+              style={{ fontSize: 'clamp(22px, 4.95vw, 32px)' }}
               initial={{ opacity: 0, y: 15 }}
               animate={{
                 opacity: isVisible && emergenceProgress > 0.65 ? 1 : 0,
@@ -225,6 +225,9 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             >
               <RSVPButton />
             </motion.div>
+
+            {/* Spacing after RSVP to match lateral margins */}
+            <div style={{ height: 'clamp(8px, 2.55vw, 16.5px)' }} />
           </div>
         </div>
 
