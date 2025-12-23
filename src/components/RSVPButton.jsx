@@ -15,8 +15,8 @@ export function RSVPButton() {
         style={{
           paddingLeft: 'clamp(40px, 18vw, 110px)',
           paddingRight: 'clamp(40px, 18vw, 110px)',
-          paddingTop: 'clamp(5px, 1.375vh, 6px)',
-          paddingBottom: 'clamp(6.5px, 1.75vh, 10px)',
+          paddingTop: 'clamp(3px, 0.825vh, 6px)',
+          paddingBottom: 'clamp(5px, 1.346vh, 10px)',
           boxShadow: '0 6px 24px rgba(196, 114, 94, 0.45), 0 4px 12px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.15)',
         }}
       >
