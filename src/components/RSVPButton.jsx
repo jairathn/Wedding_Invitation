@@ -11,7 +11,7 @@ export function RSVPButton() {
       whileTap={{ scale: 0.97 }}
     >
       <div
-        className="py-12 bg-terracotta text-warm-white rounded-sm transition-all duration-300 group-hover:bg-terracotta/90 group-hover:shadow-2xl"
+        className="py-12 pb-16 bg-terracotta text-warm-white rounded-sm transition-all duration-300 group-hover:bg-terracotta/90 group-hover:shadow-2xl"
         style={{
           paddingLeft: '152px',
           paddingRight: '152px',
