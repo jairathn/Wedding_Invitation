@@ -73,19 +73,19 @@ body {
 /* Photo carousel animations */
 @keyframes scroll-left {
   0% {
-    transform: translateX(-125%);
+    transform: translateX(0);
   }
   100% {
-    transform: translateX(100%);
+    transform: translateX(-225%);
   }
 }
 
 @keyframes scroll-right {
   0% {
-    transform: translateX(0);
+    transform: translateX(100%);
   }
   100% {
-    transform: translateX(225%);
+    transform: translateX(-125%);
   }
 }
 
