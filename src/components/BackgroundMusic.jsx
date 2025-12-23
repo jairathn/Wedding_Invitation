@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 export function BackgroundMusic() {
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPausedForVideo, setIsPausedForVideo] = useState(false);
   const audioRef = useRef(null);
+  const targetVolumeRef = useRef(0.6); // 60% volume
 
   // Try to play audio after first user interaction
   useEffect(() => {
@@ -16,9 +18,9 @@ export function BackgroundMusic() {
         audioRef.current.play().then(() => {
           setIsPlaying(true);
 
-          // Fade in to 40% volume over 2 seconds
+          // Fade in to 60% volume over 2 seconds
           const fadeInDuration = 2000; // 2 seconds
-          const targetVolume = 0.4;
+          const targetVolume = targetVolumeRef.current;
           const steps = 50;
           const volumeIncrement = targetVolume / steps;
           const intervalTime = fadeInDuration / steps;
@@ -47,6 +49,33 @@ export function BackgroundMusic() {
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
   }, [isPlaying]);
+
+  // Listen for video play/pause events
+  useEffect(() => {
+    const handleVideoPlay = () => {
+      if (audioRef.current && isPlaying && !isPausedForVideo) {
+        audioRef.current.pause();
+        setIsPausedForVideo(true);
+      }
+    };
+
+    const handleVideoPause = () => {
+      if (audioRef.current && isPlaying && isPausedForVideo) {
+        audioRef.current.play();
+        setIsPausedForVideo(false);
+      }
+    };
+
+    window.addEventListener('video-play', handleVideoPlay);
+    window.addEventListener('video-pause', handleVideoPause);
+    window.addEventListener('video-ended', handleVideoPause);
+
+    return () => {
+      window.removeEventListener('video-play', handleVideoPlay);
+      window.removeEventListener('video-pause', handleVideoPause);
+      window.removeEventListener('video-ended', handleVideoPause);
+    };
+  }, [isPlaying, isPausedForVideo]);
 
   const toggleMute = () => {
     if (audioRef.current) {

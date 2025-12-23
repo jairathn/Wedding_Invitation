@@ -90,9 +90,18 @@ export function VideoPlayer() {
                 controls
                 playsInline
                 onError={handleError}
-                onEnded={() => setIsPlaying(false)}
-                onPause={() => setIsPlaying(false)}
-                onPlay={() => setIsPlaying(true)}
+                onEnded={() => {
+                  setIsPlaying(false);
+                  window.dispatchEvent(new Event('video-ended'));
+                }}
+                onPause={() => {
+                  setIsPlaying(false);
+                  window.dispatchEvent(new Event('video-pause'));
+                }}
+                onPlay={() => {
+                  setIsPlaying(true);
+                  window.dispatchEvent(new Event('video-play'));
+                }}
               >
                 <source src="/video/Invitation_Video.mp4" type="video/mp4" />
               </video>
@@ -148,9 +157,18 @@ export function VideoPlayer() {
                     controls
                     playsInline
                     onError={handleError}
-                    onEnded={() => setIsPlaying(false)}
-                    onPause={() => setIsPlaying(false)}
-                    onPlay={() => setIsPlaying(true)}
+                    onEnded={() => {
+                      setIsPlaying(false);
+                      window.dispatchEvent(new Event('video-ended'));
+                    }}
+                    onPause={() => {
+                      setIsPlaying(false);
+                      window.dispatchEvent(new Event('video-pause'));
+                    }}
+                    onPlay={() => {
+                      setIsPlaying(true);
+                      window.dispatchEvent(new Event('video-play'));
+                    }}
                   >
                     <source src="/video/Invitation_Video.mp4" type="video/mp4" />
                   </video>
