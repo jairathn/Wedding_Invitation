@@ -38,36 +38,29 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
         );
       });
 
-      const properName = name.trim().split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-
       if (!found) {
-        setError("We couldn't find your name on our list, but please enjoy the invitation!");
+        setError("We couldn't find your name on our guest list. Please text Shriya or Neil if you think this is an error.");
+        setIsValidating(false);
+        return;
       }
 
-      setTimeout(() => {
-        onNameSubmit(properName);
-        setNameEntered(true);
-        // Auto-trigger opening after name is submitted
-        setTimeout(() => {
-          onOpen();
-        }, 800);
-      }, found ? 0 : 1500);
-
-    } catch (err) {
+      // Only proceed if found
       const properName = name.trim().split(' ')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
         .join(' ');
+
       onNameSubmit(properName);
       setNameEntered(true);
       // Auto-trigger opening after name is submitted
       setTimeout(() => {
         onOpen();
       }, 800);
-    }
 
-    setIsValidating(false);
+    } catch (err) {
+      // If guest list fails to load, deny access with error message
+      setError("Unable to verify guest list. Please text Shriya or Neil for assistance.");
+      setIsValidating(false);
+    }
   };
 
   return (
