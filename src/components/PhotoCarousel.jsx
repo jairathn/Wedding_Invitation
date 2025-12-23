@@ -76,80 +76,50 @@ export function PhotoCarousel({ show }) {
       {/* Top carousel - moves left with margin from top */}
       <div className="absolute top-6 left-0 right-0 h-32 md:h-40 overflow-hidden">
         <div className="flex gap-4 h-full animate-scroll-left">
-          {topPhotos.map((photo, index) => (
-            <div
-              key={`top-${index}`}
-              className="h-full flex-shrink-0 opacity-60"
-            >
-              <img
-                src={photo}
-                alt=""
-                loading="lazy"
-                className="h-full w-auto object-cover rounded-sm shadow-lg"
-                style={{
-                  filter: 'brightness(0.9) contrast(1.1)',
-                }}
-              />
-            </div>
-          ))}
-          {/* Duplicate set for seamless loop */}
-          {topPhotos.map((photo, index) => (
-            <div
-              key={`top-dup-${index}`}
-              className="h-full flex-shrink-0 opacity-60"
-              aria-hidden="true"
-            >
-              <img
-                src={photo}
-                alt=""
-                loading="lazy"
-                className="h-full w-auto object-cover rounded-sm shadow-lg"
-                style={{
-                  filter: 'brightness(0.9) contrast(1.1)',
-                }}
-              />
-            </div>
-          ))}
+          {[...Array(4)].flatMap((_, setIndex) =>
+            topPhotos.map((photo, index) => (
+              <div
+                key={`top-${setIndex}-${index}`}
+                className="h-full flex-shrink-0 opacity-60"
+                aria-hidden={setIndex > 0}
+              >
+                <img
+                  src={photo}
+                  alt=""
+                  loading="lazy"
+                  className="h-full w-auto object-cover rounded-sm shadow-lg"
+                  style={{
+                    filter: 'brightness(0.9) contrast(1.1)',
+                  }}
+                />
+              </div>
+            ))
+          )}
         </div>
       </div>
 
       {/* Bottom carousel - moves right with margin from bottom */}
       <div className="absolute bottom-6 left-0 right-0 h-32 md:h-40 overflow-hidden">
         <div className="flex gap-4 h-full animate-scroll-right">
-          {bottomPhotos.map((photo, index) => (
-            <div
-              key={`bottom-${index}`}
-              className="h-full flex-shrink-0 opacity-60"
-            >
-              <img
-                src={photo}
-                alt=""
-                loading="lazy"
-                className="h-full w-auto object-cover rounded-sm shadow-lg"
-                style={{
-                  filter: 'brightness(0.9) contrast(1.1)',
-                }}
-              />
-            </div>
-          ))}
-          {/* Duplicate set for seamless loop */}
-          {bottomPhotos.map((photo, index) => (
-            <div
-              key={`bottom-dup-${index}`}
-              className="h-full flex-shrink-0 opacity-60"
-              aria-hidden="true"
-            >
-              <img
-                src={photo}
-                alt=""
-                loading="lazy"
-                className="h-full w-auto object-cover rounded-sm shadow-lg"
-                style={{
-                  filter: 'brightness(0.9) contrast(1.1)',
-                }}
-              />
-            </div>
-          ))}
+          {[...Array(4)].flatMap((_, setIndex) =>
+            bottomPhotos.map((photo, index) => (
+              <div
+                key={`bottom-${setIndex}-${index}`}
+                className="h-full flex-shrink-0 opacity-60"
+                aria-hidden={setIndex > 0}
+              >
+                <img
+                  src={photo}
+                  alt=""
+                  loading="lazy"
+                  className="h-full w-auto object-cover rounded-sm shadow-lg"
+                  style={{
+                    filter: 'brightness(0.9) contrast(1.1)',
+                  }}
+                />
+              </div>
+            ))
+          )}
         </div>
       </div>
     </motion.div>
