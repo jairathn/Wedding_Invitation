@@ -15,8 +15,8 @@ export function RSVPButton() {
         style={{
           paddingLeft: 'clamp(40px, 18vw, 110px)',
           paddingRight: 'clamp(40px, 18vw, 110px)',
-          paddingTop: 'clamp(10px, 2.75vh, 20px)',
-          paddingBottom: 'clamp(13px, 3.5vh, 26px)',
+          paddingTop: 'clamp(5px, 1.375vh, 10px)',
+          paddingBottom: 'clamp(6.5px, 1.75vh, 13px)',
           boxShadow: '0 6px 24px rgba(196, 114, 94, 0.45), 0 4px 12px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.15)',
         }}
       >
@@ -24,7 +24,7 @@ export function RSVPButton() {
           className="font-serif font-bold italic tracking-wide whitespace-nowrap"
           style={{
             fontSize: 'clamp(30px, 8vw, 44px)',
-            marginBottom: 'clamp(2px, 0.5vh, 3px)'
+            marginBottom: 'clamp(1px, 0.25vh, 1.5px)'
           }}
         >
           Click to RSVP
