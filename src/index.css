@@ -96,3 +96,24 @@ body {
 .animate-scroll-right {
   animation: scroll-right 20s linear infinite;
 }
+
+/* Faster carousel on mobile screens */
+@media (max-width: 768px) {
+  .animate-scroll-left {
+    animation: scroll-left 10s linear infinite;
+  }
+
+  .animate-scroll-right {
+    animation: scroll-right 10s linear infinite;
+  }
+}
+
+@media (max-width: 480px) {
+  .animate-scroll-left {
+    animation: scroll-left 7s linear infinite;
+  }
+
+  .animate-scroll-right {
+    animation: scroll-right 7s linear infinite;
+  }
+}
