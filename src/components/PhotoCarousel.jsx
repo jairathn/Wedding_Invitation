@@ -66,9 +66,9 @@ export function PhotoCarousel({ show }) {
     '2Q9A6622.JPG',
   ].map(name => `/images/${name}`);
 
-  // Duplicate photos for seamless loop
-  const topPhotosLoop = [...topPhotos, ...topPhotos, ...topPhotos];
-  const bottomPhotosLoop = [...bottomPhotos, ...bottomPhotos, ...bottomPhotos];
+  // Duplicate photos for seamless loop (2x instead of 3x for faster loading)
+  const topPhotosLoop = [...topPhotos, ...topPhotos];
+  const bottomPhotosLoop = [...bottomPhotos, ...bottomPhotos];
 
   return (
     <motion.div
@@ -77,16 +77,16 @@ export function PhotoCarousel({ show }) {
       animate={{ opacity: show ? 1 : 0 }}
       transition={{ duration: 1.5, ease: 'easeInOut' }}
     >
-      {/* Top carousel - moves left */}
-      <div className="absolute top-0 left-0 right-0 h-32 md:h-40 overflow-hidden">
+      {/* Top carousel - moves left with margin from top */}
+      <div className="absolute top-6 left-0 right-0 h-32 md:h-40 overflow-hidden">
         <motion.div
           className="flex gap-4 h-full"
           animate={{
-            x: [0, -1920], // Adjust based on total width
+            x: [0, -1920],
           }}
           transition={{
             x: {
-              duration: 60,
+              duration: 80, // Slower for smoother effect with fewer duplicates
               repeat: Infinity,
               ease: 'linear',
             },
@@ -95,11 +95,12 @@ export function PhotoCarousel({ show }) {
           {topPhotosLoop.map((photo, index) => (
             <div
               key={`top-${index}`}
-              className="h-full flex-shrink-0 opacity-30"
+              className="h-full flex-shrink-0 opacity-60"
             >
               <img
                 src={photo}
                 alt=""
+                loading="lazy"
                 className="h-full w-auto object-cover rounded-sm shadow-lg"
                 style={{
                   filter: 'brightness(0.9) contrast(1.1)',
@@ -110,16 +111,16 @@ export function PhotoCarousel({ show }) {
         </motion.div>
       </div>
 
-      {/* Bottom carousel - moves right */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 md:h-40 overflow-hidden">
+      {/* Bottom carousel - moves right with margin from bottom */}
+      <div className="absolute bottom-6 left-0 right-0 h-32 md:h-40 overflow-hidden">
         <motion.div
           className="flex gap-4 h-full"
           animate={{
-            x: [-1920, 0], // Opposite direction
+            x: [-1920, 0],
           }}
           transition={{
             x: {
-              duration: 60,
+              duration: 80,
               repeat: Infinity,
               ease: 'linear',
             },
@@ -128,11 +129,12 @@ export function PhotoCarousel({ show }) {
           {bottomPhotosLoop.map((photo, index) => (
             <div
               key={`bottom-${index}`}
-              className="h-full flex-shrink-0 opacity-30"
+              className="h-full flex-shrink-0 opacity-60"
             >
               <img
                 src={photo}
                 alt=""
+                loading="lazy"
                 className="h-full w-auto object-cover rounded-sm shadow-lg"
                 style={{
                   filter: 'brightness(0.9) contrast(1.1)',
