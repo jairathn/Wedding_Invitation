@@ -13,18 +13,18 @@ export function RSVPButton() {
       <div
         className="bg-terracotta text-warm-white rounded-sm transition-all duration-300 group-hover:bg-terracotta/90 group-hover:shadow-2xl"
         style={{
-          paddingLeft: 'clamp(48px, 12vw, 152px)',
-          paddingRight: 'clamp(48px, 12vw, 152px)',
-          paddingTop: 'clamp(32px, 6.9vh, 48px)',
-          paddingBottom: 'clamp(40px, 9.1vh, 64px)',
+          paddingLeft: 'clamp(80px, calc(92vw * 0.3167), 152px)',
+          paddingRight: 'clamp(80px, calc(92vw * 0.3167), 152px)',
+          paddingTop: 'clamp(32px, calc(92vw * 0.10), 48px)',
+          paddingBottom: 'clamp(42px, calc(92vw * 0.1333), 64px)',
           boxShadow: '0 6px 24px rgba(196, 114, 94, 0.45), 0 4px 12px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.15)',
         }}
       >
         <p
           className="font-serif font-bold italic tracking-wide whitespace-nowrap"
           style={{
-            fontSize: 'clamp(36px, 6.9vh, 48px)',
-            marginBottom: 'clamp(6px, 1.1vh, 8px)',
+            fontSize: 'clamp(32px, calc(92vw * 0.10), 48px)',
+            marginBottom: 'clamp(6px, calc(92vw * 0.0167), 8px)'
           }}
         >
           Click to RSVP
@@ -32,7 +32,7 @@ export function RSVPButton() {
         <p
           className="font-sans text-warm-white/85 tracking-normal font-medium"
           style={{
-            fontSize: 'clamp(13px, 2.0vh, 14px)',
+            fontSize: 'clamp(12px, calc(92vw * 0.0292), 14px)'
           }}
         >
           Password: Barcelona2026
