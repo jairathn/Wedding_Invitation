@@ -9,9 +9,35 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
   const [isValidating, setIsValidating] = useState(false);
   const [nameEntered, setNameEntered] = useState(false);
   const [sealClicked, setSealClicked] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
 
   const handleSealClick = () => {
     setSealClicked(true);
+  };
+
+  // Levenshtein distance for fuzzy matching
+  const levenshteinDistance = (str1, str2) => {
+    const matrix = [];
+    for (let i = 0; i <= str2.length; i++) {
+      matrix[i] = [i];
+    }
+    for (let j = 0; j <= str1.length; j++) {
+      matrix[0][j] = j;
+    }
+    for (let i = 1; i <= str2.length; i++) {
+      for (let j = 1; j <= str1.length; j++) {
+        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+    return matrix[str2.length][str1.length];
   };
 
   const handleSubmit = async (e) => {
@@ -23,6 +49,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
 
     setIsValidating(true);
     setError('');
+    setSuggestions([]);
 
     try {
       const response = await fetch('/data/guests.json');
@@ -61,6 +88,25 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
       });
 
       if (!found) {
+        // Try fuzzy matching (max 2 letter difference)
+        const fuzzyMatches = guests
+          .map(guest => ({
+            original: guest,
+            cleaned: cleanName(guest),
+            distance: levenshteinDistance(normalizedInput, cleanName(guest))
+          }))
+          .filter(match => match.distance > 0 && match.distance <= 2)
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 5) // Top 5 suggestions
+          .map(match => match.original);
+
+        if (fuzzyMatches.length > 0) {
+          setSuggestions(fuzzyMatches);
+          setError("We couldn't find an exact match. Did you mean one of these?");
+          setIsValidating(false);
+          return;
+        }
+
         setError("If you received this link directly, but your name isn't working, please text us!");
         setIsValidating(false);
         return;
@@ -83,6 +129,23 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
       setError("Unable to verify guest list. Please text Shriya or Neil for assistance.");
       setIsValidating(false);
     }
+  };
+
+  const handleSuggestionClick = (suggestedName) => {
+    const properName = suggestedName
+      .replace(/^(Dr\.?|Mr\.?|Mrs\.?|Ms\.?|Miss\.?)\s+/i, '') // Remove title for display
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+
+    setSuggestions([]);
+    setError('');
+    onNameSubmit(properName);
+    setNameEntered(true);
+    // Auto-trigger opening after name is selected
+    setTimeout(() => {
+      onOpen();
+    }, 800);
   };
 
   return (
@@ -232,6 +295,26 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                     >
                       {error}
                     </motion.p>
+                  )}
+
+                  {suggestions.length > 0 && (
+                    <motion.div
+                      className="space-y-2"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {suggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          className="w-full px-4 py-2 bg-white/50 border border-golden/30 text-charcoal font-serif text-base rounded transition-all duration-200 hover:bg-golden/20 hover:border-golden/50"
+                        >
+                          {suggestion.replace(/^(Dr\.?|Mr\.?|Mrs\.?|Ms\.?|Miss\.?)\s+/i, '')}
+                        </button>
+                      ))}
+                    </motion.div>
                   )}
 
                   <button
