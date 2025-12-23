@@ -54,16 +54,16 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
         <div
           className="relative h-full flex flex-col"
           style={{
-            padding: `clamp(32px, calc(92vw * 0.10), 56px) clamp(48px, calc(92vw * 0.1333), 64px)`
+            padding: `clamp(24px, 7.5vh, 56px) clamp(32px, 10vw, 64px)`
           }}
         >
 
           {/* Top section - separate elements for progressive reveal */}
-          <div className="flex-shrink-0" style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(16px, calc(92vw * 0.05), 24px)', marginTop: 'clamp(16px, calc(92vw * 0.05), 24px)' }}>
+          <div className="flex-shrink-0" style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3.75vh, 24px)', marginTop: 'clamp(12px, 3vh, 24px)' }}>
             {/* Header - "Together with their families" */}
             <motion.p
               className="text-center font-sans text-charcoal/60 tracking-[0.3em] uppercase"
-              style={{ fontSize: 'clamp(8px, calc(92vw * 0.0208), 10px)' }}
+              style={{ fontSize: 'clamp(8px, 1.5vw, 10px)' }}
               initial={{ opacity: 0, y: 15 }}
               animate={{
                 opacity: isVisible && emergenceProgress > 0.1 ? 1 : 0,
@@ -77,7 +77,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             {/* Names - THE HERO */}
             <motion.h1
               className="text-center font-serif text-charcoal italic tracking-wide"
-              style={{ fontSize: 'clamp(52px, calc(92vw * 0.15), 72px)' }}
+              style={{ fontSize: 'clamp(48px, 11vw, 72px)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{
                 opacity: isVisible && emergenceProgress > 0.15 ? 1 : 0,
@@ -89,12 +89,12 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             </motion.h1>
 
             {/* Extra spacing before subtitle */}
-            <div style={{ height: 'clamp(12px, calc(92vw * 0.0333), 16px)' }} />
+            <div style={{ height: 'clamp(8px, 2.5vh, 16px)' }} />
 
             {/* Subtitle - "Request the pleasure of your company" */}
             <motion.p
               className="text-center font-sans text-charcoal/60 tracking-[0.25em] uppercase"
-              style={{ fontSize: 'clamp(8px, calc(92vw * 0.0208), 10px)' }}
+              style={{ fontSize: 'clamp(8px, 1.5vw, 10px)' }}
               initial={{ opacity: 0, y: 15 }}
               animate={{
                 opacity: isVisible && emergenceProgress > 0.2 ? 1 : 0,
@@ -108,7 +108,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             {/* Decorative divider */}
             <motion.div
               className="flex items-center justify-center"
-              style={{ paddingTop: 'clamp(12px, calc(92vw * 0.0333), 16px)' }}
+              style={{ paddingTop: 'clamp(10px, 2.5vh, 16px)' }}
               initial={{ opacity: 0, scaleX: 0 }}
               animate={{
                 opacity: isVisible && emergenceProgress > 0.25 ? 1 : 0,
@@ -130,12 +130,12 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
           </div>
 
           {/* Spacing before video */}
-          <div style={{ height: 'clamp(20px, calc(92vw * 0.0667), 32px)' }} />
+          <div style={{ height: 'clamp(12px, 4vh, 32px)' }} />
 
           {/* Middle section - Video */}
           <motion.div
             className="flex-shrink-0 flex flex-col justify-center"
-            style={{ padding: 'clamp(20px, calc(92vw * 0.0667), 32px) 0' }}
+            style={{ padding: 'clamp(12px, 5vh, 32px) 0' }}
             initial={{ opacity: 0, y: 25 }}
             animate={{
               opacity: isVisible && emergenceProgress > 0.4 ? 1 : 0,
@@ -161,14 +161,14 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
           </motion.div>
 
           {/* Spacing after video */}
-          <div style={{ height: 'clamp(20px, calc(92vw * 0.0667), 32px)' }} />
+          <div style={{ height: 'clamp(12px, 4vh, 32px)' }} />
 
           {/* Bottom section - separate elements for progressive reveal */}
-          <div className="flex-shrink-0" style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(10px, calc(92vw * 0.025), 12px)' }}>
+          <div className="flex-shrink-0" style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.9vh, 12px)' }}>
             {/* Date */}
             <motion.p
               className="text-center font-serif text-charcoal italic"
-              style={{ fontSize: 'clamp(26px, calc(92vw * 0.075), 36px)' }}
+              style={{ fontSize: 'clamp(24px, 5.5vw, 36px)' }}
               initial={{ opacity: 0, y: 15 }}
               animate={{
                 opacity: isVisible && emergenceProgress > 0.65 ? 1 : 0,
@@ -180,12 +180,12 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             </motion.p>
 
             {/* Spacing after date */}
-            <div style={{ height: 'clamp(8px, calc(92vw * 0.025), 12px)' }} />
+            <div style={{ height: 'clamp(6px, 1.5vh, 12px)' }} />
 
             {/* Location - larger text */}
             <motion.p
               className="text-center font-sans text-charcoal/55 tracking-wider"
-              style={{ fontSize: 'clamp(14px, calc(92vw * 0.0333), 16px)' }}
+              style={{ fontSize: 'clamp(13px, 2.5vw, 16px)' }}
               initial={{ opacity: 0, y: 10 }}
               animate={{
                 opacity: isVisible && emergenceProgress > 0.7 ? 1 : 0,
@@ -197,12 +197,12 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             </motion.p>
 
             {/* Spacing after location */}
-            <div style={{ height: 'clamp(8px, calc(92vw * 0.025), 12px)' }} />
+            <div style={{ height: 'clamp(6px, 1.5vh, 12px)' }} />
 
             {/* Hashtag - larger text */}
             <motion.p
               className="text-center font-serif italic"
-              style={{ color: '#B8943F', fontSize: 'clamp(15px, calc(92vw * 0.0375), 18px)' }}
+              style={{ color: '#B8943F', fontSize: 'clamp(14px, 2.8vw, 18px)' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: isVisible && emergenceProgress > 0.75 ? 1 : 0 }}
               transition={{ delay: 1.05, duration: 0.5 }}
@@ -211,7 +211,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             </motion.p>
 
             {/* Spacing before RSVP */}
-            <div style={{ height: 'clamp(16px, calc(92vw * 0.05), 24px)' }} />
+            <div style={{ height: 'clamp(12px, 3vh, 24px)' }} />
 
             {/* RSVP Button - larger, more prominent, separated */}
             <motion.div
