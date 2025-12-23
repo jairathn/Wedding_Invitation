@@ -10,8 +10,28 @@ export function BackgroundMusic() {
   useEffect(() => {
     const handleFirstInteraction = () => {
       if (audioRef.current && !isPlaying) {
+        // Start at 0 volume
+        audioRef.current.volume = 0;
+
         audioRef.current.play().then(() => {
           setIsPlaying(true);
+
+          // Fade in to 40% volume over 2 seconds
+          const fadeInDuration = 2000; // 2 seconds
+          const targetVolume = 0.4;
+          const steps = 50;
+          const volumeIncrement = targetVolume / steps;
+          const intervalTime = fadeInDuration / steps;
+
+          let currentStep = 0;
+          const fadeInterval = setInterval(() => {
+            if (currentStep < steps && audioRef.current) {
+              audioRef.current.volume = Math.min(volumeIncrement * currentStep, targetVolume);
+              currentStep++;
+            } else {
+              clearInterval(fadeInterval);
+            }
+          }, intervalTime);
         }).catch((error) => {
           console.log('Audio autoplay prevented:', error);
         });
@@ -42,7 +62,6 @@ export function BackgroundMusic() {
         ref={audioRef}
         loop
         preload="auto"
-        volume={0.4}
       >
         <source src="/audio/background-music.mp3" type="audio/mpeg" />
       </audio>
