@@ -76,44 +76,44 @@ body {
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-225%);
+    transform: translateX(-50%);
   }
 }
 
 @keyframes scroll-right {
   0% {
-    transform: translateX(-200%);
+    transform: translateX(-50%);
   }
   100% {
-    transform: translateX(25%);
+    transform: translateX(0);
   }
 }
 
 .animate-scroll-left {
-  animation: scroll-left 60s linear infinite;
+  animation: scroll-left 20s linear infinite;
 }
 
 .animate-scroll-right {
-  animation: scroll-right 60s linear infinite;
+  animation: scroll-right 20s linear infinite;
 }
 
-/* Faster carousel on smaller screens */
+/* Faster carousel on mobile screens */
 @media (max-width: 768px) {
   .animate-scroll-left {
-    animation: scroll-left 30s linear infinite;
+    animation: scroll-left 10s linear infinite;
   }
 
   .animate-scroll-right {
-    animation: scroll-right 30s linear infinite;
+    animation: scroll-right 10s linear infinite;
   }
 }
 
 @media (max-width: 480px) {
   .animate-scroll-left {
-    animation: scroll-left 21s linear infinite;
+    animation: scroll-left 7s linear infinite;
   }
 
   .animate-scroll-right {
-    animation: scroll-right 21s linear infinite;
+    animation: scroll-right 7s linear infinite;
   }
 }
