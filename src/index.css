@@ -73,10 +73,10 @@ body {
 /* Photo carousel animations */
 @keyframes scroll-left {
   0% {
-    transform: translateX(0);
+    transform: translateX(-125%);
   }
   100% {
-    transform: translateX(-225%);
+    transform: translateX(200%);
   }
 }
 
