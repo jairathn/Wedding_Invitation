@@ -72,7 +72,7 @@ export function VideoPlayer() {
 
               {/* Expand button - for testing even without video */}
               <motion.button
-                className="absolute bottom-3 right-3 z-[100] w-9 h-9 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all shadow-lg opacity-0 group-hover:opacity-100"
+                className="absolute bottom-3 right-3 z-[100] w-9 h-9 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100"
                 onClick={handleExpandClick}
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}
@@ -108,7 +108,7 @@ export function VideoPlayer() {
 
               {/* Expand button - bottom right */}
               <motion.button
-                className="absolute bottom-3 right-3 z-[100] w-9 h-9 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all shadow-lg opacity-0 group-hover:opacity-100"
+                className="absolute bottom-3 right-3 z-[100] w-9 h-9 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100"
                 onClick={handleExpandClick}
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}
@@ -175,7 +175,7 @@ export function VideoPlayer() {
 
                   {/* Collapse button - bottom right */}
                   <motion.button
-                    className="absolute bottom-3 right-3 z-[100] w-11 h-11 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all shadow-lg opacity-0 group-hover:opacity-100"
+                    className="absolute bottom-3 right-3 z-[100] w-11 h-11 rounded bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100"
                     onClick={handleExpandClick}
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.9 }}
