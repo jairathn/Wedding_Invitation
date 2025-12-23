@@ -19,7 +19,7 @@ export function RSVPButton() {
         }}
       >
         <p className="font-serif text-4xl font-bold italic tracking-wide mb-2">
-          RSVP at Zola
+          RSVP
         </p>
         <p className="font-sans text-sm text-warm-white/85 tracking-normal font-medium">
           Password: Barcelona2026
