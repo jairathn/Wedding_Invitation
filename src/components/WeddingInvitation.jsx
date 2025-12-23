@@ -3,7 +3,7 @@ import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { Envelope } from './Envelope';
 import { InvitationCard } from './InvitationCard';
 
-export function WeddingInvitation() {
+export function WeddingInvitation({ onEnvelopeOpen }) {
   const [guestName, setGuestName] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [emergenceProgress, setEmergenceProgress] = useState(0);
@@ -14,6 +14,10 @@ export function WeddingInvitation() {
 
   const handleOpen = () => {
     setIsOpen(true);
+    // Trigger carousel to show
+    if (onEnvelopeOpen) {
+      onEnvelopeOpen();
+    }
     // Simulate emergence progress over time
     let progress = 0;
     const interval = setInterval(() => {
