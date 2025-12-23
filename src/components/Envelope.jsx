@@ -345,8 +345,8 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
           className="absolute left-1/2 -translate-x-1/2"
           style={{
             top: '54%', // Position at the tip of the flap (55% flap height - 1% for visual centering)
-            zIndex: 200, // HIGHEST z-index in the entire component
-            pointerEvents: 'auto',
+            zIndex: sealClicked || isOpen ? -1 : 200, // Move behind when seal is clicked or envelope opens
+            pointerEvents: sealClicked || isOpen ? 'none' : 'auto', // Disable pointer events when seal is clicked or envelope opens
           }}
           animate={{
             rotateX: isOpen ? -180 : 0,
