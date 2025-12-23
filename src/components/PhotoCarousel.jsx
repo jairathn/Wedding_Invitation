@@ -33,7 +33,7 @@ export function PhotoCarousel({ show }) {
     '2Q9A1787-2.jpg',
   ].map(name => `/images/${name}`);
 
-  // Bottom carousel photos (second half - 29 photos) - reversed for proper starting position
+  // Bottom carousel photos (second half - 29 photos)
   const bottomPhotos = [
     '2Q9A0558.jpg',
     '2Q9A3286.jpg',
@@ -64,7 +64,7 @@ export function PhotoCarousel({ show }) {
     '2Q9A6029-2.JPG',
     '2Q9A2463-2.jpg',
     '2Q9A3329.jpg',
-  ].map(name => `/images/${name}`).reverse();
+  ].map(name => `/images/${name}`);
 
   return (
     <motion.div
@@ -100,7 +100,7 @@ export function PhotoCarousel({ show }) {
 
       {/* Bottom carousel - moves right with margin from bottom */}
       <div className="absolute bottom-6 left-0 right-0 h-32 md:h-40 overflow-hidden">
-        <div className="flex gap-4 h-full animate-scroll-right">
+        <div className="flex flex-row-reverse gap-4 h-full animate-scroll-right">
           {[...Array(4)].flatMap((_, setIndex) =>
             bottomPhotos.map((photo, index) => (
               <div
