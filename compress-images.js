@@ -10,11 +10,15 @@
  * and save them as optimized versions.
  */
 
-const sharp = require('sharp');
-const fs = require('fs');
-const path = require('path');
+import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const inputDir = './public/images';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const inputDir = path.join(__dirname, './public/images');
 const quality = 70; // Adjust quality (1-100)
 
 async function compressImages() {
