@@ -108,11 +108,9 @@ export function WaxSeal({ onClick, isVisible = true }) {
             className="font-sans text-[10px] tracking-wide uppercase"
             style={{
               color: '#B54545',
-              textShadow: `
-                0 1px 0 rgba(255,255,255,0.3),
-                0 -1px 0 rgba(0,0,0,0.6),
-                0 1px 2px rgba(0,0,0,0.4)
-              `,
+              textShadow: '0 1px 1px rgba(0,0,0,0.3)',
+              WebkitFontSmoothing: 'antialiased',
+              MozOsxFontSmoothing: 'grayscale',
             }}
             initial={{ opacity: 0.85 }}
             whileHover={{ opacity: 1 }}

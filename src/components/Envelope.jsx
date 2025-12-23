@@ -122,7 +122,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
       // Auto-trigger opening after name is submitted
       setTimeout(() => {
         onOpen();
-      }, 800);
+      }, 300);
 
     } catch (err) {
       // If guest list fails to load, deny access with error message
@@ -145,7 +145,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
     // Auto-trigger opening after name is selected
     setTimeout(() => {
       onOpen();
-    }, 800);
+    }, 300);
   };
 
   return (
