@@ -33,8 +33,8 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
       <div
         className="relative w-[480px] max-w-[92vw] overflow-hidden rounded-sm"
         style={{
-          height: 'min(640px, 85vh)',
-          maxHeight: '85vh',
+          height: 'min(700px, 88vh)',
+          maxHeight: '88vh',
           boxShadow: '0 4px 20px rgba(0,0,0,0.06), 0 12px 48px rgba(0,0,0,0.1)',
         }}
       >
