@@ -90,30 +90,30 @@ body {
 }
 
 .animate-scroll-left {
-  animation: scroll-left 60s linear infinite;
+  animation: scroll-left 20s linear infinite;
 }
 
 .animate-scroll-right {
-  animation: scroll-right 60s linear infinite;
+  animation: scroll-right 20s linear infinite;
 }
 
-/* Adjusted carousel speed on mobile screens */
+/* Faster carousel on smaller screens */
 @media (max-width: 768px) {
   .animate-scroll-left {
-    animation: scroll-left 30s linear infinite;
+    animation: scroll-left 10s linear infinite;
   }
 
   .animate-scroll-right {
-    animation: scroll-right 30s linear infinite;
+    animation: scroll-right 10s linear infinite;
   }
 }
 
 @media (max-width: 480px) {
   .animate-scroll-left {
-    animation: scroll-left 20s linear infinite;
+    animation: scroll-left 7s linear infinite;
   }
 
   .animate-scroll-right {
-    animation: scroll-right 20s linear infinite;
+    animation: scroll-right 7s linear infinite;
   }
 }
