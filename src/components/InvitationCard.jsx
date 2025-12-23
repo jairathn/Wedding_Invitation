@@ -33,8 +33,8 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
       <div
         className="relative w-[480px] max-w-[92vw] overflow-hidden rounded-sm"
         style={{
-          height: 'min(700px, 88vh)',
-          maxHeight: '88vh',
+          height: 'min(600px, 80vh)',
+          maxHeight: '80vh',
           boxShadow: '0 4px 20px rgba(0,0,0,0.06), 0 12px 48px rgba(0,0,0,0.1)',
         }}
       >
@@ -50,10 +50,10 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
         />
 
         {/* Card content with responsive padding */}
-        <div className="relative h-full flex flex-col px-6 py-6 sm:px-10 sm:py-8 md:px-16 md:py-10 overflow-y-auto">
+        <div className="relative h-full flex flex-col px-4 py-4 sm:px-10 sm:py-8 md:px-16 md:py-10 overflow-y-auto">
 
           {/* Top section - separate elements for progressive reveal */}
-          <div className="flex-shrink-0 space-y-3 sm:space-y-4 md:space-y-6" style={{ marginTop: '0.5rem' }}>
+          <div className="flex-shrink-0 space-y-1.5 sm:space-y-4 md:space-y-6" style={{ marginTop: '0.25rem' }}>
             {/* Header - "Together with their families" */}
             <motion.p
               className="text-center font-sans text-[8px] sm:text-[9px] md:text-[10px] text-charcoal/60 tracking-[0.25em] sm:tracking-[0.3em] uppercase"
@@ -120,11 +120,11 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
           </div>
 
           {/* Spacing before video */}
-          <div className="h-4 sm:h-6 md:h-8" />
+          <div className="h-2 sm:h-6 md:h-8" />
 
           {/* Middle section - Video */}
           <motion.div
-            className="flex-shrink-0 flex flex-col justify-center py-3 sm:py-4 md:py-6"
+            className="flex-shrink-0 flex flex-col justify-center py-1.5 sm:py-4 md:py-6"
             initial={{ opacity: 0, y: 25 }}
             animate={{
               opacity: isVisible && emergenceProgress > 0.4 ? 1 : 0,
@@ -150,10 +150,10 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
           </motion.div>
 
           {/* Spacing after video */}
-          <div className="h-4 sm:h-6 md:h-8" />
+          <div className="h-2 sm:h-6 md:h-8" />
 
           {/* Bottom section - separate elements for progressive reveal */}
-          <div className="flex-shrink-0 space-y-2 sm:space-y-2.5 md:space-y-3">
+          <div className="flex-shrink-0 space-y-1 sm:space-y-2.5 md:space-y-3">
             {/* Date */}
             <motion.p
               className="text-center font-serif text-xl sm:text-2xl md:text-3xl text-charcoal italic"
@@ -168,7 +168,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             </motion.p>
 
             {/* Spacing after date */}
-            <div className="h-1.5 sm:h-2 md:h-3" />
+            <div className="h-0.5 sm:h-2 md:h-3" />
 
             {/* Location - larger text */}
             <motion.p
@@ -184,7 +184,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             </motion.p>
 
             {/* Spacing after location */}
-            <div className="h-1.5 sm:h-2 md:h-3" />
+            <div className="h-0.5 sm:h-2 md:h-3" />
 
             {/* Hashtag - larger text */}
             <motion.p
@@ -198,7 +198,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             </motion.p>
 
             {/* Spacing before RSVP */}
-            <div className="h-3 sm:h-4 md:h-6" />
+            <div className="h-2 sm:h-4 md:h-6" />
 
             {/* RSVP Button - larger, more prominent, separated */}
             <motion.div
