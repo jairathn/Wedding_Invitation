@@ -16,12 +16,15 @@ export function NameEntryModal({ isOpen, onValidName }) {
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const { valid, matchedName } = validateGuest(name);
+    const { status, matchedName, suggestedName } = validateGuest(name);
 
-    if (valid) {
+    if (status === 'exact') {
       onValidName(matchedName);
+    } else if (status === 'fuzzy') {
+      setError(`Did you mean "${suggestedName}"? Please enter the full name exactly as it appears.`);
+      setIsValidating(false);
     } else {
-      setError("We couldn't find that name. Please try again.");
+      setError("We couldn't find that name on our guest list. Please reach out to Neil or Shriya if you believe this is an error.");
       setIsValidating(false);
     }
   };
