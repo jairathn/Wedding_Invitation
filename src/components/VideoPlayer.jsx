@@ -2,9 +2,8 @@ import { useRef, useEffect } from 'react';
 import Player from '@vimeo/player';
 
 export function VideoPlayer() {
-  // Replace this with your actual Vimeo video ID after uploading
-  // Example: If your Vimeo URL is https://vimeo.com/123456789, use '123456789'
-  const VIMEO_VIDEO_ID = null;
+  // Vimeo video ID from https://vimeo.com/1149072071
+  const VIMEO_VIDEO_ID = '1149072071';
 
   const iframeRef = useRef(null);
   const playerRef = useRef(null);
