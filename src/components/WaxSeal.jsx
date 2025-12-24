@@ -103,19 +103,20 @@ export function WaxSeal({ onClick, isVisible = true }) {
             S&N
           </div>
 
-          {/* Click to RSVP - smaller, subtle */}
+          {/* Click to Open - smaller, with better contrast */}
           <motion.div
             className="font-sans text-[10px] tracking-wide uppercase whitespace-nowrap"
             style={{
-              color: '#B54545',
-              textShadow: '0 1px 1px rgba(0,0,0,0.3)',
+              color: '#E8B4B4',
+              textShadow: '0 1px 2px rgba(0,0,0,0.6), 0 0 3px rgba(0,0,0,0.4)',
               WebkitFontSmoothing: 'antialiased',
               MozOsxFontSmoothing: 'grayscale',
+              fontWeight: '600',
             }}
-            initial={{ opacity: 0.85 }}
+            initial={{ opacity: 0.95 }}
             whileHover={{ opacity: 1 }}
           >
-            Click to RSVP
+            Click to Open
           </motion.div>
         </div>
 
