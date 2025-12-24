@@ -15,6 +15,12 @@ export function VideoPlayer() {
     const player = new Player(iframeRef.current);
     playerRef.current = player;
 
+    // Ensure controls are visible when the player is ready
+    player.ready().then(() => {
+      // Show controls immediately so users can see the fullscreen button
+      player.enableTextTrack('en').catch(() => {}); // Trigger player interaction to show controls
+    });
+
     // Listen to Vimeo player events and dispatch custom events for BackgroundMusic component
     player.on('play', () => {
       window.dispatchEvent(new Event('video-play'));
@@ -67,10 +73,11 @@ export function VideoPlayer() {
     <div className="relative aspect-video overflow-hidden">
       <iframe
         ref={iframeRef}
-        src={`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?title=0&byline=0&portrait=0`}
+        src={`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?title=0&byline=0&portrait=0&controls=1&transparent=0`}
         className="w-full h-full"
         allow="autoplay; fullscreen; picture-in-picture"
         allowFullScreen
+        title="Wedding Video"
       />
     </div>
   );
