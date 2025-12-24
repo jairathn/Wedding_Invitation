@@ -67,24 +67,12 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
       const normalizedInput = cleanName(name);
       const inputParts = normalizedInput.split(' ');
 
-      // Match if first and last name match (flexible - can include middle names)
+      // EXACT MATCH ONLY - no partial matches allowed
       const found = guests.some(guest => {
         const normalizedGuest = cleanName(guest);
-        const guestParts = normalizedGuest.split(' ');
 
-        // Extract first and last name from input and guest
-        const inputFirst = inputParts[0];
-        const inputLast = inputParts[inputParts.length - 1];
-        const guestFirst = guestParts[0];
-        const guestLast = guestParts[guestParts.length - 1];
-
-        // Match if first and last names match
-        return (
-          inputFirst === guestFirst && inputLast === guestLast ||
-          normalizedInput === normalizedGuest ||
-          normalizedGuest.includes(normalizedInput) ||
-          normalizedInput.includes(normalizedGuest)
-        );
+        // Only allow exact full name match (case-insensitive)
+        return normalizedInput === normalizedGuest;
       });
 
       if (!found) {
