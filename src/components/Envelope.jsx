@@ -379,7 +379,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             <p
               className="font-serif italic whitespace-nowrap"
               style={{
-                fontSize: 'clamp(48px, 11vw, 112px)', // Responsive: 48px mobile, scales up to 112px desktop
+                fontSize: 'clamp(72px, 11vw, 112px)', // Responsive: 72px mobile, scales up to 112px desktop
                 color: '#8B2F2F', // Deep burgundy/wine
                 textShadow: '0 2px 8px rgba(0,0,0,0.25)',
                 letterSpacing: '0.02em',
