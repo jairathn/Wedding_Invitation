@@ -5,7 +5,7 @@ export function PaperTexture({ className = '', darker = false }) {
       <div
         className="absolute inset-0"
         style={{
-          background: darker ? '#F3EDE4' : '#FEFEFE',
+          background: darker ? '#F3EDE4' : '#FDFCFA',
         }}
       />
 
