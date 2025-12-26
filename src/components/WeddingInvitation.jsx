@@ -35,7 +35,7 @@ export function WeddingInvitation({ onEnvelopeOpen }) {
         2. Video plays + Name displays (6.3s) - personalized moment
         3. Envelope slides down + Card emerges up simultaneously (1.5s) - starts after video
         4. Card centers, envelope fades (1.0s) - final position
-        Total: ~8.6s for full sequence
+        Total: ~8.1s for full sequence
       */}
       <div className="relative" style={{ perspective: '1500px' }}>
 
@@ -50,7 +50,7 @@ export function WeddingInvitation({ onEnvelopeOpen }) {
           }}
           transition={{
             duration: 1.5,
-            delay: isOpen ? 6.1 : 0, // Start after flap opens (0.8s) + video/name (5.3s)
+            delay: isOpen ? 5.6 : 0, // Start after flap opens (0.8s) + video/name (4.8s)
             ease: [0.4, 0, 0.2, 1],
           }}
         >
@@ -74,17 +74,17 @@ export function WeddingInvitation({ onEnvelopeOpen }) {
           transition={{
             opacity: {
               duration: 1.0,
-              delay: isOpen ? 7.6 : 0, // Fade out at end (after video + slide)
+              delay: isOpen ? 7.1 : 0, // Fade out at end (after video + slide)
               ease: 'easeOut',
             },
             y: {
               duration: 1.5,
-              delay: isOpen ? 6.1 : 0, // Slide down after video/name (0.8s + 5.3s)
+              delay: isOpen ? 5.6 : 0, // Slide down after video/name (0.8s + 4.8s)
               ease: [0.4, 0, 0.2, 1],
             },
             scale: {
               duration: 1.5,
-              delay: isOpen ? 6.1 : 0,
+              delay: isOpen ? 5.6 : 0,
               ease: [0.4, 0, 0.2, 1],
             },
           }}
