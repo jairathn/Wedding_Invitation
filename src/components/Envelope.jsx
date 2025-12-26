@@ -474,12 +474,8 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                       if (totalLength > 12) return 'clamp(28px, 4.5vw, 40px)';
                       return 'clamp(32px, 5vw, 48px)';
                     })(),
-                    color: 'rgba(90, 58, 26, 0.6)', // Semi-transparent dark gold
-                    textShadow: `
-                      1px 1px 2px rgba(255, 255, 255, 0.5),
-                      -1px -1px 2px rgba(0, 0, 0, 0.5),
-                      0 0 3px rgba(0, 0, 0, 0.3)
-                    `, // Etched/embossed effect
+                    color: '#8B6F47', // Darker gold - natural part of the surface
+                    textShadow: '0 1px 1px rgba(0, 0, 0, 0.15)', // Subtle depth only
                     letterSpacing: '0.05em',
                   }}
                 >
