@@ -13,18 +13,18 @@ export function RSVPButton() {
       <div
         className="bg-terracotta text-warm-white rounded-sm transition-all duration-300 group-hover:bg-terracotta/90 group-hover:shadow-2xl w-full"
         style={{
-          paddingLeft: 'clamp(24px, 8vw, 64px)',
-          paddingRight: 'clamp(24px, 8vw, 64px)',
-          paddingTop: 'clamp(6px, 1.2vh, 10px)',
-          paddingBottom: 'clamp(6px, 1.2vh, 10px)',
+          paddingLeft: 'clamp(32px, 14vw, 90px)',
+          paddingRight: 'clamp(32px, 14vw, 90px)',
+          paddingTop: 'clamp(4px, 0.8vh, 7px)',
+          paddingBottom: 'clamp(4px, 0.8vh, 7px)',
           boxShadow: '0 6px 24px rgba(196, 114, 94, 0.45), 0 4px 12px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.15)',
         }}
       >
         <p
           className="font-serif font-bold italic tracking-wide whitespace-nowrap"
           style={{
-            fontSize: 'clamp(18px, 4.5vw, 28px)',
-            marginBottom: 'clamp(2px, 0.4vh, 4px)'
+            fontSize: 'clamp(16px, 4vw, 26px)',
+            marginBottom: 'clamp(1px, 0.3vh, 3px)'
           }}
         >
           Click to RSVP

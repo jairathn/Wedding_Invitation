@@ -391,7 +391,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                       },
                     }}
                     style={{
-                      fontSize: 'clamp(18px, 3.75vw, 36px)', // 25% smaller: 18px mobile to 36px desktop
+                      fontSize: 'clamp(24px, 3.75vw, 36px)', // Readable minimum: 24px mobile to 36px desktop
                       background: 'linear-gradient(90deg, #A8842F 0%, #D4B870 25%, #F5E6C8 50%, #D4B870 75%, #A8842F 100%)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
