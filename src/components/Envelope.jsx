@@ -344,10 +344,10 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               playsInline
               className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
               style={{
-                top: '50%',
+                top: '55%',
                 width: '98%', // Cropped 1% on each side to reveal envelope border shading
                 height: 'auto',
-                maxHeight: '50%',
+                maxHeight: '45%',
                 objectFit: 'cover',
                 objectPosition: 'top', // Crop from top
                 zIndex: 3,
@@ -360,19 +360,19 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
           )}
         </div>
 
-        {/* Personalized guest name - positioned high over gold flap */}
+        {/* Personalized guest name - positioned at top */}
         {nameEntered && guestName && (
           <motion.div
             className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
             style={{
-              top: '15%', // Much higher up, over the gold flap
+              top: '0%', // At the very top
               zIndex: 25, // Above video, below flap
             }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: isOpen ? [0, 1, 1, 0] : 0 }}
+            animate={{ opacity: isOpen ? [0, 0, 1, 1, 0] : 0 }}
             transition={{
               duration: 6.3,
-              times: [0, 0.32, 0.68, 1], // Slower fade in: 0-2s in, hold 2-4.3s, fade out 4.3-6.3s
+              times: [0, 0.635, 0.667, 0.873, 1], // Hidden 0-4s, fade in 4-4.2s, hold 4.2-5.5s, fade out 5.5-6.3s
               ease: [0.4, 0, 0.2, 1], // Smoother easing
             }}
           >
@@ -413,7 +413,13 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               transformStyle: 'preserve-3d',
             }}
           >
-            <PaperTexture />
+            {/* Original gradient background for flap */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'linear-gradient(180deg, #FDFCF9 0%, #FAF8F4 50%, #F8F6F1 100%)',
+              }}
+            />
 
             {/* Enhanced paper gradient */}
             <div
