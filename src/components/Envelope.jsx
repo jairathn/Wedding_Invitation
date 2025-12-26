@@ -504,7 +504,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                 className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
                 style={{
                   top: '45%',
-                  maxWidth: '80%',
+                  maxWidth: '60%', // Narrower to fit triangular flap shape
                 }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: isOpen ? [0, 0, 1, 1, 0] : 0 }}
@@ -520,9 +520,12 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                     fontSize: (() => {
                       const nameLength = guestName.split(' ')[0].length;
                       const totalLength = 5 + nameLength; // "Dear " + name + ","
-                      // Reduce font size for longer names
-                      if (totalLength > 15) return 'clamp(24px, 4vw, 36px)';
-                      if (totalLength > 12) return 'clamp(28px, 4.5vw, 40px)';
+                      // More aggressive scaling for longer names to fit triangle
+                      if (totalLength > 21) return 'clamp(14px, 2.5vw, 22px)';
+                      if (totalLength > 18) return 'clamp(16px, 3vw, 26px)';
+                      if (totalLength > 15) return 'clamp(18px, 3.5vw, 30px)'; // "Dear Narothama,"
+                      if (totalLength > 12) return 'clamp(22px, 4vw, 34px)';
+                      if (totalLength > 9) return 'clamp(26px, 4.5vw, 38px)';
                       return 'clamp(32px, 5vw, 48px)';
                     })(),
                     color: '#BDA055', // Darker gold - better integration with surface
