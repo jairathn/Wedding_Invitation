@@ -447,69 +447,45 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               background: 'linear-gradient(180deg, #D4B870 0%, #C9A855 40%, #B8943F 100%)',
             }}
           >
-            {/* Personalized greeting on gold liner - "Dear" on left, name on right */}
+            {/* Personalized greeting etched into gold liner */}
             {nameEntered && guestName && (
-              <>
-                {/* "Dear" - positioned along left diagonal edge */}
-                <motion.div
-                  className="absolute pointer-events-none"
+              <motion.div
+                className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+                style={{
+                  top: '20%',
+                  maxWidth: '80%',
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: isOpen ? [0, 0, 1, 1, 0] : 0 }}
+                transition={{
+                  duration: 6.3,
+                  times: [0, 0.635, 0.667, 0.873, 1],
+                  ease: [0.4, 0, 0.2, 1],
+                }}
+              >
+                <p
+                  className="font-serif italic whitespace-nowrap text-center"
                   style={{
-                    left: '15%',
-                    top: '35%',
-                    transform: 'rotate(-63deg)',
-                    transformOrigin: 'center',
-                  }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: isOpen ? [0, 0, 1, 1, 0] : 0 }}
-                  transition={{
-                    duration: 6.3,
-                    times: [0, 0.635, 0.659, 0.873, 1], // Hidden 0-4s, fade in 4-4.15s, hold 4.15-5.5s, fade out 5.5-6.3s
-                    ease: [0.4, 0, 0.2, 1],
+                    fontSize: (() => {
+                      const nameLength = guestName.split(' ')[0].length;
+                      const totalLength = 5 + nameLength; // "Dear " + name + ","
+                      // Reduce font size for longer names
+                      if (totalLength > 15) return 'clamp(24px, 4vw, 36px)';
+                      if (totalLength > 12) return 'clamp(28px, 4.5vw, 40px)';
+                      return 'clamp(32px, 5vw, 48px)';
+                    })(),
+                    color: 'rgba(90, 58, 26, 0.6)', // Semi-transparent dark gold
+                    textShadow: `
+                      1px 1px 2px rgba(255, 255, 255, 0.5),
+                      -1px -1px 2px rgba(0, 0, 0, 0.5),
+                      0 0 3px rgba(0, 0, 0, 0.3)
+                    `, // Etched/embossed effect
+                    letterSpacing: '0.05em',
                   }}
                 >
-                  <p
-                    className="font-serif italic whitespace-nowrap"
-                    style={{
-                      fontSize: 'clamp(32px, 5vw, 48px)',
-                      color: '#5A3A1A',
-                      textShadow: '0 1px 4px rgba(0,0,0,0.3)',
-                      letterSpacing: '0.05em',
-                    }}
-                  >
-                    Dear
-                  </p>
-                </motion.div>
-
-                {/* Name - positioned along right diagonal edge */}
-                <motion.div
-                  className="absolute pointer-events-none"
-                  style={{
-                    right: '10%',
-                    top: '35%',
-                    transform: 'rotate(63deg)',
-                    transformOrigin: 'center',
-                  }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: isOpen ? [0, 0, 1, 1, 0] : 0 }}
-                  transition={{
-                    duration: 6.3,
-                    times: [0, 0.683, 0.714, 0.873, 1], // Hidden 0-4.3s, fade in 4.3-4.5s, hold 4.5-5.5s, fade out 5.5-6.3s
-                    ease: [0.4, 0, 0.2, 1],
-                  }}
-                >
-                  <p
-                    className="font-serif italic whitespace-nowrap"
-                    style={{
-                      fontSize: 'clamp(32px, 5vw, 48px)',
-                      color: '#5A3A1A',
-                      textShadow: '0 1px 4px rgba(0,0,0,0.3)',
-                      letterSpacing: '0.05em',
-                    }}
-                  >
-                    {guestName.split(' ')[0]},
-                  </p>
-                </motion.div>
-              </>
+                  Dear {guestName.split(' ')[0]},
+                </p>
+              </motion.div>
             )}
 
             {/* Gold shimmer */}
