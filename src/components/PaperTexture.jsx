@@ -5,9 +5,7 @@ export function PaperTexture({ className = '', darker = false }) {
       <div
         className="absolute inset-0"
         style={{
-          background: darker
-            ? '#F3EDE4'
-            : 'linear-gradient(180deg, #FDFCF9 0%, #FAF8F4 50%, #F8F6F1 100%)',
+          background: darker ? '#F3EDE4' : '#F8F6F1',
         }}
       />
 

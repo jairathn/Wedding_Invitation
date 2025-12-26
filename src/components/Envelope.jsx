@@ -342,12 +342,12 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               ref={videoRef}
               muted
               playsInline
-              className="absolute left-0 right-0 pointer-events-none"
+              className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
               style={{
-                top: '50%', // Moved up slightly
-                width: '100%',
+                top: '50%',
+                width: '98%', // Cropped 1% on each side to reveal envelope border shading
                 height: 'auto',
-                maxHeight: '50%', // Increased to allow more video to show
+                maxHeight: '50%',
                 objectFit: 'cover',
                 objectPosition: 'top', // Crop from top
                 zIndex: 3,
