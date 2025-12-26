@@ -474,9 +474,14 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                       if (totalLength > 12) return 'clamp(28px, 4.5vw, 40px)';
                       return 'clamp(32px, 5vw, 48px)';
                     })(),
-                    color: '#8B6F47', // Darker gold - natural part of the surface
-                    textShadow: '0 1px 1px rgba(0, 0, 0, 0.15)', // Subtle depth only
+                    color: '#E5C888', // Lighter gold - embossed surface
+                    textShadow: `
+                      -1px -1px 1px rgba(255, 255, 255, 0.8),
+                      1px 1px 2px rgba(0, 0, 0, 0.4),
+                      2px 2px 4px rgba(0, 0, 0, 0.3)
+                    `, // Embossed/raised effect
                     letterSpacing: '0.05em',
+                    fontWeight: 500,
                   }}
                 >
                   Dear {guestName.split(' ')[0]},
