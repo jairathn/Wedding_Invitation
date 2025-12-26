@@ -342,14 +342,14 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               ref={videoRef}
               muted
               playsInline
-              className="absolute left-0 right-0 pointer-events-none"
+              className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
               style={{
-                top: '55%', // Just below where flap tip sits
-                width: '100%',
+                top: '50%',
+                width: '98%', // Cropped 1% on each side to reveal envelope border shading
                 height: 'auto',
-                maxHeight: '45%', // Ensure it doesn't overflow bottom
+                maxHeight: '50%',
                 objectFit: 'cover',
-                objectPosition: 'top', // Crop from top if needed
+                objectPosition: 'top', // Crop from top
                 zIndex: 3,
                 border: 'none',
                 outline: 'none',
@@ -360,12 +360,12 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
           )}
         </div>
 
-        {/* Personalized guest name - positioned hovering over gold flap */}
+        {/* Personalized guest name - positioned high over gold flap */}
         {nameEntered && guestName && (
           <motion.div
             className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
             style={{
-              top: '38%', // Positioned over the gold flap area (higher up)
+              top: '15%', // Much higher up, over the gold flap
               zIndex: 25, // Above video, below flap
             }}
             initial={{ opacity: 0 }}
@@ -379,9 +379,9 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             <p
               className="font-serif italic whitespace-nowrap"
               style={{
-                fontSize: '56px', // Much larger, more prominent
+                fontSize: 'clamp(48px, 11vw, 112px)', // Responsive: 48px mobile, scales up to 112px desktop
                 color: '#8B2F2F', // Deep burgundy/wine
-                textShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                textShadow: '0 2px 8px rgba(0,0,0,0.25)',
                 letterSpacing: '0.02em',
               }}
             >
