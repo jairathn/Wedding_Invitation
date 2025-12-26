@@ -375,15 +375,16 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: isOpen ? 1 : 0 }}
                     transition={{
-                      delay: isOpen ? 2 + (index * 0.1) : 0, // Start at 2s, stagger each letter by 0.1s (2s total for 20 chars)
+                      delay: isOpen ? 2 + (index * 0.15) : 0, // Start at 2s, stagger each letter by 0.15s (3s total for 20 chars)
                       duration: 0.3,
                       ease: [0.4, 0, 0.2, 1],
                     }}
                     style={{
                       fontSize: 'clamp(18px, 3.75vw, 36px)', // 25% smaller: 18px mobile to 36px desktop
                       color: '#D4B870', // Gold color
-                      fontFamily: 'serif',
-                      fontWeight: 600,
+                      fontFamily: "'Didot', 'Bodoni MT', 'Cochin', 'Baskerville', 'Garamond', 'Palatino', 'Book Antiqua', 'Georgia', serif",
+                      fontWeight: 400,
+                      fontStyle: 'italic',
                       textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
                     }}
                   >
