@@ -226,8 +226,8 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
               <RSVPButton />
             </motion.div>
 
-            {/* Spacing after RSVP to match lateral margins */}
-            <div style={{ height: 'clamp(10.8px, 3.447vw, 22.5px)' }} />
+            {/* Spacing after RSVP to ensure button visibility */}
+            <div style={{ height: 'clamp(16px, 4vh, 28px)' }} />
           </div>
         </div>
 
