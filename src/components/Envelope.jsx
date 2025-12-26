@@ -459,7 +459,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                 animate={{ opacity: isOpen ? [0, 0, 1, 1, 0] : 0 }}
                 transition={{
                   duration: 6.3,
-                  times: [0, 0.635, 0.667, 0.873, 1],
+                  times: [0, 0.556, 0.714, 0.873, 1], // Longer fade: 3.5-4.5s (1 second fade in)
                   ease: [0.4, 0, 0.2, 1],
                 }}
               >
@@ -474,7 +474,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                       if (totalLength > 12) return 'clamp(28px, 4.5vw, 40px)';
                       return 'clamp(32px, 5vw, 48px)';
                     })(),
-                    color: '#D4B870', // Match base gold - depth comes from shadows
+                    color: '#BDA055', // Darker gold - better integration with surface
                     textShadow: `
                       -1.5px -1.5px 0 rgba(255, 255, 255, 1),
                       -2.5px -2.5px 2px rgba(255, 255, 255, 0.8),
