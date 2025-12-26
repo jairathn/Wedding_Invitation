@@ -459,7 +459,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                 animate={{ opacity: isOpen ? [0, 0, 1, 1, 0] : 0 }}
                 transition={{
                   duration: 6.3,
-                  times: [0, 0.556, 0.714, 0.841, 1], // Symmetric fades: in 3.5-4.5s, hold 4.5-5.3s, out 5.3-6.3s (both 1s)
+                  times: [0, 0.317, 0.635, 0.841, 1], // Longer fade in: 2-4s (2s), hold 4-5.3s, fade out 5.3-6.3s (1s)
                   ease: [0.4, 0, 0.2, 1],
                 }}
               >
