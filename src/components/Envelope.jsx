@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PaperTexture } from './PaperTexture';
 import { WaxSeal } from './WaxSeal';
@@ -11,9 +11,20 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
   const [sealClicked, setSealClicked] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
 
+  const videoRef = useRef(null);
+
   const handleSealClick = () => {
     setSealClicked(true);
   };
+
+  // Auto-play video when envelope opens
+  useEffect(() => {
+    if (isOpen && videoRef.current) {
+      videoRef.current.play().catch((err) => {
+        console.error('Video autoplay failed:', err);
+      });
+    }
+  }, [isOpen]);
 
   // Levenshtein distance for fuzzy matching
   const levenshteinDistance = (str1, str2) => {
@@ -324,7 +335,60 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.03)',
             }}
           />
+
+          {/* Intro video - positioned on envelope body, below flap */}
+          {nameEntered && (
+            <video
+              ref={videoRef}
+              muted
+              playsInline
+              className="absolute left-0 right-0 pointer-events-none"
+              style={{
+                top: '55%', // Just below where flap tip sits
+                width: '100%',
+                height: 'auto',
+                maxHeight: '45%', // Ensure it doesn't overflow bottom
+                objectFit: 'cover',
+                objectPosition: 'top', // Crop from top if needed
+                zIndex: 3,
+                border: 'none',
+                outline: 'none',
+              }}
+            >
+              <source src="/video/intro_video.mp4" type="video/mp4" />
+            </video>
+          )}
         </div>
+
+        {/* Personalized guest name - positioned at hinge between flap and body */}
+        {nameEntered && guestName && (
+          <motion.div
+            className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+            style={{
+              top: '55%', // At the hinge/fold line
+              zIndex: 25, // Above video, below flap
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isOpen ? [0, 1, 1, 0] : 0 }}
+            transition={{
+              duration: 6.3,
+              times: [0, 0.24, 0.76, 1], // Fade in at 0.5s (1.5s duration), fade out at 4.8s (1.5s duration)
+              ease: 'easeInOut',
+            }}
+          >
+            <p
+              className="font-serif italic whitespace-nowrap"
+              style={{
+                fontSize: '34px',
+                color: '#8B2F2F', // Deep burgundy/wine
+                textShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                letterSpacing: '0.02em',
+              }}
+            >
+              {guestName.split(' ')[0]},
+            </p>
+          </motion.div>
+        )}
 
         {/* Envelope flap - CLOSED position (folded down over front) */}
         <motion.div
