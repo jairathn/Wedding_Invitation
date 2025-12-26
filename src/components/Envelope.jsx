@@ -360,28 +360,28 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
           )}
         </div>
 
-        {/* Personalized guest name - positioned at hinge between flap and body */}
+        {/* Personalized guest name - positioned hovering over gold flap */}
         {nameEntered && guestName && (
           <motion.div
             className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
             style={{
-              top: '55%', // At the hinge/fold line
+              top: '38%', // Positioned over the gold flap area (higher up)
               zIndex: 25, // Above video, below flap
             }}
             initial={{ opacity: 0 }}
             animate={{ opacity: isOpen ? [0, 1, 1, 0] : 0 }}
             transition={{
               duration: 6.3,
-              times: [0, 0.24, 0.76, 1], // Fade in at 0.5s (1.5s duration), fade out at 4.8s (1.5s duration)
-              ease: 'easeInOut',
+              times: [0, 0.32, 0.68, 1], // Slower fade in: 0-2s in, hold 2-4.3s, fade out 4.3-6.3s
+              ease: [0.4, 0, 0.2, 1], // Smoother easing
             }}
           >
             <p
               className="font-serif italic whitespace-nowrap"
               style={{
-                fontSize: '34px',
+                fontSize: '56px', // Much larger, more prominent
                 color: '#8B2F2F', // Deep burgundy/wine
-                textShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                textShadow: '0 2px 6px rgba(0,0,0,0.2)',
                 letterSpacing: '0.02em',
               }}
             >
