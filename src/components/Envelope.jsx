@@ -504,7 +504,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                 className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
                 style={{
                   top: '45%',
-                  maxWidth: '60%', // Narrower to fit triangular flap shape
+                  maxWidth: '50%', // Tighter fit for triangular flap shape
                 }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: isOpen ? [0, 0, 1, 1, 0] : 0 }}
