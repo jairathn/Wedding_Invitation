@@ -452,7 +452,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               <motion.div
                 className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
                 style={{
-                  top: '20%',
+                  top: '45%',
                   maxWidth: '80%',
                 }}
                 initial={{ opacity: 0 }}
@@ -474,14 +474,17 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                       if (totalLength > 12) return 'clamp(28px, 4.5vw, 40px)';
                       return 'clamp(32px, 5vw, 48px)';
                     })(),
-                    color: '#E5C888', // Lighter gold - embossed surface
+                    color: '#D4B870', // Match base gold - depth comes from shadows
                     textShadow: `
-                      -1px -1px 1px rgba(255, 255, 255, 0.8),
-                      1px 1px 2px rgba(0, 0, 0, 0.4),
-                      2px 2px 4px rgba(0, 0, 0, 0.3)
-                    `, // Embossed/raised effect
+                      -1.5px -1.5px 0 rgba(255, 255, 255, 1),
+                      -2.5px -2.5px 2px rgba(255, 255, 255, 0.8),
+                      1.5px 1.5px 0 rgba(0, 0, 0, 0.6),
+                      2px 2px 3px rgba(0, 0, 0, 0.7),
+                      3px 3px 6px rgba(0, 0, 0, 0.5),
+                      0 5px 10px rgba(0, 0, 0, 0.3)
+                    `, // Realistic embossed depth with strong highlights and shadows
                     letterSpacing: '0.05em',
-                    fontWeight: 500,
+                    fontWeight: 600,
                   }}
                 >
                   Dear {guestName.split(' ')[0]},
