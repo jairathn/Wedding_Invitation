@@ -413,7 +413,13 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               transformStyle: 'preserve-3d',
             }}
           >
-            <PaperTexture />
+            {/* Original gradient background for flap */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'linear-gradient(180deg, #FDFCF9 0%, #FAF8F4 50%, #F8F6F1 100%)',
+              }}
+            />
 
             {/* Enhanced paper gradient */}
             <div
