@@ -358,6 +358,41 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
               <source src="/video/intro_video.mp4" type="video/mp4" />
             </video>
           )}
+
+          {/* Hashtag overlay - cascading letter animation on video */}
+          {nameEntered && isOpen && (
+            <div
+              className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+              style={{
+                top: '77.5%', // Centered in video area (55% + 45%/2)
+                zIndex: 4, // Above video
+              }}
+            >
+              <div className="flex justify-center">
+                {"#JayWalkingToJairath".split('').map((char, index) => (
+                  <motion.span
+                    key={index}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: isOpen ? 1 : 0 }}
+                    transition={{
+                      delay: isOpen ? 6 + (index * 0.05) : 0, // Start at 6s, stagger each letter by 0.05s (1s total for 20 chars)
+                      duration: 0.3,
+                      ease: [0.4, 0, 0.2, 1],
+                    }}
+                    style={{
+                      fontSize: 'clamp(24px, 5vw, 48px)', // Responsive: 24px mobile to 48px desktop
+                      color: '#D4B870', // Gold color
+                      fontFamily: 'serif',
+                      fontWeight: 600,
+                      textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                    }}
+                  >
+                    {char}
+                  </motion.span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Envelope flap - CLOSED position (folded down over front) */}
