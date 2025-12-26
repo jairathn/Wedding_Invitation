@@ -31,11 +31,11 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
 
       {/* Main card - portrait proportions (approximately 8.5 x 11 ratio = 0.77) */}
       <div
-        className="relative overflow-visible rounded-sm"
+        className="relative overflow-hidden rounded-sm"
         style={{
           width: 'min(432px, 82.8vw, 61.425vh)',
           aspectRatio: '0.75',
-          maxHeight: '95vh',
+          maxHeight: '85vh',
           boxShadow: '0 4px 20px rgba(0,0,0,0.06), 0 12px 48px rgba(0,0,0,0.1)',
         }}
       >
