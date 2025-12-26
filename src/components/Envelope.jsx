@@ -375,7 +375,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: isOpen ? 1 : 0 }}
                     transition={{
-                      delay: isOpen ? 6 + (index * 0.05) : 0, // Start at 6s, stagger each letter by 0.05s (1s total for 20 chars)
+                      delay: isOpen ? 3 + (index * 0.05) : 0, // Start at 3s, stagger each letter by 0.05s (1s total for 20 chars)
                       duration: 0.3,
                       ease: [0.4, 0, 0.2, 1],
                     }}
