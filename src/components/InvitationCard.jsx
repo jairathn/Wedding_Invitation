@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { VideoPlayer } from './VideoPlayer';
 import { RSVPButton } from './RSVPButton';
 import { PaperTexture } from './PaperTexture';
 
-export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) {
+export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, guestName = '' }) {
+  const [isFlipped, setIsFlipped] = useState(false);
+
   return (
     <motion.div
       className="relative"
@@ -29,16 +32,43 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
         }}
       />
 
-      {/* Main card - portrait proportions (approximately 8.5 x 11 ratio = 0.77) */}
+      {/* Flip container with 3D perspective */}
       <div
-        className="relative overflow-hidden rounded-sm"
+        className="relative"
         style={{
           width: 'min(432px, 82.8vw, 61.425vh)',
           aspectRatio: '0.75',
           maxHeight: '85vh',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.06), 0 12px 48px rgba(0,0,0,0.1)',
+          perspective: '2000px',
         }}
       >
+        <motion.div
+          className="relative w-full h-full"
+          style={{
+            transformStyle: 'preserve-3d',
+          }}
+          animate={{
+            rotateY: isFlipped ? 180 : 0,
+          }}
+          transition={{
+            duration: 0.8,
+            ease: [0.4, 0, 0.2, 1],
+          }}
+        >
+          {/* Front of card */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backfaceVisibility: 'hidden',
+            }}
+          >
+            {/* Main card - portrait proportions (approximately 8.5 x 11 ratio = 0.77) */}
+            <div
+              className="relative overflow-hidden rounded-sm w-full h-full"
+              style={{
+                boxShadow: '0 4px 20px rgba(0,0,0,0.06), 0 12px 48px rgba(0,0,0,0.1)',
+              }}
+            >
         {/* Paper texture */}
         <PaperTexture />
 
@@ -238,6 +268,171 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
             background: 'linear-gradient(90deg, rgba(212,168,83,0.2) 0%, rgba(212,168,83,0.6) 50%, rgba(212,168,83,0.2) 100%)',
           }}
         />
+            </div>
+          </div>
+
+          {/* Back of card */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+            }}
+          >
+            <div
+              className="relative overflow-hidden rounded-sm w-full h-full"
+              style={{
+                boxShadow: '0 4px 20px rgba(0,0,0,0.06), 0 12px 48px rgba(0,0,0,0.1)',
+              }}
+            >
+              {/* Paper texture */}
+              <PaperTexture />
+
+              {/* Top gold accent line */}
+              <div
+                className="relative h-[3px]"
+                style={{
+                  background: 'linear-gradient(90deg, rgba(212,168,83,0.2) 0%, rgba(212,168,83,0.6) 50%, rgba(212,168,83,0.2) 100%)',
+                }}
+              />
+
+              {/* Card content - centered message */}
+              <div className="relative h-full flex flex-col items-center justify-center" style={{ padding: 'clamp(20px, 5vh, 40px) clamp(30px, 7vw, 50px)' }}>
+                <motion.div
+                  className="text-center space-y-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{
+                    opacity: isFlipped ? 1 : 0,
+                    y: isFlipped ? 0 : 20
+                  }}
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                >
+                  <p className="font-serif text-charcoal/80 italic" style={{ fontSize: 'clamp(18px, 4vw, 28px)', lineHeight: '1.6' }}>
+                    Dear {guestName || 'Friend'},
+                  </p>
+
+                  <p className="font-serif text-charcoal/70" style={{ fontSize: 'clamp(14px, 3vw, 20px)', lineHeight: '1.8' }}>
+                    We could not be more excited to invite you to our wedding. In one way or another, without you in our lives, we would not be here today, and we hope you can join us to celebrate our special day!
+                  </p>
+
+                  <p className="font-serif text-charcoal/70" style={{ fontSize: 'clamp(14px, 3vw, 20px)', lineHeight: '1.8' }}>
+                    See you in Barcelona! 🥂
+                  </p>
+
+                  <p className="font-serif text-charcoal/80 italic" style={{ fontSize: 'clamp(16px, 3.5vw, 24px)', marginTop: 'clamp(20px, 4vh, 40px)' }}>
+                    Be Happy,<br />
+                    Shriya and Neil
+                  </p>
+                </motion.div>
+              </div>
+
+              {/* Bottom gold accent line */}
+              <div
+                className="absolute bottom-0 left-0 right-0 h-[3px]"
+                style={{
+                  background: 'linear-gradient(90deg, rgba(212,168,83,0.2) 0%, rgba(212,168,83,0.6) 50%, rgba(212,168,83,0.2) 100%)',
+                }}
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Flip button - appears on the right side */}
+        <motion.div
+          className="absolute"
+          style={{
+            top: '50%',
+            right: '-90px',
+            transform: 'translateY(-50%)',
+            zIndex: 100,
+          }}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{
+            opacity: isVisible && emergenceProgress >= 1 ? 1 : 0,
+            x: isVisible && emergenceProgress >= 1 ? 0 : -20,
+          }}
+          transition={{ delay: 1.3, duration: 0.6 }}
+        >
+          <div className="flex flex-col items-center gap-3">
+            {/* Button label */}
+            <motion.p
+              className="font-sans text-charcoal/60 text-center"
+              style={{
+                fontSize: 'clamp(9px, 1.8vw, 11px)',
+                maxWidth: '80px',
+                lineHeight: '1.3',
+                letterSpacing: '0.05em',
+              }}
+            >
+              {isFlipped ? 'flip to return to your invitation' : 'click for a personalized message from the couple!'}
+            </motion.p>
+
+            {/* Pulsing button */}
+            <motion.button
+              onClick={() => setIsFlipped(!isFlipped)}
+              className="relative rounded-full"
+              style={{
+                width: '50px',
+                height: '50px',
+                background: 'linear-gradient(135deg, #D4A853 0%, #C9A855 50%, #B8943F 100%)',
+                border: '2px solid rgba(212, 168, 83, 0.6)',
+                boxShadow: '0 4px 12px rgba(212, 168, 83, 0.3), 0 2px 4px rgba(0,0,0,0.1)',
+                cursor: 'pointer',
+              }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              animate={{
+                scale: [1, 1.1, 1],
+                boxShadow: [
+                  '0 4px 12px rgba(212, 168, 83, 0.3), 0 2px 4px rgba(0,0,0,0.1)',
+                  '0 4px 20px rgba(212, 168, 83, 0.5), 0 2px 8px rgba(0,0,0,0.2)',
+                  '0 4px 12px rgba(212, 168, 83, 0.3), 0 2px 4px rgba(0,0,0,0.1)',
+                ],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            >
+              {/* Inner glow */}
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 60%)',
+                }}
+              />
+
+              {/* Icon - envelope or arrow */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="text-white drop-shadow-sm"
+                >
+                  {isFlipped ? (
+                    // Return arrow icon
+                    <path
+                      d="M19 12H5M12 19l-7-7 7-7"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  ) : (
+                    // Heart/message icon
+                    <path
+                      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                      fill="currentColor"
+                    />
+                  )}
+                </svg>
+              </div>
+            </motion.button>
+          </div>
+        </motion.div>
       </div>
     </motion.div>
   );
