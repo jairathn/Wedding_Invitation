@@ -184,7 +184,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
                   }}
                 />
                 <div className="rounded-sm overflow-hidden">
-                  <VideoPlayer />
+                  <VideoPlayer isFlipped={isFlipped} />
                 </div>
               </div>
             </div>
@@ -337,29 +337,44 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
           </div>
         </motion.div>
 
-        {/* Flip button - appears on the right side */}
-        <motion.div
+        {/* Flip button - appears below on mobile, right side on desktop */}
+        <div
           className="absolute"
           style={{
-            top: '50%',
-            right: '-90px',
-            transform: 'translateY(-50%)',
+            left: '50%',
+            bottom: '-100px',
+            transform: 'translateX(-50%)',
             zIndex: 100,
           }}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{
-            opacity: isVisible && emergenceProgress >= 1 ? 1 : 0,
-            x: isVisible && emergenceProgress >= 1 ? 0 : -20,
-          }}
-          transition={{ delay: 1.3, duration: 0.6 }}
         >
-          <div className="flex flex-col items-center gap-3">
+          {/* Desktop positioning via media query */}
+          <style>{`
+            @media (min-width: 768px) {
+              .flip-button-wrapper {
+                left: auto !important;
+                right: -90px !important;
+                top: 50% !important;
+                bottom: auto !important;
+                transform: translateY(-50%) !important;
+              }
+            }
+          `}</style>
+          <motion.div
+            className="flip-button-wrapper flex flex-col items-center gap-3"
+            style={{ position: 'relative' }}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{
+              opacity: isVisible && emergenceProgress >= 1 ? 1 : 0,
+              y: isVisible && emergenceProgress >= 1 ? 0 : -20,
+            }}
+            transition={{ delay: 1.3, duration: 0.6 }}
+          >
             {/* Button label */}
             <motion.p
               className="font-sans text-charcoal/60 text-center"
               style={{
                 fontSize: 'clamp(9px, 1.8vw, 11px)',
-                maxWidth: '80px',
+                maxWidth: '120px',
                 lineHeight: '1.3',
                 letterSpacing: '0.05em',
               }}
@@ -431,8 +446,8 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
                 </svg>
               </div>
             </motion.button>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     </motion.div>
   );
