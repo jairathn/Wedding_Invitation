@@ -58,6 +58,7 @@ export function WeddingInvitation({ onEnvelopeOpen }) {
             isVisible={isOpen}
             animateUp={true}
             emergenceProgress={emergenceProgress}
+            guestName={guestName}
           />
         </motion.div>
 
