@@ -337,72 +337,132 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
           </div>
         </motion.div>
 
-        {/* Flip button - appears below on mobile, right side on desktop */}
-        <div
-          className="absolute"
+        {/* Flip button - wraps around right edge of card */}
+        <motion.button
+          onClick={() => setIsFlipped(!isFlipped)}
+          className="absolute hidden md:flex flex-col items-center gap-2 cursor-pointer group"
           style={{
-            left: '50%',
-            bottom: '-100px',
-            transform: 'translateX(-50%)',
+            right: '-3px',
+            top: '50%',
+            transform: 'translateY(-50%)',
             zIndex: 100,
+            padding: '12px 6px',
+            background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.15) 0%, rgba(212, 168, 83, 0.25) 100%)',
+            borderRadius: '8px 0 0 8px',
+            border: '1px solid rgba(212, 168, 83, 0.3)',
+            borderRight: 'none',
+            backdropFilter: 'blur(4px)',
+          }}
+          initial={{ opacity: 0, x: 10 }}
+          animate={{
+            opacity: isVisible && emergenceProgress >= 1 ? 1 : 0,
+            x: isVisible && emergenceProgress >= 1 ? 0 : 10,
+          }}
+          transition={{ delay: 1.3, duration: 0.6 }}
+          whileHover={{
+            x: -2,
+            background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.25) 0%, rgba(212, 168, 83, 0.35) 100%)',
           }}
         >
-          {/* Desktop positioning via media query */}
-          <style>{`
-            @media (min-width: 768px) {
-              .flip-button-wrapper {
-                left: auto !important;
-                right: -90px !important;
-                top: 50% !important;
-                bottom: auto !important;
-                transform: translateY(-50%) !important;
-              }
-            }
-          `}</style>
-          <motion.div
-            className="flip-button-wrapper flex flex-col items-center gap-3"
-            style={{ position: 'relative' }}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{
-              opacity: isVisible && emergenceProgress >= 1 ? 1 : 0,
-              y: isVisible && emergenceProgress >= 1 ? 0 : -20,
+          {/* Top text */}
+          <p
+            className="font-sans text-charcoal/70 uppercase tracking-wider"
+            style={{
+              fontSize: '9px',
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              letterSpacing: '0.15em',
+              lineHeight: '1.2',
             }}
-            transition={{ delay: 1.3, duration: 0.6 }}
           >
-            {/* Button label */}
-            <motion.p
-              className="font-sans text-charcoal/60 text-center"
-              style={{
-                fontSize: 'clamp(9px, 1.8vw, 11px)',
-                maxWidth: '120px',
-                lineHeight: '1.3',
-                letterSpacing: '0.05em',
-              }}
-            >
-              {isFlipped ? 'flip to return to your invitation' : 'click for a personalized message from the couple!'}
-            </motion.p>
+            {isFlipped ? 'return' : 'click to flip'}
+          </p>
 
-            {/* Pulsing button */}
-            <motion.button
-              onClick={() => setIsFlipped(!isFlipped)}
-              className="relative rounded-full"
-              style={{
-                width: '50px',
-                height: '50px',
-                background: 'linear-gradient(135deg, #D4A853 0%, #C9A855 50%, #B8943F 100%)',
-                border: '2px solid rgba(212, 168, 83, 0.6)',
-                boxShadow: '0 4px 12px rgba(212, 168, 83, 0.3), 0 2px 4px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-              }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
+          {/* Arrow icon with pulse */}
+          <motion.div
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.7, 1, 0.7],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="text-golden"
+            >
+              {isFlipped ? (
+                // Left arrow for return
+                <path
+                  d="M15 18l-6-6 6-6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ) : (
+                // Flip/rotate icon
+                <path
+                  d="M21 10c0-4.97-4.03-9-9-9-2.44 0-4.65.98-6.25 2.56M3 14c0 4.97 4.03 9 9 9 2.44 0 4.65-.98 6.25-2.56M1 10h7V3M23 14h-7v7"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
+            </svg>
+          </motion.div>
+
+          {/* Bottom text */}
+          <p
+            className="font-sans text-charcoal/70 uppercase tracking-wider"
+            style={{
+              fontSize: '9px',
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              letterSpacing: '0.15em',
+              lineHeight: '1.2',
+            }}
+          >
+            {isFlipped ? 'to invite' : 'for message'}
+          </p>
+        </motion.button>
+
+        {/* Mobile flip button - centered below card */}
+        <motion.button
+          onClick={() => setIsFlipped(!isFlipped)}
+          className="absolute md:hidden flex flex-col items-center gap-2 cursor-pointer"
+          style={{
+            left: '50%',
+            bottom: '-85px',
+            transform: 'translateX(-50%)',
+            zIndex: 100,
+            padding: '10px 16px',
+            background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.15) 0%, rgba(212, 168, 83, 0.25) 100%)',
+            borderRadius: '12px',
+            border: '1px solid rgba(212, 168, 83, 0.3)',
+            backdropFilter: 'blur(4px)',
+          }}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{
+            opacity: isVisible && emergenceProgress >= 1 ? 1 : 0,
+            y: isVisible && emergenceProgress >= 1 ? 0 : -10,
+          }}
+          transition={{ delay: 1.3, duration: 0.6 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <div className="flex items-center gap-3">
+            {/* Arrow icon with pulse */}
+            <motion.div
               animate={{
-                scale: [1, 1.1, 1],
-                boxShadow: [
-                  '0 4px 12px rgba(212, 168, 83, 0.3), 0 2px 4px rgba(0,0,0,0.1)',
-                  '0 4px 20px rgba(212, 168, 83, 0.5), 0 2px 8px rgba(0,0,0,0.2)',
-                  '0 4px 12px rgba(212, 168, 83, 0.3), 0 2px 4px rgba(0,0,0,0.1)',
-                ],
+                scale: [1, 1.15, 1],
+                opacity: [0.7, 1, 0.7],
               }}
               transition={{
                 duration: 2,
@@ -410,44 +470,45 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
                 ease: 'easeInOut',
               }}
             >
-              {/* Inner glow */}
-              <div
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 60%)',
-                }}
-              />
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="text-golden"
+              >
+                {isFlipped ? (
+                  <path
+                    d="M15 18l-6-6 6-6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ) : (
+                  <path
+                    d="M21 10c0-4.97-4.03-9-9-9-2.44 0-4.65.98-6.25 2.56M3 14c0 4.97 4.03 9 9 9 2.44 0 4.65-.98 6.25-2.56M1 10h7V3M23 14h-7v7"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+              </svg>
+            </motion.div>
 
-              {/* Icon - envelope or arrow */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="text-white drop-shadow-sm"
-                >
-                  {isFlipped ? (
-                    // Return arrow icon
-                    <path
-                      d="M19 12H5M12 19l-7-7 7-7"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  ) : (
-                    // Heart/message icon
-                    <path
-                      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-                      fill="currentColor"
-                    />
-                  )}
-                </svg>
-              </div>
-            </motion.button>
-          </motion.div>
-        </div>
+            {/* Text */}
+            <p
+              className="font-sans text-charcoal/70 uppercase tracking-wider"
+              style={{
+                fontSize: '10px',
+                letterSpacing: '0.12em',
+              }}
+            >
+              {isFlipped ? 'Return to Invite' : 'Flip for Message'}
+            </p>
+          </div>
+        </motion.button>
       </div>
     </motion.div>
   );
