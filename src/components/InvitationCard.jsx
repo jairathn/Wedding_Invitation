@@ -337,10 +337,10 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
           </div>
         </motion.div>
 
-        {/* Flip button - wraps around right edge of card */}
+        {/* Flip button - wraps around right edge of card on all screen sizes */}
         <motion.button
           onClick={() => setIsFlipped(!isFlipped)}
-          className="absolute hidden md:flex flex-col items-center gap-2 cursor-pointer group"
+          className="absolute flex flex-col items-center gap-2 cursor-pointer group"
           style={{
             right: '-3px',
             top: '50%',
@@ -429,79 +429,6 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
           >
             {isFlipped ? 'to invite' : 'for message'}
           </p>
-        </motion.button>
-
-        {/* Mobile flip button - centered below card */}
-        <motion.button
-          onClick={() => setIsFlipped(!isFlipped)}
-          className="absolute md:hidden flex flex-col items-center gap-2 cursor-pointer"
-          style={{
-            left: '50%',
-            bottom: '-85px',
-            transform: 'translateX(-50%)',
-            zIndex: 100,
-            padding: '10px 16px',
-            background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.15) 0%, rgba(212, 168, 83, 0.25) 100%)',
-            borderRadius: '12px',
-            border: '1px solid rgba(212, 168, 83, 0.3)',
-            backdropFilter: 'blur(4px)',
-          }}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{
-            opacity: isVisible && emergenceProgress >= 1 ? 1 : 0,
-            y: isVisible && emergenceProgress >= 1 ? 0 : -10,
-          }}
-          transition={{ delay: 1.3, duration: 0.6 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <div className="flex items-center gap-3">
-            {/* Icon with pulse */}
-            <motion.div
-              animate={{
-                scale: [1, 1.15, 1],
-                opacity: [0.7, 1, 0.7],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="text-golden"
-              >
-                {isFlipped ? (
-                  <path
-                    d="M15 18l-6-6 6-6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                ) : (
-                  <path
-                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-                    fill="currentColor"
-                  />
-                )}
-              </svg>
-            </motion.div>
-
-            {/* Text */}
-            <p
-              className="font-sans text-charcoal/70 uppercase tracking-wider"
-              style={{
-                fontSize: '10px',
-                letterSpacing: '0.12em',
-              }}
-            >
-              {isFlipped ? 'Return to Invite' : 'Flip for Message'}
-            </p>
-          </div>
         </motion.button>
       </div>
     </motion.div>
