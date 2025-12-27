@@ -1,11 +1,41 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { VideoPlayer } from './VideoPlayer';
 import { RSVPButton } from './RSVPButton';
 import { PaperTexture } from './PaperTexture';
+import personalizedMessages from '../data/personalizedMessages.json';
 
 export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, guestName = '' }) {
   const [isFlipped, setIsFlipped] = useState(false);
+
+  // Get personalized message for the guest, or use default
+  const message = useMemo(() => {
+    if (!guestName) return null;
+
+    // Try exact match first
+    if (personalizedMessages[guestName]) {
+      return personalizedMessages[guestName].message;
+    }
+
+    // Try case-insensitive match
+    const normalizedGuestName = guestName.toLowerCase().trim();
+    const matchedKey = Object.keys(personalizedMessages).find(
+      key => key.toLowerCase().trim() === normalizedGuestName
+    );
+
+    if (matchedKey) {
+      return personalizedMessages[matchedKey].message;
+    }
+
+    // Return null if no personalized message (will use default)
+    return null;
+  }, [guestName]);
+
+  // Default message
+  const defaultMessage = "We could not be more excited to invite you to our wedding. In one way or another, without you in our lives, we would not be here today, and we hope you can join us to celebrate our special day!";
+
+  // Use personalized message if available, otherwise use default
+  const displayMessage = message || defaultMessage;
 
   return (
     <motion.div
@@ -312,7 +342,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
                   </p>
 
                   <p className="font-serif text-charcoal/70" style={{ fontSize: 'clamp(14px, 3vw, 20px)', lineHeight: '1.8' }}>
-                    We could not be more excited to invite you to our wedding. In one way or another, without you in our lives, we would not be here today, and we hope you can join us to celebrate our special day!
+                    {displayMessage}
                   </p>
 
                   <p className="font-serif text-charcoal/70" style={{ fontSize: 'clamp(14px, 3vw, 20px)', lineHeight: '1.8', marginTop: 'clamp(16px, 3vh, 24px)' }}>
