@@ -315,7 +315,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
                     We could not be more excited to invite you to our wedding. In one way or another, without you in our lives, we would not be here today, and we hope you can join us to celebrate our special day!
                   </p>
 
-                  <p className="font-serif text-charcoal/70" style={{ fontSize: 'clamp(14px, 3vw, 20px)', lineHeight: '1.8' }}>
+                  <p className="font-serif text-charcoal/70" style={{ fontSize: 'clamp(14px, 3vw, 20px)', lineHeight: '1.8', marginTop: 'clamp(16px, 3vh, 24px)' }}>
                     See you in Barcelona! 🥂
                   </p>
 
