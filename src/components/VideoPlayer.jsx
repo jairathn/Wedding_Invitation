@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import Player from '@vimeo/player';
 
-export function VideoPlayer() {
+export function VideoPlayer({ isFlipped = false }) {
   // Vimeo video ID from https://vimeo.com/1149072071
   const VIMEO_VIDEO_ID = '1149072071';
 
@@ -90,7 +90,7 @@ export function VideoPlayer() {
       />
 
       {/* Custom fullscreen button - always visible on mobile, shows on hover on desktop */}
-      {showButton && (
+      {showButton && !isFlipped && (
         <button
           onClick={handleFullscreen}
           className="absolute bottom-3 right-3 z-50 w-10 h-10 rounded-lg bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100"
