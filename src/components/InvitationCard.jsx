@@ -326,6 +326,84 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
                 }}
               />
 
+              {/* Decorative embroidered border frame */}
+              <div className="absolute inset-0 pointer-events-none" style={{ padding: 'clamp(16px, 3vh, 28px) clamp(20px, 4vw, 32px)' }}>
+                {/* Shimmer animation overlay */}
+                <motion.div
+                  className="absolute inset-0"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                    backgroundSize: '200% 100%',
+                    mixBlendMode: 'overlay',
+                  }}
+                  animate={{
+                    backgroundPosition: ['0% 0%', '200% 0%'],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: 'linear',
+                  }}
+                />
+
+                {/* Ornamental corner flourishes with shimmer */}
+                {/* Top Left Corner */}
+                <svg className="absolute" style={{ top: 'clamp(14px, 2.8vh, 26px)', left: 'clamp(18px, 3.6vw, 30px)', width: 'clamp(40px, 8vw, 60px)', height: 'clamp(40px, 8vw, 60px)', filter: 'drop-shadow(0 0 2px rgba(212,168,83,0.4))' }} viewBox="0 0 60 60" fill="none">
+                  <path d="M2 58 Q2 2 58 2" stroke="#D4A853" strokeWidth="0.8" fill="none" opacity="0.4"/>
+                  <path d="M6 58 Q6 6 58 6" stroke="#D4A853" strokeWidth="0.6" fill="none" opacity="0.3"/>
+                  <circle cx="58" cy="2" r="2" fill="#D4A853" opacity="0.5"/>
+                  <circle cx="2" cy="58" r="2" fill="#D4A853" opacity="0.5"/>
+                  <path d="M10 50 Q15 45 20 50 Q25 55 30 50 Q35 45 40 50" stroke="#D4A853" strokeWidth="0.5" opacity="0.25"/>
+                </svg>
+
+                {/* Top Right Corner */}
+                <svg className="absolute" style={{ top: 'clamp(14px, 2.8vh, 26px)', right: 'clamp(18px, 3.6vw, 30px)', width: 'clamp(40px, 8vw, 60px)', height: 'clamp(40px, 8vw, 60px)', filter: 'drop-shadow(0 0 2px rgba(212,168,83,0.4))' }} viewBox="0 0 60 60" fill="none">
+                  <path d="M58 58 Q58 2 2 2" stroke="#D4A853" strokeWidth="0.8" fill="none" opacity="0.4"/>
+                  <path d="M54 58 Q54 6 2 6" stroke="#D4A853" strokeWidth="0.6" fill="none" opacity="0.3"/>
+                  <circle cx="2" cy="2" r="2" fill="#D4A853" opacity="0.5"/>
+                  <circle cx="58" cy="58" r="2" fill="#D4A853" opacity="0.5"/>
+                  <path d="M50 50 Q45 45 40 50 Q35 55 30 50 Q25 45 20 50" stroke="#D4A853" strokeWidth="0.5" opacity="0.25"/>
+                </svg>
+
+                {/* Bottom Left Corner */}
+                <svg className="absolute" style={{ bottom: 'clamp(14px, 2.8vh, 26px)', left: 'clamp(18px, 3.6vw, 30px)', width: 'clamp(40px, 8vw, 60px)', height: 'clamp(40px, 8vw, 60px)', filter: 'drop-shadow(0 0 2px rgba(212,168,83,0.4))' }} viewBox="0 0 60 60" fill="none">
+                  <path d="M2 2 Q2 58 58 58" stroke="#D4A853" strokeWidth="0.8" fill="none" opacity="0.4"/>
+                  <path d="M6 2 Q6 54 58 54" stroke="#D4A853" strokeWidth="0.6" fill="none" opacity="0.3"/>
+                  <circle cx="58" cy="58" r="2" fill="#D4A853" opacity="0.5"/>
+                  <circle cx="2" cy="2" r="2" fill="#D4A853" opacity="0.5"/>
+                  <path d="M10 10 Q15 15 20 10 Q25 5 30 10 Q35 15 40 10" stroke="#D4A853" strokeWidth="0.5" opacity="0.25"/>
+                </svg>
+
+                {/* Bottom Right Corner */}
+                <svg className="absolute" style={{ bottom: 'clamp(14px, 2.8vh, 26px)', right: 'clamp(18px, 3.6vw, 30px)', width: 'clamp(40px, 8vw, 60px)', height: 'clamp(40px, 8vw, 60px)', filter: 'drop-shadow(0 0 2px rgba(212,168,83,0.4))' }} viewBox="0 0 60 60" fill="none">
+                  <path d="M58 2 Q58 58 2 58" stroke="#D4A853" strokeWidth="0.8" fill="none" opacity="0.4"/>
+                  <path d="M54 2 Q54 54 2 54" stroke="#D4A853" strokeWidth="0.6" fill="none" opacity="0.3"/>
+                  <circle cx="2" cy="58" r="2" fill="#D4A853" opacity="0.5"/>
+                  <circle cx="58" cy="2" r="2" fill="#D4A853" opacity="0.5"/>
+                  <path d="M50 10 Q45 15 40 10 Q35 5 30 10 Q25 15 20 10" stroke="#D4A853" strokeWidth="0.5" opacity="0.25"/>
+                </svg>
+
+                {/* Delicate lace border pattern with shimmer */}
+                <div className="absolute inset-0 border border-golden/20 rounded-sm" style={{ margin: 'clamp(12px, 2.4vh, 22px) clamp(16px, 3.2vw, 26px)', boxShadow: '0 0 4px rgba(212,168,83,0.3), inset 0 0 2px rgba(212,168,83,0.2)' }}></div>
+                <div className="absolute inset-0 border border-golden/15 rounded-sm" style={{ margin: 'clamp(14px, 2.8vh, 24px) clamp(18px, 3.6vw, 28px)', boxShadow: '0 0 3px rgba(212,168,83,0.25)' }}></div>
+
+                {/* Inner decorative dots with glow */}
+                <div className="absolute" style={{ top: 'clamp(12px, 2.4vh, 22px)', left: '50%', transform: 'translateX(-50%)' }}>
+                  <div className="flex gap-1">
+                    <div className="w-1 h-1 rounded-full bg-golden/30" style={{ boxShadow: '0 0 3px rgba(212,168,83,0.5)' }}></div>
+                    <div className="w-1 h-1 rounded-full bg-golden/30" style={{ boxShadow: '0 0 3px rgba(212,168,83,0.5)' }}></div>
+                    <div className="w-1 h-1 rounded-full bg-golden/30" style={{ boxShadow: '0 0 3px rgba(212,168,83,0.5)' }}></div>
+                  </div>
+                </div>
+                <div className="absolute" style={{ bottom: 'clamp(12px, 2.4vh, 22px)', left: '50%', transform: 'translateX(-50%)' }}>
+                  <div className="flex gap-1">
+                    <div className="w-1 h-1 rounded-full bg-golden/30" style={{ boxShadow: '0 0 3px rgba(212,168,83,0.5)' }}></div>
+                    <div className="w-1 h-1 rounded-full bg-golden/30" style={{ boxShadow: '0 0 3px rgba(212,168,83,0.5)' }}></div>
+                    <div className="w-1 h-1 rounded-full bg-golden/30" style={{ boxShadow: '0 0 3px rgba(212,168,83,0.5)' }}></div>
+                  </div>
+                </div>
+              </div>
+
               {/* Card content - centered message */}
               <div className="relative h-full flex flex-col items-center justify-center" style={{ padding: 'clamp(20px, 5vh, 40px) clamp(30px, 7vw, 50px)' }}>
                 <motion.div
