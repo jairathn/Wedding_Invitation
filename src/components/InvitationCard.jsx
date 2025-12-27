@@ -326,127 +326,106 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
                 }}
               />
 
-              {/* Decorative embroidered border frame with shimmer */}
+              {/* Delicate embroidered border frame with shimmer - inspired by elegant scrollwork */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                {/* Ornamental corner flourishes with animated shimmer */}
-                {[
-                  { pos: 'top-left', top: 'clamp(16px, 3.2vh, 24px)', left: 'clamp(20px, 4vw, 28px)' },
-                  { pos: 'top-right', top: 'clamp(16px, 3.2vh, 24px)', right: 'clamp(20px, 4vw, 28px)' },
-                  { pos: 'bottom-left', bottom: 'clamp(16px, 3.2vh, 24px)', left: 'clamp(20px, 4vw, 28px)' },
-                  { pos: 'bottom-right', bottom: 'clamp(16px, 3.2vh, 24px)', right: 'clamp(20px, 4vw, 28px)' },
-                ].map(({ pos, ...style }) => (
-                  <motion.svg
-                    key={pos}
-                    className="absolute"
-                    style={{
-                      ...style,
-                      width: 'clamp(70px, 14vw, 100px)',
-                      height: 'clamp(70px, 14vw, 100px)',
-                      filter: 'drop-shadow(0 0 6px rgba(212,168,83,0.8)) drop-shadow(0 0 12px rgba(212,168,83,0.4))',
-                    }}
-                    viewBox="0 0 100 100"
-                    fill="none"
-                  >
-                    <defs>
-                      <linearGradient id={`shimmer-${pos}`} x1="0%" y1="0%" x2="200%" y2="0%">
-                        <stop offset="0%" stopColor="#A8842F" />
-                        <stop offset="25%" stopColor="#D4B870" />
-                        <stop offset="50%" stopColor="#F5E6C8" />
-                        <stop offset="75%" stopColor="#D4B870" />
-                        <stop offset="100%" stopColor="#A8842F" />
-                      </linearGradient>
-                    </defs>
-                    <motion.g
-                      animate={{
-                        opacity: [0.7, 1, 0.7],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                      }}
-                    >
-                      {/* Flowing vine pattern */}
-                      {pos === 'top-left' && (
-                        <>
-                          <path d="M5 95 Q5 5 95 5" stroke={`url(#shimmer-${pos})`} strokeWidth="1.5" fill="none" />
-                          <path d="M15 85 Q15 15 85 15 M20 70 Q25 65 30 70 Q35 75 40 70 M10 60 Q15 55 20 60" stroke={`url(#shimmer-${pos})`} strokeWidth="1" fill="none" opacity="0.8"/>
-                          <circle cx="95" cy="5" r="3" fill={`url(#shimmer-${pos})`} />
-                          <circle cx="5" cy="95" r="3" fill={`url(#shimmer-${pos})`} />
-                          {/* Small leaves */}
-                          <path d="M25 80 Q20 75 25 70" stroke={`url(#shimmer-${pos})`} strokeWidth="0.8" fill="none" />
-                          <path d="M35 70 Q30 65 35 60" stroke={`url(#shimmer-${pos})`} strokeWidth="0.8" fill="none" />
-                        </>
-                      )}
-                      {pos === 'top-right' && (
-                        <>
-                          <path d="M95 95 Q95 5 5 5" stroke={`url(#shimmer-${pos})`} strokeWidth="1.5" fill="none" />
-                          <path d="M85 85 Q85 15 15 15 M80 70 Q75 65 70 70 Q65 75 60 70 M90 60 Q85 55 80 60" stroke={`url(#shimmer-${pos})`} strokeWidth="1" fill="none" opacity="0.8"/>
-                          <circle cx="5" cy="5" r="3" fill={`url(#shimmer-${pos})`} />
-                          <circle cx="95" cy="95" r="3" fill={`url(#shimmer-${pos})`} />
-                          <path d="M75 80 Q80 75 75 70" stroke={`url(#shimmer-${pos})`} strokeWidth="0.8" fill="none" />
-                          <path d="M65 70 Q70 65 65 60" stroke={`url(#shimmer-${pos})`} strokeWidth="0.8" fill="none" />
-                        </>
-                      )}
-                      {pos === 'bottom-left' && (
-                        <>
-                          <path d="M5 5 Q5 95 95 95" stroke={`url(#shimmer-${pos})`} strokeWidth="1.5" fill="none" />
-                          <path d="M15 15 Q15 85 85 85 M20 30 Q25 35 30 30 Q35 25 40 30 M10 40 Q15 45 20 40" stroke={`url(#shimmer-${pos})`} strokeWidth="1" fill="none" opacity="0.8"/>
-                          <circle cx="95" cy="95" r="3" fill={`url(#shimmer-${pos})`} />
-                          <circle cx="5" cy="5" r="3" fill={`url(#shimmer-${pos})`} />
-                          <path d="M25 20 Q20 25 25 30" stroke={`url(#shimmer-${pos})`} strokeWidth="0.8" fill="none" />
-                          <path d="M35 30 Q30 35 35 40" stroke={`url(#shimmer-${pos})`} strokeWidth="0.8" fill="none" />
-                        </>
-                      )}
-                      {pos === 'bottom-right' && (
-                        <>
-                          <path d="M95 5 Q95 95 5 95" stroke={`url(#shimmer-${pos})`} strokeWidth="1.5" fill="none" />
-                          <path d="M85 15 Q85 85 15 85 M80 30 Q75 35 70 30 Q65 25 60 30 M90 40 Q85 45 80 40" stroke={`url(#shimmer-${pos})`} strokeWidth="1" fill="none" opacity="0.8"/>
-                          <circle cx="5" cy="95" r="3" fill={`url(#shimmer-${pos})`} />
-                          <circle cx="95" cy="5" r="3" fill={`url(#shimmer-${pos})`} />
-                          <path d="M75 20 Q80 25 75 30" stroke={`url(#shimmer-${pos})`} strokeWidth="0.8" fill="none" />
-                          <path d="M65 30 Q70 35 65 40" stroke={`url(#shimmer-${pos})`} strokeWidth="0.8" fill="none" />
-                        </>
-                      )}
-                    </motion.g>
-                  </motion.svg>
-                ))}
-
-                {/* Flowing vine border on all sides */}
-                {/* Top border */}
-                <motion.svg className="absolute top-0 left-1/2" style={{ transform: 'translateX(-50%)', width: '60%', height: 'clamp(30px, 6vh, 50px)', filter: 'drop-shadow(0 0 8px rgba(212,168,83,0.9)) drop-shadow(0 0 16px rgba(245,230,200,0.5))' }} viewBox="0 0 300 30" fill="none" animate={{ opacity: [0.8, 1, 0.8] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>
+                {/* Top border - elegant scrollwork with leaves */}
+                <motion.svg
+                  className="absolute top-0 left-1/2"
+                  style={{
+                    transform: 'translateX(-50%)',
+                    width: '85%',
+                    height: 'clamp(18px, 3.5vh, 28px)',
+                    filter: 'drop-shadow(0 0 4px rgba(212,168,83,0.6)) drop-shadow(0 0 8px rgba(212,168,83,0.3))',
+                    top: 'clamp(10px, 2vh, 16px)'
+                  }}
+                  viewBox="0 0 400 24"
+                  fill="none"
+                  animate={{ opacity: [0.75, 1, 0.75] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                >
                   <defs>
-                    <linearGradient id="vine-top" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <linearGradient id="border-shimmer-top" x1="0%" y1="0%" x2="100%" y2="0%">
                       <motion.stop offset="0%" stopColor="#A8842F" animate={{ stopColor: ['#A8842F', '#D4B870', '#F5E6C8', '#D4B870', '#A8842F'] }} transition={{ duration: 4, repeat: Infinity }} />
                       <motion.stop offset="50%" stopColor="#F5E6C8" animate={{ stopColor: ['#F5E6C8', '#D4B870', '#A8842F', '#D4B870', '#F5E6C8'] }} transition={{ duration: 4, repeat: Infinity }} />
                       <motion.stop offset="100%" stopColor="#A8842F" animate={{ stopColor: ['#A8842F', '#D4B870', '#F5E6C8', '#D4B870', '#A8842F'] }} transition={{ duration: 4, repeat: Infinity }} />
                     </linearGradient>
                   </defs>
-                  <path d="M10 15 Q50 10 90 15 Q130 20 170 15 Q210 10 250 15 Q270 17 290 15" stroke="url(#vine-top)" strokeWidth="1.5" fill="none" />
-                  {[30, 90, 150, 210, 270].map((x, i) => (
+                  {/* Main flowing vine with S-curves */}
+                  <path
+                    d="M 10 12 Q 40 8 60 12 Q 80 16 100 12 Q 130 7 160 12 Q 180 15 200 12 Q 230 8 260 12 Q 280 16 300 12 Q 330 7 360 12 Q 380 14 390 12"
+                    stroke="url(#border-shimmer-top)"
+                    strokeWidth="0.7"
+                    fill="none"
+                  />
+                  {/* Small delicate leaves along the vine */}
+                  {[60, 100, 140, 180, 220, 260, 300, 340].map((x, i) => (
                     <g key={i}>
-                      <circle cx={x} cy="15" r="2" fill="url(#vine-top)" />
-                      <path d={`M${x} 15 Q${x-5} 10 ${x} 5`} stroke="url(#vine-top)" strokeWidth="0.8" fill="none" opacity="0.7" />
-                      <path d={`M${x} 15 Q${x+5} 10 ${x} 5`} stroke="url(#vine-top)" strokeWidth="0.8" fill="none" opacity="0.7" />
+                      {/* Leaf pair */}
+                      <path
+                        d={`M${x} ${12 + (i % 2) * 2} Q${x - 4} ${8 + (i % 2) * 2} ${x - 6} ${6 + (i % 2) * 2}`}
+                        stroke="url(#border-shimmer-top)"
+                        strokeWidth="0.5"
+                        fill="none"
+                        opacity="0.75"
+                      />
+                      <path
+                        d={`M${x} ${12 + (i % 2) * 2} Q${x + 4} ${8 + (i % 2) * 2} ${x + 6} ${6 + (i % 2) * 2}`}
+                        stroke="url(#border-shimmer-top)"
+                        strokeWidth="0.5"
+                        fill="none"
+                        opacity="0.75"
+                      />
                     </g>
                   ))}
                 </motion.svg>
 
-                {/* Bottom border */}
-                <motion.svg className="absolute bottom-0 left-1/2" style={{ transform: 'translateX(-50%)', width: '60%', height: 'clamp(30px, 6vh, 50px)', filter: 'drop-shadow(0 0 8px rgba(212,168,83,0.9)) drop-shadow(0 0 16px rgba(245,230,200,0.5))' }} viewBox="0 0 300 30" fill="none" animate={{ opacity: [0.8, 1, 0.8] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 1 }}>
+                {/* Bottom border - mirrored elegant scrollwork */}
+                <motion.svg
+                  className="absolute bottom-0 left-1/2"
+                  style={{
+                    transform: 'translateX(-50%)',
+                    width: '85%',
+                    height: 'clamp(18px, 3.5vh, 28px)',
+                    filter: 'drop-shadow(0 0 4px rgba(212,168,83,0.6)) drop-shadow(0 0 8px rgba(212,168,83,0.3))',
+                    bottom: 'clamp(10px, 2vh, 16px)'
+                  }}
+                  viewBox="0 0 400 24"
+                  fill="none"
+                  animate={{ opacity: [0.75, 1, 0.75] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 1.25 }}
+                >
                   <defs>
-                    <linearGradient id="vine-bottom" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <linearGradient id="border-shimmer-bottom" x1="0%" y1="0%" x2="100%" y2="0%">
                       <motion.stop offset="0%" stopColor="#D4B870" animate={{ stopColor: ['#D4B870', '#F5E6C8', '#D4B870', '#A8842F', '#D4B870'] }} transition={{ duration: 4, repeat: Infinity }} />
                       <motion.stop offset="50%" stopColor="#A8842F" animate={{ stopColor: ['#A8842F', '#D4B870', '#F5E6C8', '#D4B870', '#A8842F'] }} transition={{ duration: 4, repeat: Infinity }} />
                       <motion.stop offset="100%" stopColor="#D4B870" animate={{ stopColor: ['#D4B870', '#F5E6C8', '#D4B870', '#A8842F', '#D4B870'] }} transition={{ duration: 4, repeat: Infinity }} />
                     </linearGradient>
                   </defs>
-                  <path d="M10 15 Q50 20 90 15 Q130 10 170 15 Q210 20 250 15 Q270 13 290 15" stroke="url(#vine-bottom)" strokeWidth="1.5" fill="none" />
-                  {[30, 90, 150, 210, 270].map((x, i) => (
+                  {/* Main flowing vine with S-curves (mirrored vertically) */}
+                  <path
+                    d="M 10 12 Q 40 16 60 12 Q 80 8 100 12 Q 130 17 160 12 Q 180 9 200 12 Q 230 16 260 12 Q 280 8 300 12 Q 330 17 360 12 Q 380 10 390 12"
+                    stroke="url(#border-shimmer-bottom)"
+                    strokeWidth="0.7"
+                    fill="none"
+                  />
+                  {/* Small delicate leaves along the vine */}
+                  {[60, 100, 140, 180, 220, 260, 300, 340].map((x, i) => (
                     <g key={i}>
-                      <circle cx={x} cy="15" r="2" fill="url(#vine-bottom)" />
-                      <path d={`M${x} 15 Q${x-5} 20 ${x} 25`} stroke="url(#vine-bottom)" strokeWidth="0.8" fill="none" opacity="0.7" />
-                      <path d={`M${x} 15 Q${x+5} 20 ${x} 25`} stroke="url(#vine-bottom)" strokeWidth="0.8" fill="none" opacity="0.7" />
+                      {/* Leaf pair (mirrored) */}
+                      <path
+                        d={`M${x} ${12 - (i % 2) * 2} Q${x - 4} ${16 - (i % 2) * 2} ${x - 6} ${18 - (i % 2) * 2}`}
+                        stroke="url(#border-shimmer-bottom)"
+                        strokeWidth="0.5"
+                        fill="none"
+                        opacity="0.75"
+                      />
+                      <path
+                        d={`M${x} ${12 - (i % 2) * 2} Q${x + 4} ${16 - (i % 2) * 2} ${x + 6} ${18 - (i % 2) * 2}`}
+                        stroke="url(#border-shimmer-bottom)"
+                        strokeWidth="0.5"
+                        fill="none"
+                        opacity="0.75"
+                      />
                     </g>
                   ))}
                 </motion.svg>
