@@ -378,7 +378,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
             {isFlipped ? 'return' : 'click to flip'}
           </p>
 
-          {/* Arrow icon with pulse */}
+          {/* Icon with pulse */}
           <motion.div
             animate={{
               scale: [1, 1.2, 1],
@@ -407,13 +407,10 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
                   strokeLinejoin="round"
                 />
               ) : (
-                // Flip/rotate icon
+                // Heart icon for personalized message
                 <path
-                  d="M21 10c0-4.97-4.03-9-9-9-2.44 0-4.65.98-6.25 2.56M3 14c0 4.97 4.03 9 9 9 2.44 0 4.65-.98 6.25-2.56M1 10h7V3M23 14h-7v7"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                  fill="currentColor"
                 />
               )}
             </svg>
@@ -458,7 +455,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
           whileTap={{ scale: 0.95 }}
         >
           <div className="flex items-center gap-3">
-            {/* Arrow icon with pulse */}
+            {/* Icon with pulse */}
             <motion.div
               animate={{
                 scale: [1, 1.15, 1],
@@ -487,11 +484,8 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
                   />
                 ) : (
                   <path
-                    d="M21 10c0-4.97-4.03-9-9-9-2.44 0-4.65.98-6.25 2.56M3 14c0 4.97 4.03 9 9 9 2.44 0 4.65-.98 6.25-2.56M1 10h7V3M23 14h-7v7"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                    fill="currentColor"
                   />
                 )}
               </svg>
