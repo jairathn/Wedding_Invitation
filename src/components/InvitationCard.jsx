@@ -2,8 +2,11 @@ import { motion } from 'framer-motion';
 import { VideoPlayer } from './VideoPlayer';
 import { RSVPButton } from './RSVPButton';
 import { PaperTexture } from './PaperTexture';
+import { useState } from 'react';
 
-export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) {
+export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, guestName = '' }) {
+  const [isFlipped, setIsFlipped] = useState(false);
+
   return (
     <motion.div
       className="relative"
@@ -17,6 +20,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
         delay: isVisible ? 0.4 : 0,
         ease: [0.4, 0, 0.2, 1],
       }}
+      style={{ perspective: '2000px' }}
     >
       {/* Card shadow - layered for depth */}
       <div
@@ -29,8 +33,79 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
         }}
       />
 
-      {/* Main card - portrait proportions (approximately 8.5 x 11 ratio = 0.77) */}
-      <div
+      {/* Flip button - positioned on right side */}
+      {isVisible && emergenceProgress > 0.95 && (
+        <motion.div
+          className="absolute -right-2 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.5, duration: 0.5 }}
+        >
+          <p
+            className="text-xs text-charcoal/60 mb-2 whitespace-nowrap writing-mode-vertical"
+            style={{
+              fontSize: 'clamp(8px, 1.5vw, 10px)',
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              maxWidth: '200px',
+              textAlign: 'center',
+            }}
+          >
+            {isFlipped ? 'flip to return' : 'click for a personalized message!'}
+          </p>
+          <motion.button
+            onClick={() => setIsFlipped(!isFlipped)}
+            className="bg-golden/20 hover:bg-golden/30 rounded-full p-2 transition-colors"
+            animate={{
+              scale: [1, 1.1, 1],
+              boxShadow: [
+                '0 0 0 0 rgba(212, 168, 83, 0.4)',
+                '0 0 0 8px rgba(212, 168, 83, 0)',
+                '0 0 0 0 rgba(212, 168, 83, 0)',
+              ],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            style={{
+              width: 'clamp(32px, 6vw, 48px)',
+              height: 'clamp(32px, 6vw, 48px)',
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-golden"
+            >
+              <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>
+          </motion.button>
+        </motion.div>
+      )}
+
+      {/* Card flip container */}
+      <motion.div
+        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+        style={{
+          transformStyle: 'preserve-3d',
+          position: 'relative',
+        }}
+      >
+        {/* Front of card */}
+        <div
+          style={{
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+          }}
+        >
+          {/* Main card - portrait proportions (approximately 8.5 x 11 ratio = 0.77) */}
+          <div
         className="relative overflow-hidden rounded-sm"
         style={{
           width: 'min(432px, 82.8vw, 61.425vh)',
@@ -239,6 +314,92 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1 }) 
           }}
         />
       </div>
+    </div>
+
+    {/* Back of card */}
+    <div
+      style={{
+        backfaceVisibility: 'hidden',
+        WebkitBackfaceVisibility: 'hidden',
+        transform: 'rotateY(180deg)',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+      }}
+    >
+      <div
+        className="relative overflow-hidden rounded-sm"
+        style={{
+          width: 'min(432px, 82.8vw, 61.425vh)',
+          aspectRatio: '0.75',
+          maxHeight: '85vh',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.06), 0 12px 48px rgba(0,0,0,0.1)',
+        }}
+      >
+        {/* Paper texture */}
+        <PaperTexture />
+
+        {/* Top gold accent line */}
+        <div
+          className="relative h-[3px]"
+          style={{
+            background: 'linear-gradient(90deg, rgba(212,168,83,0.2) 0%, rgba(212,168,83,0.6) 50%, rgba(212,168,83,0.2) 100%)',
+          }}
+        />
+
+        {/* Back card content */}
+        <div
+          className="relative h-full flex flex-col justify-center items-center"
+          style={{
+            padding: 'clamp(32px, 8vw, 64px)',
+          }}
+        >
+          <div className="text-center space-y-6">
+            {/* Salutation */}
+            <p
+              className="font-serif italic text-charcoal"
+              style={{ fontSize: 'clamp(24px, 5vw, 36px)' }}
+            >
+              Dear {guestName ? guestName.split(' ')[0] : 'Friend'},
+            </p>
+
+            {/* Message */}
+            <p
+              className="font-sans text-charcoal/80 leading-relaxed"
+              style={{ fontSize: 'clamp(14px, 3vw, 18px)', maxWidth: '80%', margin: '0 auto' }}
+            >
+              We could not be more excited to invite you to our wedding. In one way or another, without you in our lives, we would not be here today, and we hope you can join us to celebrate our special day! See you in Barcelona! 🥂
+            </p>
+
+            {/* Signature */}
+            <div className="pt-4">
+              <p
+                className="font-serif italic text-charcoal/70"
+                style={{ fontSize: 'clamp(12px, 2.5vw, 16px)' }}
+              >
+                Be Happy,
+              </p>
+              <p
+                className="font-serif italic text-charcoal mt-1"
+                style={{ fontSize: 'clamp(16px, 3.5vw, 22px)' }}
+              >
+                Shriya and Neil
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom gold accent line */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-[3px]"
+          style={{
+            background: 'linear-gradient(90deg, rgba(212,168,83,0.2) 0%, rgba(212,168,83,0.6) 50%, rgba(212,168,83,0.2) 100%)',
+          }}
+        />
+      </div>
+    </div>
+  </motion.div>
     </motion.div>
   );
 }
