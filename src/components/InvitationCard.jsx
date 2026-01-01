@@ -472,7 +472,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
           </div>
         </motion.div>
 
-        {/* Flip button - wraps around right edge of card with prominent pulse and rich golden color */}
+        {/* Flip button - wraps around right edge of card with prominent pulse and elegant burgundy color */}
         <motion.button
           onClick={() => setIsFlipped(!isFlipped)}
           className="absolute flex flex-col items-center gap-2 cursor-pointer group"
@@ -482,12 +482,12 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
             transform: 'translateY(-50%)',
             zIndex: 100,
             padding: '12px 6px',
-            background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.5) 0%, rgba(212, 168, 83, 0.65) 100%)',
+            background: 'linear-gradient(135deg, rgba(139, 31, 31, 0.5) 0%, rgba(165, 42, 42, 0.65) 100%)',
             borderRadius: '8px 0 0 8px',
-            border: '2px solid rgba(212, 168, 83, 0.7)',
+            border: '2px solid rgba(139, 31, 31, 0.7)',
             borderRight: 'none',
             backdropFilter: 'blur(4px)',
-            boxShadow: '0 0 12px rgba(212, 168, 83, 0.4), 0 0 24px rgba(212, 168, 83, 0.2)',
+            boxShadow: '0 0 12px rgba(139, 31, 31, 0.4), 0 0 24px rgba(139, 31, 31, 0.2)',
           }}
           initial={{ opacity: 0, x: 10 }}
           animate={{
@@ -507,8 +507,8 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
           whileHover={{
             x: -2,
             scale: 1.05,
-            background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.7) 0%, rgba(212, 168, 83, 0.85) 100%)',
-            boxShadow: '0 0 16px rgba(212, 168, 83, 0.6), 0 0 32px rgba(212, 168, 83, 0.3)',
+            background: 'linear-gradient(135deg, rgba(139, 31, 31, 0.7) 0%, rgba(165, 42, 42, 0.85) 100%)',
+            boxShadow: '0 0 16px rgba(139, 31, 31, 0.6), 0 0 32px rgba(139, 31, 31, 0.3)',
           }}
         >
           {/* Top text */}
