@@ -513,13 +513,14 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
         >
           {/* Top text */}
           <p
-            className="font-sans text-charcoal/90 uppercase tracking-wider font-medium"
+            className="font-sans uppercase tracking-wider font-medium"
             style={{
               fontSize: '9px',
               writingMode: 'vertical-rl',
               textOrientation: 'mixed',
               letterSpacing: '0.15em',
               lineHeight: '1.2',
+              color: 'rgba(255, 250, 240, 0.95)',
             }}
           >
             {isFlipped ? 'return' : 'click to flip'}
@@ -532,7 +533,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              className="text-charcoal/80"
+              style={{ color: 'rgba(255, 250, 240, 0.95)' }}
             >
               {isFlipped ? (
                 // Left arrow for return
@@ -555,13 +556,14 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
 
           {/* Bottom text */}
           <p
-            className="font-sans text-charcoal/90 uppercase tracking-wider font-medium"
+            className="font-sans uppercase tracking-wider font-medium"
             style={{
               fontSize: '9px',
               writingMode: 'vertical-rl',
               textOrientation: 'mixed',
               letterSpacing: '0.15em',
               lineHeight: '1.2',
+              color: 'rgba(255, 250, 240, 0.95)',
             }}
           >
             {isFlipped ? 'to invite' : 'for message'}
