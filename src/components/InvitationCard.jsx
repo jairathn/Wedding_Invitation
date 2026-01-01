@@ -472,7 +472,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
           </div>
         </motion.div>
 
-        {/* Flip button - wraps around right edge of card with prominent pulse */}
+        {/* Flip button - wraps around right edge of card with prominent pulse and rich golden color */}
         <motion.button
           onClick={() => setIsFlipped(!isFlipped)}
           className="absolute flex flex-col items-center gap-2 cursor-pointer group"
@@ -482,11 +482,12 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
             transform: 'translateY(-50%)',
             zIndex: 100,
             padding: '12px 6px',
-            background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.15) 0%, rgba(212, 168, 83, 0.25) 100%)',
+            background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.5) 0%, rgba(212, 168, 83, 0.65) 100%)',
             borderRadius: '8px 0 0 8px',
-            border: '1px solid rgba(212, 168, 83, 0.3)',
+            border: '2px solid rgba(212, 168, 83, 0.7)',
             borderRight: 'none',
             backdropFilter: 'blur(4px)',
+            boxShadow: '0 0 12px rgba(212, 168, 83, 0.4), 0 0 24px rgba(212, 168, 83, 0.2)',
           }}
           initial={{ opacity: 0, x: 10 }}
           animate={{
@@ -506,12 +507,13 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
           whileHover={{
             x: -2,
             scale: 1.05,
-            background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.25) 0%, rgba(212, 168, 83, 0.35) 100%)',
+            background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.7) 0%, rgba(212, 168, 83, 0.85) 100%)',
+            boxShadow: '0 0 16px rgba(212, 168, 83, 0.6), 0 0 32px rgba(212, 168, 83, 0.3)',
           }}
         >
           {/* Top text */}
           <p
-            className="font-sans text-charcoal/70 uppercase tracking-wider"
+            className="font-sans text-charcoal/90 uppercase tracking-wider font-medium"
             style={{
               fontSize: '9px',
               writingMode: 'vertical-rl',
@@ -530,7 +532,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              className="text-golden"
+              className="text-charcoal/80"
             >
               {isFlipped ? (
                 // Left arrow for return
@@ -553,7 +555,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
 
           {/* Bottom text */}
           <p
-            className="font-sans text-charcoal/70 uppercase tracking-wider"
+            className="font-sans text-charcoal/90 uppercase tracking-wider font-medium"
             style={{
               fontSize: '9px',
               writingMode: 'vertical-rl',
