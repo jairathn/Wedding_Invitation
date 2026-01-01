@@ -472,31 +472,31 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
           </div>
         </motion.div>
 
-        {/* Flip button - wraps around bottom edge of card with prominent pulse */}
+        {/* Flip button - wraps around right edge of card with prominent pulse */}
         <motion.button
           onClick={() => setIsFlipped(!isFlipped)}
-          className="absolute flex flex-row items-center gap-3 cursor-pointer group"
+          className="absolute flex flex-col items-center gap-2 cursor-pointer group"
           style={{
-            bottom: '-3px',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            right: '-3px',
+            top: '50%',
+            transform: 'translateY(-50%)',
             zIndex: 100,
-            padding: '8px 16px',
-            background: 'linear-gradient(180deg, rgba(212, 168, 83, 0.15) 0%, rgba(212, 168, 83, 0.25) 100%)',
-            borderRadius: '8px 8px 0 0',
+            padding: '12px 6px',
+            background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.15) 0%, rgba(212, 168, 83, 0.25) 100%)',
+            borderRadius: '8px 0 0 8px',
             border: '1px solid rgba(212, 168, 83, 0.3)',
-            borderBottom: 'none',
+            borderRight: 'none',
             backdropFilter: 'blur(4px)',
           }}
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, x: 10 }}
           animate={{
             opacity: isVisible && emergenceProgress >= 1 ? 1 : 0,
-            y: isVisible && emergenceProgress >= 1 ? 0 : 10,
+            x: isVisible && emergenceProgress >= 1 ? 0 : 10,
             scale: isVisible && emergenceProgress >= 1 && !isFlipped ? [1, 1.08, 1] : 1,
           }}
           transition={{
             opacity: { delay: 1.3, duration: 0.6 },
-            y: { delay: 1.3, duration: 0.6 },
+            x: { delay: 1.3, duration: 0.6 },
             scale: {
               duration: 1.5,
               repeat: Infinity,
@@ -504,16 +504,18 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
             },
           }}
           whileHover={{
-            y: -2,
+            x: -2,
             scale: 1.05,
-            background: 'linear-gradient(180deg, rgba(212, 168, 83, 0.25) 0%, rgba(212, 168, 83, 0.35) 100%)',
+            background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.25) 0%, rgba(212, 168, 83, 0.35) 100%)',
           }}
         >
-          {/* Left text */}
+          {/* Top text */}
           <p
             className="font-sans text-charcoal/70 uppercase tracking-wider"
             style={{
               fontSize: '9px',
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
               letterSpacing: '0.15em',
               lineHeight: '1.2',
             }}
@@ -531,9 +533,9 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
               className="text-golden"
             >
               {isFlipped ? (
-                // Up arrow for return
+                // Left arrow for return
                 <path
-                  d="M18 15l-6-6-6 6"
+                  d="M15 18l-6-6 6-6"
                   stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
@@ -549,11 +551,13 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
             </svg>
           </div>
 
-          {/* Right text */}
+          {/* Bottom text */}
           <p
             className="font-sans text-charcoal/70 uppercase tracking-wider"
             style={{
               fontSize: '9px',
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
               letterSpacing: '0.15em',
               lineHeight: '1.2',
             }}
