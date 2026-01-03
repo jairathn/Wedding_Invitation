@@ -37,6 +37,25 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
   // Use personalized message if available, otherwise use default
   const displayMessage = message || defaultMessage;
 
+  // Calculate font sizes based on message length to prevent overflow
+  const messageFontSize = useMemo(() => {
+    const messageLength = displayMessage.length;
+    if (messageLength > 450) {
+      return 'clamp(11px, 2.2vw, 15px)'; // Very long messages
+    } else if (messageLength > 350) {
+      return 'clamp(12px, 2.5vw, 17px)'; // Long messages
+    } else if (messageLength > 250) {
+      return 'clamp(13px, 2.8vw, 19px)'; // Medium-long messages
+    } else {
+      return 'clamp(14px, 3vw, 20px)'; // Normal/short messages
+    }
+  }, [displayMessage]);
+
+  const messageLineHeight = useMemo(() => {
+    const messageLength = displayMessage.length;
+    return messageLength > 350 ? '1.6' : '1.8';
+  }, [displayMessage]);
+
   return (
     <motion.div
       className="relative"
@@ -446,7 +465,7 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
                     Dear {guestName || 'Friend'},
                   </p>
 
-                  <p className="font-serif text-charcoal/70" style={{ fontSize: 'clamp(14px, 3vw, 20px)', lineHeight: '1.8' }}>
+                  <p className="font-serif text-charcoal/70" style={{ fontSize: messageFontSize, lineHeight: messageLineHeight }}>
                     {displayMessage}
                   </p>
 
