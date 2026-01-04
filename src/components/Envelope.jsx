@@ -258,7 +258,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
 
           {/* Content area */}
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center px-10 pt-8"
+            className="absolute inset-0 flex flex-col items-center justify-center px-10 pb-10"
             style={{ zIndex: sealClicked ? 100 : 1 }}
           >
             {sealClicked && !nameEntered && (
@@ -269,7 +269,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                 transition={{ duration: 0.4 }}
               >
                 {/* Ganesh image */}
-                <div className="w-full flex justify-center mb-4 -mt-12">
+                <div className="w-full flex justify-center mb-4 -mt-6">
                   <motion.img
                     src="/images/ganesha_no_background.png"
                     alt="Ganesh"
@@ -280,7 +280,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                   />
                 </div>
 
-                <p className="font-serif text-3xl md:text-4xl text-charcoal/80 italic mb-2 mt-12">
+                <p className="font-serif text-3xl md:text-4xl text-charcoal/80 italic mb-2 mt-6">
                   Shriya & Neil
                 </p>
                 <p className="font-sans text-[10px] text-charcoal/50 tracking-[0.25em] uppercase mb-10">
