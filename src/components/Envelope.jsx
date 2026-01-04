@@ -269,7 +269,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                 transition={{ duration: 0.4 }}
               >
                 {/* Ganesh image */}
-                <div className="w-full flex justify-center mb-4">
+                <div className="w-full flex justify-center mb-4 -mt-4">
                   <motion.img
                     src="/images/ganesha_no_background.png"
                     alt="Ganesh"
