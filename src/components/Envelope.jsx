@@ -264,6 +264,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
             {sealClicked && !nameEntered && (
               <motion.div
                 className="w-full max-w-[300px] text-center"
+                style={{ transform: 'translateY(20px)' }}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4 }}
