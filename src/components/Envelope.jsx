@@ -258,7 +258,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
 
           {/* Content area */}
           <div
-            className="absolute inset-0 flex flex-col items-center justify-end px-10 pb-24"
+            className="absolute inset-0 flex flex-col items-center justify-center px-10"
             style={{ zIndex: sealClicked ? 100 : 1 }}
           >
             {sealClicked && !nameEntered && (
@@ -269,7 +269,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                 transition={{ duration: 0.4 }}
               >
                 {/* Ganesh image */}
-                <div className="w-full flex justify-center mb-4 -mt-6">
+                <div className="w-full flex justify-center mb-8 -mt-6">
                   <motion.img
                     src="/images/ganesha_no_background.png"
                     alt="Ganesh"
