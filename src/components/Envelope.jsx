@@ -274,8 +274,8 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                     src="/images/ganesha_no_background.png"
                     alt="Ganesh"
                     style={{ width: 'clamp(60px, 15vw, 100px)', height: 'auto', display: 'block' }}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: -40 }}
+                    animate={{ opacity: 1, y: -30 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
                   />
                 </div>
