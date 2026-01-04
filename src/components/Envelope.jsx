@@ -258,7 +258,7 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
 
           {/* Content area */}
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center px-10"
+            className="absolute inset-0 flex flex-col items-center justify-end px-10 pb-8"
             style={{ zIndex: sealClicked ? 100 : 1 }}
           >
             {sealClicked && !nameEntered && (
