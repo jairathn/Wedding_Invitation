@@ -268,6 +268,17 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4 }}
               >
+                {/* Ganesh image */}
+                <motion.img
+                  src="/images/ganesha_no_background.png"
+                  alt="Ganesh"
+                  className="mx-auto mb-4"
+                  style={{ width: 'clamp(60px, 15vw, 100px)', height: 'auto' }}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                />
+
                 <p className="font-serif text-3xl md:text-4xl text-charcoal/80 italic mb-2">
                   Shriya & Neil
                 </p>
