@@ -24,20 +24,46 @@ export function RSVPButton() {
           className="font-serif font-bold italic tracking-wide whitespace-nowrap"
           style={{
             fontSize: 'clamp(16px, 4vw, 26px)',
-            marginBottom: 'clamp(1px, 0.3vh, 3px)'
+            marginBottom: 'clamp(2px, 0.5vh, 4px)'
           }}
         >
           Click to RSVP
         </p>
         <p
-          className="font-sans text-warm-white/85 tracking-normal font-medium whitespace-nowrap"
+          className="font-sans text-warm-white tracking-normal font-bold whitespace-nowrap shimmer-text"
           style={{
-            fontSize: 'clamp(8px, 1.8vw, 11px)'
+            fontSize: 'clamp(11px, 2.5vw, 15px)'
           }}
         >
           Password: Barcelona2026
         </p>
       </div>
+      <style jsx>{`
+        @keyframes shimmer {
+          0% {
+            background-position: -200% center;
+          }
+          100% {
+            background-position: 200% center;
+          }
+        }
+
+        .shimmer-text {
+          background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.9) 0%,
+            rgba(255, 255, 255, 1) 25%,
+            rgba(255, 245, 220, 1) 50%,
+            rgba(255, 255, 255, 1) 75%,
+            rgba(255, 255, 255, 0.9) 100%
+          );
+          background-size: 200% auto;
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer 3s linear infinite;
+        }
+      `}</style>
     </motion.a>
   );
 }
