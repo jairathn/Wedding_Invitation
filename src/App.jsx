@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { Background } from './components/Background';
 import { WeddingInvitation } from './components/WeddingInvitation';
 import { BackgroundMusic } from './components/BackgroundMusic';
 import { PhotoCarousel } from './components/PhotoCarousel';
 
-function App() {
+// Lazy-load the wedding app (code-split)
+const WeddingApp = lazy(() => import('./wedding-app/WeddingApp'));
+
+function InvitationPage() {
   const [showCarousel, setShowCarousel] = useState(false);
 
   return (
@@ -16,6 +20,29 @@ function App() {
         <WeddingInvitation onEnvelopeOpen={() => setShowCarousel(true)} />
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      {/* Existing wedding invitation site */}
+      <Route path="/" element={<InvitationPage />} />
+
+      {/* Wedding App — all /app/* routes */}
+      <Route
+        path="/app/*"
+        element={
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+              <div className="w-8 h-8 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
+            </div>
+          }>
+            <WeddingApp />
+          </Suspense>
+        }
+      />
+    </Routes>
   );
 }
 
