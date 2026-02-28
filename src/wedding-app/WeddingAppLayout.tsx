@@ -1,9 +1,8 @@
-// Wedding App Layout — Sleek modern shell
-// Floating glass bottom nav, clean top bar
+// Wedding App Layout — Light, warm, Instagram-style
+// Bottom tab bar with terracotta active state
 
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Video, Camera, CalendarDays, Images, ChevronLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
 import UploadIndicator from './components/UploadIndicator';
 
 const NAV_ITEMS = [
@@ -28,19 +27,19 @@ export default function WeddingAppLayout() {
   const showBackBar = pageTitle[location.pathname] !== undefined;
 
   return (
-    <div className="min-h-[100dvh] bg-[#050505] text-[#f5f0e8] flex flex-col">
-      {/* Top bar with back button — inner pages only */}
+    <div className="min-h-[100dvh] bg-[#FEFCF9] text-[#2C2825] flex flex-col">
+      {/* Top bar — inner pages only */}
       {showBackBar && (
-        <header className="sticky top-0 z-30 backdrop-blur-xl bg-[#050505]/80 border-b border-white/[0.04]">
+        <header className="sticky top-0 z-30 bg-[#FEFCF9]/90 backdrop-blur-md border-b border-[#E8DDD3]/60">
           <div className="flex items-center h-12 px-4">
             <button
               onClick={() => navigate('/app/home')}
-              className="flex items-center gap-1 text-white/50 hover:text-white transition-colors -ml-1"
+              className="flex items-center gap-1 text-[#8A8078] hover:text-[#2C2825] transition-colors -ml-1"
             >
               <ChevronLeft size={20} strokeWidth={1.5} />
-              <span className="text-[13px] font-medium tracking-wide">Back</span>
+              <span className="text-[13px] font-medium">Back</span>
             </button>
-            <span className="absolute left-1/2 -translate-x-1/2 text-[13px] font-semibold tracking-widest uppercase text-white/40">
+            <span className="absolute left-1/2 -translate-x-1/2 text-[13px] font-semibold tracking-wide text-[#2C2825]">
               {pageTitle[location.pathname]}
             </span>
           </div>
@@ -53,9 +52,9 @@ export default function WeddingAppLayout() {
         <Outlet />
       </main>
 
-      {/* Floating bottom nav — glass pill */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pb-[max(env(safe-area-inset-bottom),8px)] px-4">
-        <nav className="flex items-center gap-1 bg-[#111]/80 backdrop-blur-2xl border border-white/[0.06] rounded-2xl px-2 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      {/* Bottom tab bar — Instagram style */}
+      <nav className="sticky bottom-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8DDD3]/50 px-2 pb-[env(safe-area-inset-bottom)]">
+        <div className="flex justify-around items-center h-14">
           {NAV_ITEMS.map(item => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
@@ -63,35 +62,25 @@ export default function WeddingAppLayout() {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="relative flex flex-col items-center justify-center w-[56px] h-[44px] rounded-xl transition-all duration-200"
+                className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 transition-colors"
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="nav-pill"
-                    className="absolute inset-0 bg-white/[0.08] rounded-xl"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  />
-                )}
                 <Icon
-                  size={20}
+                  size={22}
                   strokeWidth={isActive ? 2 : 1.5}
-                  className={`relative z-10 transition-colors duration-200 ${
-                    isActive ? 'text-[#c9a84c]' : 'text-white/35'
+                  className={`transition-colors ${
+                    isActive ? 'text-[#C4704B]' : 'text-[#B8AFA6]'
                   }`}
                 />
-                <span className={`relative z-10 text-[9px] mt-0.5 font-medium tracking-wide transition-colors duration-200 ${
-                  isActive ? 'text-[#c9a84c]' : 'text-white/30'
+                <span className={`text-[10px] font-medium transition-colors ${
+                  isActive ? 'text-[#C4704B]' : 'text-[#B8AFA6]'
                 }`}>
                   {item.label}
                 </span>
               </button>
             );
           })}
-        </nav>
-      </div>
-
-      {/* Spacer for fixed nav */}
-      <div className="h-[84px]" />
+        </div>
+      </nav>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 // Home Screen — /app/home
-// Bento grid with glassmorphic cards and gradient mesh background
+// Warm card grid with Barcelona sunshine feel
 
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Video, Camera, CalendarDays, Users, Images, ChevronRight, Sparkles } from 'lucide-react';
+import { Video, Camera, CalendarDays, Users, Images, Sparkles } from 'lucide-react';
 import Monogram from '../components/Monogram';
 import { getStoredSession } from '../lib/session';
 import { getCurrentEvent, getNextEvent } from '../constants';
@@ -12,47 +12,37 @@ const FEATURES = [
   {
     icon: Video,
     title: 'Video Message',
-    subtitle: 'Record a wish',
+    subtitle: 'Record a wish for the couple',
     path: '/app/video',
-    gradient: 'from-rose-500/20 to-orange-500/10',
-    iconColor: '#f87171',
-    span: 'col-span-1',
+    iconColor: '#C4704B',
   },
   {
     icon: Camera,
     title: 'Photo Booth',
-    subtitle: 'Strike a pose',
+    subtitle: 'Take photos with fun filters',
     path: '/app/photo',
-    gradient: 'from-amber-500/20 to-yellow-500/10',
-    iconColor: '#c9a84c',
-    span: 'col-span-1',
+    iconColor: '#2B5F8A',
   },
   {
     icon: CalendarDays,
     title: 'Schedule',
     subtitle: 'Wedding weekend events',
     path: '/app/schedule',
-    gradient: 'from-emerald-500/15 to-teal-500/10',
-    iconColor: '#6ee7b7',
-    span: 'col-span-2',
+    iconColor: '#7A8B5C',
   },
   {
     icon: Users,
     title: 'Guests',
-    subtitle: 'Guest directory',
+    subtitle: 'Find your fellow guests',
     path: '/app/directory',
-    gradient: 'from-pink-500/15 to-rose-500/10',
-    iconColor: '#f9a8d4',
-    span: 'col-span-1',
+    iconColor: '#E8865A',
   },
   {
     icon: Images,
-    title: 'Gallery',
-    subtitle: 'Your captures',
+    title: 'My Gallery',
+    subtitle: 'View your photos & videos',
     path: '/app/gallery',
-    gradient: 'from-violet-500/15 to-purple-500/10',
-    iconColor: '#c4b5fd',
-    span: 'col-span-1',
+    iconColor: '#D4A853',
   },
 ];
 
@@ -65,93 +55,82 @@ export default function HomeScreen() {
   const firstName = session?.guest?.firstName || 'Guest';
 
   return (
-    <div className="min-h-full px-5 pt-8 pb-4">
-      {/* Gradient mesh background accent */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-[40%] -right-[20%] w-[70%] h-[60%] rounded-full bg-[#c9a84c]/[0.04] blur-[100px]" />
-        <div className="absolute -bottom-[30%] -left-[20%] w-[60%] h-[50%] rounded-full bg-rose-500/[0.03] blur-[100px]" />
-      </div>
-
+    <div className="min-h-full px-5 pt-6 pb-4 bg-[#FEFCF9]">
       {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: -12 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative z-10 flex items-center justify-between mb-8"
+        transition={{ duration: 0.4 }}
+        className="flex items-center justify-between mb-6"
       >
         <div>
-          <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-white/30 mb-1">Welcome back</p>
-          <h1 className="text-[28px] font-serif font-semibold text-white leading-tight">
+          <p className="text-[13px] text-[#8A8078] mb-0.5">Welcome,</p>
+          <h1 className="text-[24px] font-serif font-semibold text-[#2C2825] leading-tight">
             {firstName}
           </h1>
         </div>
-        <Monogram size={48} className="opacity-60" />
+        <Monogram size={44} />
       </motion.div>
 
-      {/* Active event banner */}
+      {/* Current event banner */}
       {activeEvent && (
         <motion.button
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
+          transition={{ delay: 0.08, duration: 0.4 }}
           onClick={() => navigate('/app/schedule')}
-          className="relative z-10 w-full mb-8 group"
+          className="w-full mb-6 group text-left"
         >
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#c9a84c]/10 via-[#c9a84c]/5 to-transparent border border-[#c9a84c]/10 p-5">
-            {/* Subtle shimmer */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#c9a84c]/[0.03] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-
-            <div className="flex items-center justify-between relative">
+          <div className="bg-white rounded-2xl p-4 shadow-[0_2px_12px_rgba(44,40,37,0.06)] border border-[#E8DDD3]/40">
+            <div className="flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <Sparkles size={12} className="text-[#c9a84c]" />
-                  <span className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#c9a84c]">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Sparkles size={13} className="text-[#D4A853]" />
+                  <span className="text-[11px] font-semibold tracking-wide uppercase text-[#D4A853]">
                     {currentEvent ? 'Happening Now' : 'Up Next'}
                   </span>
                 </div>
-                <h2 className="text-lg font-serif font-semibold text-white">
+                <h2 className="text-[17px] font-serif font-semibold text-[#2C2825]">
                   {activeEvent.name}
                 </h2>
-                <p className="text-[13px] text-white/40 mt-0.5">
+                <p className="text-[13px] text-[#8A8078] mt-0.5">
                   {activeEvent.venueName} · {new Date(activeEvent.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </p>
               </div>
-              <ChevronRight size={20} className="text-white/20 group-hover:text-[#c9a84c]/60 transition-colors" />
+              <div className="w-8 h-8 rounded-full bg-[#F7F3ED] flex items-center justify-center group-hover:bg-[#E8DDD3] transition-colors">
+                <CalendarDays size={16} className="text-[#C4704B]" strokeWidth={1.5} />
+              </div>
             </div>
           </div>
         </motion.button>
       )}
 
-      {/* Bento grid */}
-      <div className="relative z-10 grid grid-cols-2 gap-3">
+      {/* Feature cards — 2 column grid */}
+      <div className="grid grid-cols-2 gap-3">
         {FEATURES.map((feat, i) => {
           const Icon = feat.icon;
           return (
             <motion.button
               key={feat.path}
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 + i * 0.05, duration: 0.4 }}
+              transition={{ delay: 0.12 + i * 0.05, duration: 0.35 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate(feat.path)}
-              className={`${feat.span} relative overflow-hidden rounded-2xl border border-white/[0.06] p-5 text-left group transition-all duration-300 hover:border-white/[0.1]`}
+              className="bg-white rounded-2xl p-4 text-left shadow-[0_2px_12px_rgba(44,40,37,0.06)] border border-[#E8DDD3]/30 hover:shadow-[0_4px_16px_rgba(44,40,37,0.1)] transition-shadow duration-200"
             >
-              {/* Gradient background */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${feat.gradient} opacity-60 group-hover:opacity-100 transition-opacity duration-300`} />
-              {/* Glass layer */}
-              <div className="absolute inset-0 bg-white/[0.02]" />
-
-              <div className="relative z-10">
-                <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center mb-4">
-                  <Icon size={20} style={{ color: feat.iconColor }} strokeWidth={1.5} />
-                </div>
-                <h3 className="font-sans font-semibold text-[15px] text-white/90 group-hover:text-white transition-colors">
-                  {feat.title}
-                </h3>
-                <p className="text-[12px] text-white/35 mt-0.5">
-                  {feat.subtitle}
-                </p>
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
+                style={{ backgroundColor: `${feat.iconColor}12` }}
+              >
+                <Icon size={22} style={{ color: feat.iconColor }} strokeWidth={1.5} />
               </div>
+              <h3 className="font-serif font-semibold text-[15px] text-[#2C2825]">
+                {feat.title}
+              </h3>
+              <p className="text-[12px] text-[#8A8078] mt-0.5 leading-relaxed">
+                {feat.subtitle}
+              </p>
             </motion.button>
           );
         })}

@@ -1,5 +1,5 @@
 // Photo Booth Screen — /app/photo
-// Full-screen camera with sleek filter carousel and capture
+// Clean Apple camera feel — bright viewfinder, terracotta ring on active filter
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -181,14 +181,13 @@ export default function PhotoScreen() {
 
         {/* Countdown */}
         {countdown !== null && (
-          <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/30">
+          <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/20">
             <motion.span
               key={countdown}
               initial={{ scale: 2, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.5, opacity: 0 }}
-              className="text-white text-7xl font-serif font-bold"
-              style={{ textShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
+              className="text-white text-7xl font-serif font-bold drop-shadow-lg"
             >
               {countdown}
             </motion.span>
@@ -196,64 +195,62 @@ export default function PhotoScreen() {
         )}
 
         {/* Top controls */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),12px)] pb-2">
-          <button
-            onClick={() => { stopStream(stream); navigate('/app/home'); }}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white/70 hover:text-white transition-colors"
-          >
-            <X size={18} strokeWidth={1.5} />
-          </button>
+        <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/40 to-transparent">
+          <div className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),12px)] pb-6">
+            <button
+              onClick={() => { stopStream(stream); navigate('/app/home'); }}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-sm text-white"
+            >
+              <X size={18} strokeWidth={1.5} />
+            </button>
 
-          <p className="text-white/40 text-[11px] font-medium tracking-wide">{guestName}</p>
+            <p className="text-white/70 text-[12px] font-medium">{guestName}</p>
 
-          <button
-            onClick={toggleCamera}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white/70 hover:text-white transition-colors"
-          >
-            <SwitchCamera size={16} strokeWidth={1.5} />
-          </button>
+            <button
+              onClick={toggleCamera}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-sm text-white"
+            >
+              <SwitchCamera size={16} strokeWidth={1.5} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Filter carousel */}
-      <div className="bg-black/95 px-2 py-3">
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory">
+      {/* Filter carousel — Instagram style */}
+      <div className="bg-[#1a1a1a] px-2 py-3">
+        <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory px-2">
           {availableFilters.map(filter => (
             <button
               key={filter.id}
               onClick={() => setSelectedFilter(filter)}
-              className={`flex-shrink-0 snap-center flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 ${
-                selectedFilter.id === filter.id
-                  ? 'bg-white/[0.08]'
-                  : 'bg-transparent hover:bg-white/[0.03]'
-              }`}
+              className="flex-shrink-0 snap-center flex flex-col items-center gap-1.5"
             >
               <div
-                className={`w-11 h-11 rounded-full border-2 transition-all duration-200 ${
-                  selectedFilter.id === filter.id ? 'border-[#c9a84c] scale-105' : 'border-white/[0.08]'
+                className={`w-12 h-12 rounded-full transition-all duration-200 ${
+                  selectedFilter.id === filter.id ? 'ring-2 ring-[#C4704B] ring-offset-2 ring-offset-[#1a1a1a] scale-105' : ''
                 }`}
                 style={{
                   background: filter.id === 'none'
-                    ? 'linear-gradient(135deg, #555, #888)'
+                    ? 'linear-gradient(135deg, #888, #bbb)'
                     : filter.id === 'bw-classic'
-                    ? 'linear-gradient(135deg, #333, #eee)'
+                    ? 'linear-gradient(135deg, #444, #eee)'
                     : filter.id === 'golden-hour'
-                    ? 'linear-gradient(135deg, #c9a84c, #e5c47a)'
+                    ? 'linear-gradient(135deg, #D4A853, #E5C47A)'
                     : filter.id === 'vintage-warmth'
                     ? 'linear-gradient(135deg, #8B6914, #D4A853)'
                     : filter.id === 'film-grain'
                     ? 'linear-gradient(135deg, #9B8B6C, #C4B090)'
                     : filter.event === 'haldi'
-                    ? 'linear-gradient(135deg, #D4A853, #E5C47A)'
+                    ? 'linear-gradient(135deg, #D4A853, #E8C4B8)'
                     : filter.event === 'sangeet'
-                    ? 'linear-gradient(135deg, #9B59B6, #E74C9C)'
+                    ? 'linear-gradient(135deg, #E8865A, #C4704B)'
                     : filter.event === 'wedding_reception'
-                    ? 'linear-gradient(135deg, #2E86AB, #C9A84C)'
-                    : 'linear-gradient(135deg, #555, #888)',
+                    ? 'linear-gradient(135deg, #2B5F8A, #7A8B5C)'
+                    : 'linear-gradient(135deg, #888, #bbb)',
                 }}
               />
-              <span className={`text-[9px] font-medium tracking-wide whitespace-nowrap transition-colors duration-200 ${
-                selectedFilter.id === filter.id ? 'text-[#c9a84c]' : 'text-white/30'
+              <span className={`text-[9px] font-medium whitespace-nowrap transition-colors ${
+                selectedFilter.id === filter.id ? 'text-[#C4704B]' : 'text-white/40'
               }`}>
                 {filter.name}
               </span>
@@ -262,15 +259,15 @@ export default function PhotoScreen() {
         </div>
       </div>
 
-      {/* Shutter button */}
+      {/* Shutter button — iPhone camera style: white with thin terracotta ring */}
       <div className="bg-black px-4 py-5 pb-[max(env(safe-area-inset-bottom),16px)] flex items-center justify-center">
         <motion.button
           onClick={capturePhoto}
           disabled={!cameraReady || countdown !== null}
           whileTap={{ scale: 0.92 }}
-          className="w-[72px] h-[72px] rounded-full border-[3px] border-white/70 flex items-center justify-center disabled:opacity-30 transition-opacity"
+          className="w-[72px] h-[72px] rounded-full border-[3px] border-[#C4704B]/60 flex items-center justify-center disabled:opacity-30 transition-opacity"
         >
-          <div className="w-[60px] h-[60px] rounded-full bg-white transition-transform" />
+          <div className="w-[60px] h-[60px] rounded-full bg-white" />
         </motion.button>
       </div>
     </div>

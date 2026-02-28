@@ -1,5 +1,5 @@
 // Video Message Screen — /app/video
-// Sleek full-screen camera with mode toggle and prompt cards
+// Full-screen camera — bright, party feel, Instagram Stories-style
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -183,7 +183,7 @@ export default function VideoScreen() {
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col">
-      {/* Camera viewfinder */}
+      {/* Camera viewfinder — takes up most of the screen */}
       <div className="relative flex-1 overflow-hidden">
         <video
           ref={videoRef}
@@ -194,62 +194,62 @@ export default function VideoScreen() {
           style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
         />
 
-        {/* Cinematic gradient overlays */}
-        <div className="absolute top-0 left-0 right-0 h-[15%] bg-gradient-to-b from-black/70 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-[15%] bg-gradient-to-t from-black/70 to-transparent" />
+        {/* Soft gradient overlays for readability */}
+        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
 
         {/* Top controls */}
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),12px)] pb-2">
           <button
             onClick={() => { stopStream(stream); navigate('/app/home'); }}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white/70 hover:text-white transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-sm text-white"
           >
             <X size={18} strokeWidth={1.5} />
           </button>
 
-          <p className="text-white/40 text-[11px] font-medium tracking-wide">{guestName}</p>
+          <p className="text-white/70 text-[12px] font-medium">{guestName}</p>
 
           <div className="flex gap-2">
             <button
               onClick={toggleMute}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white/70 hover:text-white transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-sm text-white"
             >
               {isMuted ? <MicOff size={16} strokeWidth={1.5} /> : <Mic size={16} strokeWidth={1.5} />}
             </button>
             <button
               onClick={toggleCamera}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white/70 hover:text-white transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-sm text-white"
             >
               <SwitchCamera size={16} strokeWidth={1.5} />
             </button>
           </div>
         </div>
 
-        {/* Mode toggle pill */}
+        {/* Mode toggle — Instagram Stories style */}
         {!isRecording && (
-          <div className="absolute top-[70px] left-1/2 -translate-x-1/2 z-10">
-            <div className="flex bg-black/30 backdrop-blur-md rounded-full p-0.5 border border-white/[0.06]">
+          <div className="absolute top-[68px] left-1/2 -translate-x-1/2 z-10">
+            <div className="flex bg-black/25 backdrop-blur-md rounded-full p-0.5">
               <button
                 onClick={() => setMode('prompted')}
-                className={`px-5 py-2 rounded-full text-[11px] font-semibold tracking-wide transition-all duration-200 ${
-                  mode === 'prompted' ? 'bg-white/15 text-white' : 'text-white/40'
+                className={`px-5 py-2 rounded-full text-[12px] font-semibold transition-all ${
+                  mode === 'prompted' ? 'bg-white text-[#2C2825]' : 'text-white/70'
                 }`}
               >
-                Prompted
+                Send a Message
               </button>
               <button
                 onClick={() => setMode('freeform')}
-                className={`px-5 py-2 rounded-full text-[11px] font-semibold tracking-wide transition-all duration-200 ${
-                  mode === 'freeform' ? 'bg-white/15 text-white' : 'text-white/40'
+                className={`px-5 py-2 rounded-full text-[12px] font-semibold transition-all ${
+                  mode === 'freeform' ? 'bg-white text-[#2C2825]' : 'text-white/70'
                 }`}
               >
-                Freeform
+                Just Record
               </button>
             </div>
           </div>
         )}
 
-        {/* Prompt card */}
+        {/* Prompt card — frosted glass pill */}
         <AnimatePresence mode="wait">
           {mode === 'prompted' && !isRecording && cameraReady && (
             <motion.div
@@ -259,19 +259,19 @@ export default function VideoScreen() {
               exit={{ opacity: 0, y: -20 }}
               className="absolute bottom-28 left-4 right-4 z-10"
             >
-              <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-6 border border-white/[0.06]">
-                <p className="text-white font-serif text-lg leading-relaxed text-center">
+              <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-5 shadow-lg">
+                <p className="text-[#2C2825] font-serif text-lg leading-relaxed text-center">
                   {prompts[currentPromptIndex]}
                 </p>
-                <div className="flex justify-between items-center mt-4">
-                  <span className="text-white/25 text-[11px] font-medium tracking-wide">
-                    {currentPromptIndex + 1} / {prompts.length}
+                <div className="flex justify-between items-center mt-3">
+                  <span className="text-[#B8AFA6] text-[11px] font-medium">
+                    {currentPromptIndex + 1} of {prompts.length}
                   </span>
                   <button
                     onClick={skipPrompt}
-                    className="flex items-center gap-1 text-white/30 text-[11px] font-medium hover:text-white/60 transition-colors"
+                    className="flex items-center gap-1 text-[#C4704B] text-[12px] font-medium"
                   >
-                    Skip <SkipForward size={11} />
+                    Skip <SkipForward size={12} />
                   </button>
                 </div>
               </div>
@@ -279,12 +279,12 @@ export default function VideoScreen() {
           )}
         </AnimatePresence>
 
-        {/* Timer during recording */}
+        {/* Timer */}
         {isRecording && (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2.5 bg-black/40 backdrop-blur-md rounded-full px-4 py-2 border border-white/[0.06]">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-white font-mono text-[13px]">{formatTime(timer)}</span>
-            <span className="text-white/25 text-[11px]">/ {formatTime(maxDuration)}</span>
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2.5 bg-white/90 backdrop-blur-md rounded-full px-4 py-2 shadow-sm">
+            <div className="w-2.5 h-2.5 bg-[#C4704B] rounded-full animate-pulse" />
+            <span className="text-[#2C2825] font-mono text-[13px] font-medium">{formatTime(timer)}</span>
+            <span className="text-[#B8AFA6] text-[11px]">/ {formatTime(maxDuration)}</span>
           </div>
         )}
 
@@ -306,7 +306,7 @@ export default function VideoScreen() {
                 stopStream(stream);
                 navigate('/app/review');
               }}
-              className="w-full flex items-center justify-center gap-2 bg-[#c9a84c] text-[#0a0a0a] font-sans font-semibold rounded-2xl py-3.5 shadow-lg shadow-[#c9a84c]/20"
+              className="w-full flex items-center justify-center gap-2 bg-[#C4704B] text-white font-sans font-semibold rounded-full py-3.5 shadow-lg"
             >
               Review Messages <ChevronRight size={18} />
             </motion.button>
@@ -314,8 +314,8 @@ export default function VideoScreen() {
         )}
       </div>
 
-      {/* Bottom controls */}
-      <div className="bg-black px-4 py-6 pb-[max(env(safe-area-inset-bottom),16px)] flex items-center justify-center">
+      {/* Bottom controls — terracotta record button */}
+      <div className="bg-black px-4 py-5 pb-[max(env(safe-area-inset-bottom),16px)] flex items-center justify-center">
         <button
           onClick={isRecording ? stopRecording : startRecording}
           disabled={!cameraReady}
@@ -327,13 +327,13 @@ export default function VideoScreen() {
               <circle
                 cx="44" cy="44" r="40"
                 fill="none"
-                stroke="rgba(196,92,92,0.3)"
+                stroke="rgba(196,112,75,0.3)"
                 strokeWidth="3"
               />
               <circle
                 cx="44" cy="44" r="40"
                 fill="none"
-                stroke="#ef4444"
+                stroke="#C4704B"
                 strokeWidth="3"
                 strokeLinecap="round"
                 strokeDasharray={`${2 * Math.PI * 40}`}
@@ -343,10 +343,9 @@ export default function VideoScreen() {
             </svg>
           )}
           {/* Outer ring */}
-          <div className={`w-20 h-20 rounded-full border-[3px] flex items-center justify-center transition-all duration-200 ${
-            isRecording ? 'border-red-500/60' : 'border-white/60'
+          <div className={`w-20 h-20 rounded-full border-[3px] flex items-center justify-center transition-all ${
+            isRecording ? 'border-[#C4704B]' : 'border-white/70'
           }`}>
-            {/* Inner shape */}
             <motion.div
               animate={{
                 borderRadius: isRecording ? '8px' : '50%',
@@ -354,7 +353,8 @@ export default function VideoScreen() {
                 height: isRecording ? 26 : 58,
               }}
               transition={{ duration: 0.2 }}
-              className={isRecording ? 'bg-red-500' : 'bg-red-500/90'}
+              className="bg-[#C4704B]"
+              style={!isRecording ? { boxShadow: '0 0 20px rgba(196,112,75,0.4)' } : {}}
             />
           </div>
         </button>

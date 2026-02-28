@@ -1,5 +1,5 @@
 // Registration Screen — /app
-// Dramatic entry with gradient mesh and frosted glass form
+// Light, airy, Barcelona sunshine — warm cream with terracotta accents
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -100,114 +100,109 @@ export default function Registration() {
   }, []);
 
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center relative overflow-hidden px-6 bg-[#050505]">
-      {/* Gradient mesh background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[50%] rounded-full bg-[#c9a84c]/[0.06] blur-[120px] animate-pulse" style={{ animationDuration: '6s' }} />
-        <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[45%] rounded-full bg-rose-600/[0.04] blur-[100px] animate-pulse" style={{ animationDuration: '8s' }} />
-        <div className="absolute top-[40%] left-[50%] w-[30%] h-[30%] rounded-full bg-violet-600/[0.03] blur-[80px]" />
-      </div>
-
-      {/* Noise texture overlay */}
-      <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'0.5\'/%3E%3C/svg%3E")' }} />
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center relative overflow-hidden px-6 bg-[#FEFCF9]">
+      {/* Warm subtle gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#FEFCF9] via-[#FDF6EE] to-[#F7F3ED]" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
         className="relative z-10 w-full max-w-sm flex flex-col items-center"
       >
         {/* Monogram */}
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={{ scale: 0.85, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
+          transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
         >
-          <Monogram size={100} />
+          <Monogram size={80} />
         </motion.div>
 
         {/* Welcome text */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-          className="text-center mt-8 mb-10"
+          transition={{ delay: 0.4, duration: 0.7 }}
+          className="text-center mt-6 mb-10"
         >
-          <h1 className="font-serif text-[32px] font-semibold text-white tracking-wide leading-tight">
+          <h1 className="font-serif text-[28px] font-semibold text-[#2C2825] leading-tight">
             Welcome
           </h1>
-          <p className="text-[14px] text-white/30 mt-2 tracking-wide">
-            Neil & Shriya's Wedding
+          <p className="text-[15px] text-[#8A8078] mt-2">
+            to Neil & Shriya's Wedding
           </p>
         </motion.div>
 
-        {/* Frosted glass form card */}
+        {/* Form */}
         <motion.form
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.6 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
           onSubmit={handleSubmit}
           className="w-full space-y-3"
         >
-          <div className="bg-white/[0.04] backdrop-blur-xl rounded-2xl border border-white/[0.06] p-5 space-y-3">
-            <div className="relative" ref={suggestionsRef}>
-              <input
-                type="text"
-                placeholder="First name"
-                value={firstName}
-                onChange={(e) => handleFirstNameChange(e.target.value)}
-                autoComplete="off"
-                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-3.5 text-white placeholder-white/25 font-sans text-[15px] focus:outline-none focus:border-[#c9a84c]/40 focus:bg-white/[0.07] transition-all duration-200"
-              />
+          <p className="text-[14px] text-[#8A8078] text-center mb-4">
+            Enter your name to get started
+          </p>
 
-              <AnimatePresence>
-                {showSuggestions && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-full left-0 right-0 mt-1.5 bg-[#1a1a1f]/95 backdrop-blur-xl border border-white/[0.08] rounded-xl overflow-hidden shadow-2xl z-20"
-                  >
-                    {suggestions.map((guest, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => selectSuggestion(guest)}
-                        className="w-full text-left px-4 py-3 text-[14px] text-white/80 hover:bg-white/[0.05] transition-colors border-b border-white/[0.04] last:border-0"
-                      >
-                        <span className="font-medium text-white">{guest.firstName}</span>{' '}
-                        <span className="text-white/40">{guest.lastName}</span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
+          <div className="relative" ref={suggestionsRef}>
             <input
               type="text"
-              placeholder="Last name"
-              value={lastName}
-              onChange={(e) => handleLastNameChange(e.target.value)}
+              placeholder="First name"
+              value={firstName}
+              onChange={(e) => handleFirstNameChange(e.target.value)}
               autoComplete="off"
-              className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-3.5 text-white placeholder-white/25 font-sans text-[15px] focus:outline-none focus:border-[#c9a84c]/40 focus:bg-white/[0.07] transition-all duration-200"
+              className="w-full bg-[#F7F3ED] border border-[#E8DDD3] rounded-xl px-4 py-3.5 text-[#2C2825] placeholder-[#B8AFA6] font-sans text-[16px] focus:outline-none focus:border-[#C4704B]/50 focus:ring-2 focus:ring-[#C4704B]/10 transition-all"
             />
+
+            <AnimatePresence>
+              {showSuggestions && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#E8DDD3] rounded-xl overflow-hidden shadow-lg z-20"
+                >
+                  {suggestions.map((guest, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => selectSuggestion(guest)}
+                      className="w-full text-left px-4 py-3 text-[15px] text-[#2C2825] hover:bg-[#F7F3ED] transition-colors border-b border-[#F7F3ED] last:border-0"
+                    >
+                      <span className="font-medium text-[#C4704B]">{guest.firstName}</span>{' '}
+                      <span className="text-[#8A8078]">{guest.lastName}</span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
+          <input
+            type="text"
+            placeholder="Last name"
+            value={lastName}
+            onChange={(e) => handleLastNameChange(e.target.value)}
+            autoComplete="off"
+            className="w-full bg-[#F7F3ED] border border-[#E8DDD3] rounded-xl px-4 py-3.5 text-[#2C2825] placeholder-[#B8AFA6] font-sans text-[16px] focus:outline-none focus:border-[#C4704B]/50 focus:ring-2 focus:ring-[#C4704B]/10 transition-all"
+          />
+
           {error && (
-            <p className="text-red-400/80 text-[13px] text-center">{error}</p>
+            <p className="text-[#D4726A] text-[13px] text-center">{error}</p>
           )}
 
           <motion.button
             type="submit"
             disabled={isSubmitting || !firstName.trim() || !lastName.trim()}
             whileTap={{ scale: 0.97 }}
-            className="w-full bg-[#c9a84c] hover:bg-[#d4b55a] text-[#0a0a0a] font-sans font-semibold text-[15px] rounded-xl py-3.5 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-[#c9a84c]/10"
+            className="w-full bg-[#C4704B] hover:bg-[#B5613E] text-white font-sans font-semibold text-[15px] rounded-full py-4 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-sm mt-2"
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-[#0a0a0a]/30 border-t-[#0a0a0a] rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Entering...
               </span>
             ) : (

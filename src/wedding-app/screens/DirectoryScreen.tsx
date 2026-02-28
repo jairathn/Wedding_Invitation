@@ -1,10 +1,12 @@
 // Guest Directory — /app/directory
-// Clean alphabetical list with glassmorphic search
+// Clean Instagram-contacts-list energy, warm and spacious
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
 import { getAllGuests, searchGuests, type GuestSuggestion } from '../lib/guest-search';
+
+const AVATAR_COLORS = ['#C4704B', '#2B5F8A', '#7A8B5C', '#D4A853', '#E8865A', '#E8C4B8'];
 
 export default function DirectoryScreen() {
   const [query, setQuery] = useState('');
@@ -29,16 +31,16 @@ export default function DirectoryScreen() {
   }, [displayedGuests]);
 
   return (
-    <div className="min-h-full px-5 py-6">
+    <div className="min-h-full px-5 py-6 bg-[#FEFCF9]">
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
+        className="mb-5"
       >
-        <h1 className="font-serif text-[26px] font-semibold text-white">
+        <h1 className="font-serif text-[24px] font-semibold text-[#2C2825]">
           Guests
         </h1>
-        <p className="text-[13px] text-white/25 mt-1">
+        <p className="text-[13px] text-[#8A8078] mt-1">
           {allGuests.length} celebrating together
         </p>
       </motion.div>
@@ -48,20 +50,20 @@ export default function DirectoryScreen() {
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
-        className="relative mb-6"
+        className="relative mb-5"
       >
-        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#B8AFA6]" />
         <input
           type="text"
-          placeholder="Search by name..."
+          placeholder="Search guests..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full bg-white/[0.04] border border-white/[0.06] rounded-xl pl-11 pr-4 py-3 text-white placeholder-white/20 font-sans text-[14px] focus:outline-none focus:border-[#c9a84c]/30 focus:bg-white/[0.06] transition-all duration-200"
+          className="w-full bg-[#F7F3ED] border border-[#E8DDD3] rounded-xl pl-10 pr-4 py-3 text-[#2C2825] placeholder-[#B8AFA6] font-sans text-[14px] focus:outline-none focus:border-[#C4704B]/40 focus:ring-2 focus:ring-[#C4704B]/10 transition-all"
         />
       </motion.div>
 
       {/* Grouped list */}
-      <div className="space-y-5">
+      <div className="space-y-4">
         {Object.entries(grouped).map(([letter, guests], gi) => (
           <motion.div
             key={letter}
@@ -69,23 +71,27 @@ export default function DirectoryScreen() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.05 + gi * 0.02 }}
           >
-            <h3 className="text-[11px] font-semibold text-[#c9a84c]/60 tracking-[0.15em] uppercase mb-2 pl-1">
+            <h3 className="text-[11px] font-semibold text-[#C4704B] tracking-wider uppercase mb-2 pl-1">
               {letter}
             </h3>
             <div className="space-y-0.5">
               {guests.map((guest, i) => {
                 const initials = `${guest.firstName.charAt(0)}${guest.lastName.charAt(0)}`;
+                const bgColor = AVATAR_COLORS[(guest.firstName.charCodeAt(0) + guest.lastName.charCodeAt(0)) % AVATAR_COLORS.length];
                 return (
                   <div
                     key={`${guest.fullName}-${i}`}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.03] transition-colors"
+                    className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-[#F7F3ED] transition-colors"
                   >
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-white/[0.08] to-white/[0.03] flex items-center justify-center shrink-0">
-                      <span className="text-[11px] font-semibold text-white/40">{initials}</span>
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${bgColor}18` }}
+                    >
+                      <span className="text-[11px] font-semibold" style={{ color: bgColor }}>{initials}</span>
                     </div>
-                    <span className="text-[14px] text-white/70 font-sans">
+                    <span className="text-[14px] text-[#2C2825] font-sans">
                       {guest.firstName}{' '}
-                      <span className="text-white/30">{guest.lastName}</span>
+                      <span className="text-[#8A8078]">{guest.lastName}</span>
                     </span>
                   </div>
                 );
@@ -97,7 +103,7 @@ export default function DirectoryScreen() {
 
       {displayedGuests.length === 0 && (
         <div className="text-center py-16">
-          <p className="text-white/20 text-[14px]">No guests found</p>
+          <p className="text-[#B8AFA6] text-[14px]">No guests found</p>
         </div>
       )}
     </div>

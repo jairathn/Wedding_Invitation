@@ -51,8 +51,8 @@ function App() {
         path="/app/*"
         element={
           <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-              <div className="w-8 h-8 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
+            <div className="min-h-screen flex items-center justify-center bg-[#FEFCF9]">
+              <div className="w-8 h-8 border-2 border-[#E8DDD3] border-t-[#C4704B] rounded-full animate-spin" />
             </div>
           }>
             <WeddingApp />

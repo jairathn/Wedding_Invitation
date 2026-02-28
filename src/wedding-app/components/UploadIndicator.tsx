@@ -18,9 +18,9 @@ export default function UploadIndicator() {
   if (count === 0) return null;
 
   return (
-    <div className="fixed top-3 right-3 z-40 flex items-center gap-2 bg-[#111]/80 backdrop-blur-xl border border-white/[0.06] rounded-full px-3.5 py-2 shadow-lg">
-      <Upload size={13} className="text-amber-400 animate-pulse" strokeWidth={1.5} />
-      <span className="text-amber-400/80 text-[11px] font-medium tracking-wide">{count} pending</span>
+    <div className="fixed top-3 right-3 z-40 flex items-center gap-2 bg-white border border-[#E8DDD3] rounded-full px-3.5 py-2 shadow-sm">
+      <Upload size={13} className="text-[#D4A853] animate-pulse" strokeWidth={1.5} />
+      <span className="text-[#D4A853] text-[11px] font-semibold">{count} uploading...</span>
     </div>
   );
 }

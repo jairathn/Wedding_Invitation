@@ -1,10 +1,10 @@
 // Review & Save Screen — /app/review
-// Full-bleed media preview with sleek save actions
+// Bright, warm save experience with terracotta CTAs
 
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Download, Upload, Star, Camera, RotateCcw, Check } from 'lucide-react';
+import { Download, Upload, Star, Camera, ArrowLeft, Check } from 'lucide-react';
 import Confetti from '../components/Confetti';
 import { getStoredSession } from '../lib/session';
 import { addToQueue } from '../lib/upload-queue';
@@ -54,7 +54,6 @@ export default function ReviewScreen() {
 
   const currentMedia = mediaItems[currentIndex];
 
-  // Save to device — uses native share sheet on mobile, falls back to download
   const saveToDevice = async () => {
     if (!capturedBlobs[currentIndex]) return;
     const blob = capturedBlobs[currentIndex].blob;
@@ -134,40 +133,49 @@ export default function ReviewScreen() {
 
   if (!currentMedia) {
     return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-[#050505]">
-        <p className="text-white/20">No media to review</p>
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#FEFCF9]">
+        <p className="text-[#B8AFA6]">No media to review</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-[#050505]">
+    <div className="min-h-[100dvh] flex flex-col bg-[#FEFCF9]">
       <Confetti active={showConfetti} />
 
-      {/* Media preview — full bleed */}
-      <div className="flex-1 flex items-center justify-center p-4 pt-[max(env(safe-area-inset-top),16px)]">
+      {/* Top bar */}
+      <div className="flex items-center px-4 pt-[max(env(safe-area-inset-top),12px)] pb-2">
+        <button
+          onClick={() => navigate('/app/home')}
+          className="flex items-center gap-1 text-[#8A8078] hover:text-[#2C2825] transition-colors"
+        >
+          <ArrowLeft size={20} strokeWidth={1.5} />
+          <span className="text-[13px] font-medium">Back</span>
+        </button>
+      </div>
+
+      {/* Media preview */}
+      <div className="flex-1 flex items-center justify-center px-5 py-4">
         {currentMedia.type === 'photo' ? (
           <motion.img
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.35 }}
             src={currentMedia.dataUrl || currentMedia.blobUrl}
             alt="Captured photo"
-            className="max-w-full max-h-[58vh] rounded-2xl object-contain"
-            style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}
+            className="max-w-full max-h-[55vh] rounded-2xl object-contain shadow-[0_8px_30px_rgba(44,40,37,0.12)]"
           />
         ) : (
           <motion.video
             ref={videoPreviewRef}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.35 }}
             src={currentMedia.blobUrl}
             controls
             autoPlay
             playsInline
-            className="max-w-full max-h-[58vh] rounded-2xl"
-            style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}
+            className="max-w-full max-h-[55vh] rounded-2xl shadow-[0_8px_30px_rgba(44,40,37,0.12)]"
           />
         )}
       </div>
@@ -180,7 +188,7 @@ export default function ReviewScreen() {
               key={i}
               onClick={() => setCurrentIndex(i)}
               className={`h-1.5 rounded-full transition-all duration-200 ${
-                i === currentIndex ? 'bg-[#c9a84c] w-4' : 'bg-white/15 w-1.5'
+                i === currentIndex ? 'bg-[#C4704B] w-5' : 'bg-[#E8DDD3] w-1.5'
               }`}
             />
           ))}
@@ -189,13 +197,13 @@ export default function ReviewScreen() {
 
       {/* Prompt text */}
       {currentMedia.promptAnswered && (
-        <p className="text-center text-[13px] text-white/25 italic px-8 py-2 font-serif">
+        <p className="text-center text-[13px] text-[#8A8078] italic px-8 py-2">
           "{currentMedia.promptAnswered}"
         </p>
       )}
 
       {/* Save actions */}
-      <div className="px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-4 space-y-2.5">
+      <div className="px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-3 space-y-2.5">
         {!saved ? (
           <>
             {/* Primary: Save to Both */}
@@ -203,51 +211,56 @@ export default function ReviewScreen() {
               whileTap={{ scale: 0.97 }}
               onClick={saveToBoth}
               disabled={saving}
-              className="w-full flex items-center justify-center gap-2.5 bg-[#c9a84c] text-[#0a0a0a] font-sans font-semibold text-[15px] rounded-2xl py-4 disabled:opacity-50 transition-all shadow-lg shadow-[#c9a84c]/15 hover:shadow-[#c9a84c]/25"
+              className="w-full flex items-center justify-center gap-2.5 bg-[#C4704B] text-white font-sans font-semibold text-[15px] rounded-full py-4 disabled:opacity-50 transition-all shadow-sm hover:bg-[#B5613E]"
             >
-              <Star size={17} strokeWidth={2} />
+              <Star size={17} />
               Save to Both
+              <span className="text-[11px] font-normal bg-[#D4A853] text-white px-2 py-0.5 rounded-full ml-1">Recommended</span>
             </motion.button>
 
-            {/* Secondary row */}
+            <p className="text-center text-[12px] text-[#B8AFA6] -mt-0.5 mb-1">
+              Keep your memories safe — save everywhere!
+            </p>
+
+            {/* Secondary buttons */}
             <div className="flex gap-2.5">
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={saveToAlbum}
                 disabled={saving}
-                className="flex-1 flex items-center justify-center gap-2 bg-white/[0.05] border border-white/[0.06] text-white/60 font-sans font-medium text-[13px] rounded-xl py-3 disabled:opacity-50 hover:bg-white/[0.08] transition-all"
+                className="flex-1 flex items-center justify-center gap-2 bg-white border border-[#E8DDD3] text-[#2C2825] font-sans font-medium text-[13px] rounded-full py-3 disabled:opacity-50 hover:bg-[#F7F3ED] transition-all shadow-sm"
               >
-                <Upload size={15} strokeWidth={1.5} />
-                Album
+                <Upload size={15} className="text-[#C4704B]" strokeWidth={1.5} />
+                Wedding Album
               </motion.button>
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={saveToDevice}
-                className="flex-1 flex items-center justify-center gap-2 bg-white/[0.05] border border-white/[0.06] text-white/60 font-sans font-medium text-[13px] rounded-xl py-3 hover:bg-white/[0.08] transition-all"
+                className="flex-1 flex items-center justify-center gap-2 bg-white border border-[#E8DDD3] text-[#2C2825] font-sans font-medium text-[13px] rounded-full py-3 hover:bg-[#F7F3ED] transition-all shadow-sm"
               >
-                <Download size={15} strokeWidth={1.5} />
-                Phone
+                <Download size={15} className="text-[#2B5F8A]" strokeWidth={1.5} />
+                My Phone
               </motion.button>
             </div>
           </>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               className="flex items-center justify-center gap-2 py-4"
             >
-              <div className="w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center">
-                <Check size={16} className="text-emerald-400" />
+              <div className="w-10 h-10 rounded-full bg-[#7A8B5C]/15 flex items-center justify-center">
+                <Check size={20} className="text-[#7A8B5C]" />
               </div>
-              <span className="text-white/60 font-medium text-[15px]">Saved</span>
+              <span className="text-[#2C2825] font-semibold text-[16px]">Saved!</span>
             </motion.div>
 
             <div className="flex gap-2.5">
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate('/app/photo')}
-                className="flex-1 flex items-center justify-center gap-2 bg-[#c9a84c] text-[#0a0a0a] font-sans font-semibold text-[14px] rounded-xl py-3.5"
+                className="flex-1 flex items-center justify-center gap-2 bg-[#C4704B] text-white font-sans font-semibold text-[14px] rounded-full py-3.5 shadow-sm"
               >
                 <Camera size={16} />
                 Take Another
@@ -255,10 +268,9 @@ export default function ReviewScreen() {
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate('/app/home')}
-                className="flex-1 flex items-center justify-center gap-2 bg-white/[0.05] border border-white/[0.06] text-white/50 font-sans font-medium text-[14px] rounded-xl py-3.5 hover:bg-white/[0.08] transition-all"
+                className="flex-1 flex items-center justify-center gap-2 bg-white border border-[#E8DDD3] text-[#2C2825] font-sans font-medium text-[14px] rounded-full py-3.5 shadow-sm hover:bg-[#F7F3ED] transition-all"
               >
-                <RotateCcw size={15} strokeWidth={1.5} />
-                Home
+                Done
               </motion.button>
             </div>
           </div>
