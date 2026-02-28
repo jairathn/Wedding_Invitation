@@ -247,15 +247,15 @@ export const PROMPTS_PER_SESSION = 3;
 
 // ─── Design Tokens ────────────────────────────────────────
 export const COLORS = {
-  bgPrimary: '#0a0a0a',
-  bgSecondary: '#1a1a2e',
+  bgPrimary: '#050505',
+  bgSecondary: '#111111',
   accentGold: '#c9a84c',
   accentBlush: '#d4a0a0',
-  textPrimary: '#f5f0e8',
-  textSecondary: '#a0998c',
-  success: '#7d9b76',
-  warning: '#d4a843',
-  error: '#c45c5c',
+  textPrimary: '#ffffff',
+  textSecondary: 'rgba(255,255,255,0.35)',
+  success: '#34d399',
+  warning: '#fbbf24',
+  error: '#f87171',
 } as const;
 
 // ─── Kiosk ────────────────────────────────────────────────

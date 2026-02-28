@@ -1,5 +1,5 @@
 // Photo Booth Screen — /app/photo
-// Full-screen camera with filter carousel and capture
+// Full-screen camera with sleek filter carousel and capture
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -31,7 +31,6 @@ export default function PhotoScreen() {
 
   const guestName = session?.guest ? `${session.guest.firstName} ${session.guest.lastName}` : 'Guest';
 
-  // Initialize camera
   const initCamera = useCallback(async (facing: 'user' | 'environment') => {
     try {
       if (stream) stopStream(stream);
@@ -55,7 +54,6 @@ export default function PhotoScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Draw filtered frame to canvas
   useEffect(() => {
     const draw = () => {
       const video = videoRef.current;
@@ -70,22 +68,17 @@ export default function PhotoScreen() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Apply CSS filter
       ctx.filter = selectedFilter.cssFilter || 'none';
 
-      // Mirror for front camera
       if (facingMode === 'user') {
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
       }
 
       ctx.drawImage(video, 0, 0);
-
-      // Reset transform
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.filter = 'none';
 
-      // Draw text overlay if present
       if (selectedFilter.textOverlay) {
         const { text, position, color } = selectedFilter.textOverlay;
         ctx.save();
@@ -108,14 +101,12 @@ export default function PhotoScreen() {
     return () => cancelAnimationFrame(animFrameRef.current);
   }, [selectedFilter, facingMode]);
 
-  // Toggle camera
   const toggleCamera = async () => {
     const newFacing = facingMode === 'user' ? 'environment' : 'user';
     setFacingMode(newFacing);
     await initCamera(newFacing);
   };
 
-  // Capture photo with countdown
   const capturePhoto = () => {
     setCountdown(3);
     let count = 3;
@@ -131,18 +122,15 @@ export default function PhotoScreen() {
     }, 1000);
   };
 
-  // Take the actual photo
   const takePhoto = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Flash effect
     setFlash(true);
     setTimeout(() => setFlash(false), 150);
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
 
-    // Convert to blob
     const byteString = atob(dataUrl.split(',')[1]);
     const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
     const ab = new ArrayBuffer(byteString.length);
@@ -159,7 +147,6 @@ export default function PhotoScreen() {
       filterApplied: selectedFilter.id,
     };
 
-    // Pass to review screen
     (window as unknown as Record<string, unknown>).__capturedMedia = [media];
     sessionStorage.setItem('reviewMedia', JSON.stringify([{
       blobUrl: URL.createObjectURL(blob),
@@ -176,7 +163,6 @@ export default function PhotoScreen() {
     <div className="fixed inset-0 bg-black flex flex-col">
       {/* Camera + canvas viewfinder */}
       <div className="relative flex-1 overflow-hidden">
-        {/* Hidden video element */}
         <video
           ref={videoRef}
           autoPlay
@@ -185,7 +171,6 @@ export default function PhotoScreen() {
           className="absolute inset-0 w-full h-full object-cover opacity-0"
         />
 
-        {/* Filtered canvas (visible) */}
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full object-cover"
@@ -194,7 +179,7 @@ export default function PhotoScreen() {
         {/* Flash overlay */}
         {flash && <div className="absolute inset-0 bg-white z-30 pointer-events-none" />}
 
-        {/* Countdown overlay */}
+        {/* Countdown */}
         {countdown !== null && (
           <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/30">
             <motion.span
@@ -202,7 +187,8 @@ export default function PhotoScreen() {
               initial={{ scale: 2, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.5, opacity: 0 }}
-              className="text-white text-8xl font-serif font-bold"
+              className="text-white text-7xl font-serif font-bold"
+              style={{ textShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
             >
               {countdown}
             </motion.span>
@@ -210,46 +196,47 @@ export default function PhotoScreen() {
         )}
 
         {/* Top controls */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 pt-[env(safe-area-inset-top)] p-4">
+        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),12px)] pb-2">
           <button
             onClick={() => { stopStream(stream); navigate('/app/home'); }}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-black/40 text-white"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white/70 hover:text-white transition-colors"
           >
-            <X size={18} />
+            <X size={18} strokeWidth={1.5} />
           </button>
 
-          <p className="text-white/70 text-xs font-sans">{guestName}</p>
+          <p className="text-white/40 text-[11px] font-medium tracking-wide">{guestName}</p>
 
           <button
             onClick={toggleCamera}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-black/40 text-white"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white/70 hover:text-white transition-colors"
           >
-            <SwitchCamera size={16} />
+            <SwitchCamera size={16} strokeWidth={1.5} />
           </button>
         </div>
       </div>
 
       {/* Filter carousel */}
-      <div className="bg-black/90 px-2 py-3">
+      <div className="bg-black/95 px-2 py-3">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory">
           {availableFilters.map(filter => (
             <button
               key={filter.id}
               onClick={() => setSelectedFilter(filter)}
-              className={`flex-shrink-0 snap-center flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all ${
+              className={`flex-shrink-0 snap-center flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 ${
                 selectedFilter.id === filter.id
-                  ? 'bg-[#c9a84c]/20 ring-1 ring-[#c9a84c]'
-                  : 'bg-white/5'
+                  ? 'bg-white/[0.08]'
+                  : 'bg-transparent hover:bg-white/[0.03]'
               }`}
             >
-              {/* Filter preview — colored circle representing the filter */}
               <div
-                className="w-10 h-10 rounded-full border border-white/10"
+                className={`w-11 h-11 rounded-full border-2 transition-all duration-200 ${
+                  selectedFilter.id === filter.id ? 'border-[#c9a84c] scale-105' : 'border-white/[0.08]'
+                }`}
                 style={{
                   background: filter.id === 'none'
-                    ? 'linear-gradient(135deg, #666, #999)'
+                    ? 'linear-gradient(135deg, #555, #888)'
                     : filter.id === 'bw-classic'
-                    ? 'linear-gradient(135deg, #333, #fff)'
+                    ? 'linear-gradient(135deg, #333, #eee)'
                     : filter.id === 'golden-hour'
                     ? 'linear-gradient(135deg, #c9a84c, #e5c47a)'
                     : filter.id === 'vintage-warmth'
@@ -262,11 +249,11 @@ export default function PhotoScreen() {
                     ? 'linear-gradient(135deg, #9B59B6, #E74C9C)'
                     : filter.event === 'wedding_reception'
                     ? 'linear-gradient(135deg, #2E86AB, #C9A84C)'
-                    : 'linear-gradient(135deg, #666, #999)',
+                    : 'linear-gradient(135deg, #555, #888)',
                 }}
               />
-              <span className={`text-[10px] font-sans whitespace-nowrap ${
-                selectedFilter.id === filter.id ? 'text-[#c9a84c]' : 'text-white/60'
+              <span className={`text-[9px] font-medium tracking-wide whitespace-nowrap transition-colors duration-200 ${
+                selectedFilter.id === filter.id ? 'text-[#c9a84c]' : 'text-white/30'
               }`}>
                 {filter.name}
               </span>
@@ -276,14 +263,14 @@ export default function PhotoScreen() {
       </div>
 
       {/* Shutter button */}
-      <div className="bg-black px-4 py-5 pb-[env(safe-area-inset-bottom)] flex items-center justify-center">
+      <div className="bg-black px-4 py-5 pb-[max(env(safe-area-inset-bottom),16px)] flex items-center justify-center">
         <motion.button
           onClick={capturePhoto}
           disabled={!cameraReady || countdown !== null}
-          whileTap={{ scale: 0.93 }}
-          className="w-20 h-20 rounded-full border-4 border-white/80 flex items-center justify-center disabled:opacity-40"
+          whileTap={{ scale: 0.92 }}
+          className="w-[72px] h-[72px] rounded-full border-[3px] border-white/70 flex items-center justify-center disabled:opacity-30 transition-opacity"
         >
-          <div className="w-16 h-16 rounded-full bg-white" />
+          <div className="w-[60px] h-[60px] rounded-full bg-white transition-transform" />
         </motion.button>
       </div>
     </div>
