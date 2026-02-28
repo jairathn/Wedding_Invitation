@@ -55,13 +55,38 @@ export default function ReviewScreen() {
 
   const currentMedia = mediaItems[currentIndex];
 
-  // Save to device (download)
-  const saveToDevice = () => {
-    if (!currentMedia) return;
+  // Save to device — uses native share sheet on mobile (Save to Photos),
+  // falls back to download link on desktop/older browsers
+  const saveToDevice = async () => {
+    if (!capturedBlobs[currentIndex]) return;
+    const blob = capturedBlobs[currentIndex].blob;
+    const filename = generateFilename(currentMedia.type, eventSlug, guestName);
+
+    // Try navigator.share() first — this gives iOS/Android the native "Save to Photos" option
+    if (navigator.share && navigator.canShare) {
+      try {
+        const file = new File([blob], filename, {
+          type: currentMedia.type === 'photo' ? 'image/jpeg' : 'video/webm',
+        });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'Neil & Shriya\'s Wedding',
+          });
+          return;
+        }
+      } catch (err) {
+        // User cancelled share sheet — that's fine, don't fall through
+        if ((err as Error).name === 'AbortError') return;
+        // Other error — fall through to download
+      }
+    }
+
+    // Fallback: trigger a browser download
+    const url = currentMedia.dataUrl || currentMedia.blobUrl || URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = currentMedia.blobUrl || currentMedia.dataUrl || '';
-    const ext = currentMedia.type === 'video' ? 'webm' : 'jpg';
-    link.download = generateFilename(currentMedia.type, eventSlug, guestName);
+    link.href = url;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

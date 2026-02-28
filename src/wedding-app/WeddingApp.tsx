@@ -14,7 +14,6 @@ const ReviewScreen = lazy(() => import('./screens/ReviewScreen'));
 const ScheduleScreen = lazy(() => import('./screens/ScheduleScreen'));
 const DirectoryScreen = lazy(() => import('./screens/DirectoryScreen'));
 const GalleryScreen = lazy(() => import('./screens/GalleryScreen'));
-const AdminScreen = lazy(() => import('./screens/AdminScreen'));
 const EmailCollectScreen = lazy(() => import('./screens/EmailCollectScreen'));
 
 function LoadingFallback() {
@@ -38,7 +37,6 @@ export default function WeddingApp() {
           <Route path="schedule" element={<ScheduleScreen />} />
           <Route path="directory" element={<DirectoryScreen />} />
           <Route path="gallery" element={<GalleryScreen />} />
-          <Route path="admin" element={<AdminScreen />} />
           <Route path="email-collect" element={<EmailCollectScreen />} />
         </Route>
 
