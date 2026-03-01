@@ -62,8 +62,10 @@ export default function ReviewScreen() {
     const blob = capturedBlobs[currentIndex].blob;
     const filename = generateFilename(currentMedia.type, eventSlug, guestName);
 
-    // Try Web Share API first (native share sheet on mobile → saves to Photos)
-    if (navigator.share && navigator.canShare) {
+    // Use Web Share API on mobile only (saves to Camera Roll via share sheet).
+    // On desktop, skip straight to download — the share picker is confusing there.
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && navigator.share && navigator.canShare) {
       try {
         const file = new File([blob], filename, {
           type: currentMedia.type === 'photo' ? 'image/jpeg' : 'video/webm',

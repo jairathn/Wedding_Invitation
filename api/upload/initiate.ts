@@ -66,18 +66,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Google Drive upload logic
     const { google } = await import('googleapis');
 
-    // Parse service account key — try base64 first, then raw JSON.
-    // Also fix newlines inside the private_key that Vercel may mangle.
+    // Parse service account key — supports both base64-encoded and raw JSON.
+    // Vercel can mangle the private_key newlines, so we fix those after parsing.
     let credentialsJson: string;
-    try {
-      credentialsJson = Buffer.from(serviceAccountKey, 'base64').toString('utf-8');
-    } catch {
-      credentialsJson = serviceAccountKey;
+    const trimmed = serviceAccountKey.trim();
+    if (trimmed.startsWith('{')) {
+      // Raw JSON stored directly in the env var
+      credentialsJson = trimmed;
+    } else {
+      // Base64-encoded JSON
+      credentialsJson = Buffer.from(trimmed, 'base64').toString('utf-8');
     }
-    // Replace literal newlines/carriage-returns inside JSON string values
-    // (common when env vars are copy-pasted through web UIs)
-    credentialsJson = credentialsJson.replace(/\r?\n/g, '\\n');
     const credentials = JSON.parse(credentialsJson);
+    // Fix private_key if Vercel turned \n escapes into literal newlines
+    if (credentials.private_key && typeof credentials.private_key === 'string') {
+      credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+    }
     const auth = new google.auth.GoogleAuth({
       credentials,
       scopes: ['https://www.googleapis.com/auth/drive.file'],
