@@ -58,14 +58,22 @@ export async function updateQueueItem(id: string, updates: Partial<QueuedUpload>
   }
 }
 
-// ── Upload a single item via the two-step resumable flow ────────────
-//
-// 1. POST metadata to /api/upload/initiate  → { uploadUrl, eventFolderId }
-// 2. PUT file blob directly to Google Drive  → { id: driveFileId }
-// 3. POST result to /api/upload/complete     → shortcut + DB record
-//
-// The file never passes through Vercel, so there is no 4.5 MB limit.
+/** Convert a Blob to a base64 string (without data URL prefix) */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      resolve(dataUrl.split(',')[1]); // strip "data:...;base64,"
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
+// Upload a single item from the queue.
+// Photos are compressed client-side (~200-500 KB) before sending as base64
+// through the serverless function, staying well under Vercel's 4.5 MB limit.
 async function processUpload(upload: QueuedUpload): Promise<boolean> {
   try {
     await updateQueueItem(upload.id, { status: 'uploading', lastAttempt: new Date().toISOString() });
@@ -78,61 +86,29 @@ async function processUpload(upload: QueuedUpload): Promise<boolean> {
     }
 
     const contentType = blob.type || (isPhoto ? 'image/jpeg' : 'video/webm');
+    const base64 = await blobToBase64(blob);
 
-    // Step 1: Get a resumable upload URL from our API
-    const initRes = await fetch('/api/upload/initiate', {
+    const res = await fetch('/api/upload/initiate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        file: base64,
+        metadata: upload.metadata,
         filename: upload.metadata.filename,
         contentType,
-        guestName: upload.metadata.guestName,
-        eventSlug: upload.metadata.eventSlug,
       }),
     });
 
-    if (!initRes.ok) {
-      throw new Error(`Initiate failed: ${initRes.status}`);
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Upload failed: ${res.status} — ${body}`);
     }
-
-    const { uploadUrl, eventFolderId } = await initRes.json();
-
-    // Step 2: Upload the file directly to Google Drive
-    const putRes = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': String(blob.size),
-      },
-      body: blob,
-    });
-
-    if (!putRes.ok) {
-      throw new Error(`Drive upload failed: ${putRes.status}`);
-    }
-
-    const driveFile = await putRes.json();
-
-    // Step 3: Record in DB + create By-Event shortcut (best-effort)
-    fetch('/api/upload/complete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        driveFileId: driveFile.id,
-        eventFolderId,
-        filename: upload.metadata.filename,
-        eventSlug: upload.metadata.eventSlug,
-        guestId: upload.metadata.guestId,
-        mediaType: upload.metadata.mediaType,
-        filterApplied: upload.metadata.filterApplied,
-        promptAnswered: upload.metadata.promptAnswered,
-      }),
-    }).catch(err => console.warn('Upload complete call failed (non-fatal):', err));
 
     // Upload succeeded — remove from queue
     await removeFromQueue(upload.id);
     return true;
-  } catch {
+  } catch (err) {
+    console.error('Upload error for', upload.id, err);
     // Upload failed — update retry count
     const newRetryCount = upload.retryCount + 1;
     await updateQueueItem(upload.id, {

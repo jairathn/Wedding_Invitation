@@ -1,7 +1,15 @@
-// POST /api/upload/initiate — Create Drive folder structure and return a
-// resumable upload URL.  The client uploads the file directly to Google
-// Drive, bypassing Vercel's 4.5 MB body-size limit entirely.
+// POST /api/upload/initiate — Accept compressed file + metadata, upload to
+// Google Drive.  Photos are compressed client-side (~200-500 KB) so they
+// fit comfortably within Vercel's 4.5 MB request body limit.
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '5mb',
+    },
+  },
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -11,6 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
     const rootFolderId = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
+    const dbUrl = process.env.DATABASE_URL;
 
     if (!serviceAccountKey || !rootFolderId) {
       console.error('Missing GOOGLE_SERVICE_ACCOUNT_KEY or GOOGLE_DRIVE_ROOT_FOLDER_ID');
@@ -20,11 +29,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const { filename, contentType, guestName, eventSlug } = req.body;
+    const { file, metadata, filename, contentType } = req.body;
 
+    if (!file) {
+      return res.status(400).json({ error: 'Missing file data' });
+    }
+
+    const fileBuffer = Buffer.from(file, 'base64');
+    const meta = (metadata || {}) as Record<string, unknown>;
+    const guestName = (meta.guestName as string) || 'Unknown';
+    const eventSlug = (meta.eventSlug as string) || 'general';
+    const safeName = filename || 'upload';
+    const safeContentType = contentType || 'application/octet-stream';
+
+    // ── Authenticate with Google Drive ──────────────────────────────
     const { google } = await import('googleapis');
 
-    // ── Parse service account key (base64 or raw JSON) ──────────────
     const trimmed = serviceAccountKey.trim();
     const credentialsJson = trimmed.startsWith('{')
       ? trimmed
@@ -34,7 +54,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       credentials = JSON.parse(credentialsJson);
     } catch {
-      // Literal newlines inside private_key break JSON.parse — fix them.
       const fixed = credentialsJson.replace(
         /("private_key"\s*:\s*")([^"]*)/,
         (_m, pre, val) => pre + val.replace(/\n/g, '\\n').replace(/\r/g, ''),
@@ -52,56 +71,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const drive = google.drive({ version: 'v3', auth });
 
     // ── Create folder structure ─────────────────────────────────────
-    const safeName = (guestName as string) || 'Unknown';
-    const safeEvent = (eventSlug as string) || 'general';
-
     const byGuestFolder = await findOrCreateFolder(drive, 'By Guest', rootFolderId);
-    const guestFolder = await findOrCreateFolder(drive, safeName, byGuestFolder);
-    const eventFolder = await findOrCreateFolder(drive, safeEvent, guestFolder);
+    const guestFolder = await findOrCreateFolder(drive, guestName, byGuestFolder);
+    const eventFolder = await findOrCreateFolder(drive, eventSlug, guestFolder);
 
-    // ── Initiate resumable upload session ───────────────────────────
-    const authClient = await auth.getClient();
-    const { token } = await authClient.getAccessToken();
+    // ── Upload file ─────────────────────────────────────────────────
+    const { Readable } = await import('stream');
+    const fileStream = new Readable();
+    fileStream.push(fileBuffer);
+    fileStream.push(null);
 
-    // Derive client origin so Google sets the right CORS headers
-    const origin = req.headers.origin
-      || (req.headers.referer ? new URL(req.headers.referer as string).origin : undefined)
-      || `https://${req.headers.host}`;
-
-    const driveRes = await fetch(
-      `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&origin=${encodeURIComponent(origin)}`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json; charset=UTF-8',
-          'X-Upload-Content-Type': (contentType as string) || 'application/octet-stream',
-        },
-        body: JSON.stringify({
-          name: (filename as string) || 'upload',
-          parents: [eventFolder],
-        }),
+    const driveFile = await drive.files.create({
+      requestBody: {
+        name: safeName,
+        parents: [eventFolder],
       },
-    );
+      media: {
+        mimeType: safeContentType,
+        body: fileStream,
+      },
+      fields: 'id, name',
+    });
 
-    if (!driveRes.ok) {
-      const body = await driveRes.text();
-      console.error('Resumable upload init failed:', driveRes.status, body);
-      return res.status(502).json({ error: 'Failed to initiate upload with Google Drive' });
+    // ── Create shortcut in By Event folder ──────────────────────────
+    try {
+      const byEventFolder = await findOrCreateFolder(drive, 'By Event', rootFolderId);
+      const eventDateFolder = await findOrCreateFolder(drive, eventSlug, byEventFolder);
+      await drive.files.create({
+        requestBody: {
+          name: safeName,
+          mimeType: 'application/vnd.google-apps.shortcut',
+          shortcutDetails: { targetId: driveFile.data.id! },
+          parents: [eventDateFolder],
+        },
+      });
+    } catch (err) {
+      console.error('Shortcut creation failed (non-fatal):', err);
     }
 
-    const uploadUrl = driveRes.headers.get('location');
-    if (!uploadUrl) {
-      return res.status(502).json({ error: 'Google Drive did not return an upload URL' });
+    // ── Record in database ──────────────────────────────────────────
+    if (dbUrl) {
+      try {
+        const { neon } = await import('@neondatabase/serverless');
+        const sql = neon(dbUrl);
+        const uploadId = crypto.randomUUID();
+        await sql`
+          INSERT INTO uploads (id, guest_id, event, media_type, filename, drive_file_id, drive_folder_id, upload_status, uploaded_at, filter_applied, prompt_answered)
+          VALUES (${uploadId}, ${(meta.guestId as number) || 0}, ${eventSlug}, ${(meta.mediaType as string) || 'photo'}, ${safeName}, ${driveFile.data.id}, ${eventFolder}, ${'complete'}, ${new Date().toISOString()}, ${(meta.filterApplied as string) || null}, ${(meta.promptAnswered as string) || null})
+        `;
+      } catch (dbErr) {
+        console.error('DB record failed (non-fatal):', dbErr);
+      }
     }
 
     return res.status(200).json({
-      uploadUrl,
-      eventFolderId: eventFolder,
+      success: true,
+      driveFileId: driveFile.data.id,
     });
   } catch (error) {
-    console.error('Upload initiate error:', error);
-    return res.status(500).json({ error: 'Failed to initiate upload' });
+    console.error('Upload error:', error);
+    return res.status(500).json({ error: 'Upload failed' });
   }
 }
 
