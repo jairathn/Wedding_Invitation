@@ -3,7 +3,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { requestCamera, stopStream, capturePhotoFromFilteredCanvas } from '../lib/camera';
+import { requestCamera, stopStream, capturePhotoFromFilteredCanvas, checkCameraPermission } from '../lib/camera';
 import { getStoredSession } from '../lib/session';
 import { FILTER_CATEGORIES } from '../constants';
 import type { CapturedMedia } from '../types';
@@ -18,7 +18,7 @@ export default function PhotoScreen() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [cameraReady, setCameraReady] = useState(false);
-  const [cameraError, setCameraError] = useState(false);
+  const [permState, setPermState] = useState<'loading' | 'needs-permission' | 'denied' | 'ready'>('loading');
   const [flash, setFlash] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [mode, setMode] = useState<'single' | 'strip'>('single');
@@ -36,22 +36,37 @@ export default function PhotoScreen() {
   const initCamera = useCallback(async (facing: 'user' | 'environment') => {
     try {
       if (stream) stopStream(stream);
-      setCameraError(false);
       const newStream = await requestCamera(facing, false);
       setStream(newStream);
       if (videoRef.current) {
         videoRef.current.srcObject = newStream;
       }
       setCameraReady(true);
+      setPermState('ready');
     } catch (err) {
       console.error('Camera error:', err);
-      setCameraError(true);
+      setPermState('denied');
     }
   }, [stream]);
 
+  // Check permissions on mount, then init camera if already granted
   useEffect(() => {
-    initCamera('user');
+    let cancelled = false;
+    (async () => {
+      const perm = await checkCameraPermission();
+      if (cancelled) return;
+      if (perm === 'granted') {
+        // Permission remembered — go straight to camera
+        initCamera('user');
+      } else if (perm === 'denied') {
+        setPermState('denied');
+      } else {
+        // 'prompt' — show our friendly UI first
+        setPermState('needs-permission');
+      }
+    })();
     return () => {
+      cancelled = true;
       if (stream) stopStream(stream);
       cancelAnimationFrame(animFrameRef.current);
     };
@@ -203,19 +218,140 @@ export default function PhotoScreen() {
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
         />
 
-        {/* Camera error state */}
-        {cameraError && (
+        {/* Permission: loading */}
+        {permState === 'loading' && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', background: '#1e1c1a', zIndex: 5,
+          }}>
+            <div style={{
+              width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)',
+              borderTopColor: '#C4704B', borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
+
+        {/* Permission: needs-permission — friendly prompt */}
+        {permState === 'needs-permission' && (
           <div style={{
             position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', background: '#1e1c1a', zIndex: 5,
+            alignItems: 'center', justifyContent: 'center',
+            background: 'linear-gradient(180deg, #FEF9F2 0%, #FEFCF9 100%)', zIndex: 5,
+            padding: '0 32px', textAlign: 'center',
+            fontFamily: "'DM Sans', sans-serif",
           }}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5">
-              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-              <circle cx="12" cy="13" r="3"/>
-            </svg>
-            <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: 16, fontSize: 14, textAlign: 'center', padding: '0 32px' }}>
-              Camera access needed. Please allow camera permissions and reload.
+            {/* Camera icon */}
+            <div style={{
+              width: 80, height: 80, borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(196,112,75,0.12) 0%, rgba(232,134,90,0.08) 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+            }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C4704B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                <circle cx="12" cy="13" r="3"/>
+              </svg>
+            </div>
+            <p style={{
+              margin: 0, fontFamily: "'Playfair Display', serif",
+              fontSize: 22, fontWeight: 600, color: '#2C2825',
+            }}>Camera Access</p>
+            <p style={{
+              margin: '10px 0 28px', fontSize: 15, color: '#8A8078', lineHeight: 1.5,
+            }}>
+              We need your camera to take photos for the wedding album. Your photos stay on your device until you choose to share them.
             </p>
+            <button
+              onClick={() => initCamera(facingMode)}
+              style={{
+                padding: '14px 40px', borderRadius: 24,
+                background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
+                border: 'none', cursor: 'pointer', color: 'white',
+                fontWeight: 600, fontSize: 16, fontFamily: "'DM Sans', sans-serif",
+                boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
+              }}
+            >
+              Allow Camera
+            </button>
+            <button
+              onClick={() => { stopStream(stream); navigate('/app/home'); }}
+              style={{
+                marginTop: 14, padding: '10px 24px', borderRadius: 20,
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: '#A09890', fontSize: 14, fontWeight: 500,
+              }}
+            >
+              Maybe Later
+            </button>
+          </div>
+        )}
+
+        {/* Permission: denied — instructions */}
+        {permState === 'denied' && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            background: 'linear-gradient(180deg, #FEF9F2 0%, #FEFCF9 100%)', zIndex: 5,
+            padding: '0 32px', textAlign: 'center',
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            <div style={{
+              width: 80, height: 80, borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(212,114,106,0.12) 0%, rgba(212,114,106,0.06) 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+            }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#D4726A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                <circle cx="12" cy="13" r="3"/>
+                <line x1="2" y1="2" x2="22" y2="22"/>
+              </svg>
+            </div>
+            <p style={{
+              margin: 0, fontFamily: "'Playfair Display', serif",
+              fontSize: 22, fontWeight: 600, color: '#2C2825',
+            }}>Camera Blocked</p>
+            <p style={{
+              margin: '10px 0 8px', fontSize: 15, color: '#8A8078', lineHeight: 1.5,
+            }}>
+              Camera access was denied. To enable it:
+            </p>
+            <div style={{
+              background: 'rgba(196,112,75,0.06)', borderRadius: 16, padding: '16px 20px',
+              margin: '8px 0 24px', textAlign: 'left', width: '100%',
+            }}>
+              <p style={{ margin: '0 0 6px', fontSize: 13, color: '#6B6158', lineHeight: 1.6 }}>
+                1. Tap the lock/info icon in your browser's address bar
+              </p>
+              <p style={{ margin: '0 0 6px', fontSize: 13, color: '#6B6158', lineHeight: 1.6 }}>
+                2. Find "Camera" and change it to "Allow"
+              </p>
+              <p style={{ margin: 0, fontSize: 13, color: '#6B6158', lineHeight: 1.6 }}>
+                3. Refresh the page
+              </p>
+            </div>
+            <button
+              onClick={() => initCamera(facingMode)}
+              style={{
+                padding: '14px 40px', borderRadius: 24,
+                background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
+                border: 'none', cursor: 'pointer', color: 'white',
+                fontWeight: 600, fontSize: 16, fontFamily: "'DM Sans', sans-serif",
+                boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
+              }}
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => { stopStream(stream); navigate('/app/home'); }}
+              style={{
+                marginTop: 14, padding: '10px 24px', borderRadius: 20,
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: '#A09890', fontSize: 14, fontWeight: 500,
+              }}
+            >
+              Go Back
+            </button>
           </div>
         )}
 

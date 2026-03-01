@@ -1,5 +1,19 @@
 // Camera access utilities
 
+export type CameraPermission = 'granted' | 'denied' | 'prompt';
+
+/** Check camera permission state without triggering a prompt */
+export async function checkCameraPermission(): Promise<CameraPermission> {
+  try {
+    const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+    return result.state as CameraPermission;
+  } catch {
+    // Firefox / older browsers don't support permissions.query for camera
+    // Return 'prompt' so we attempt getUserMedia which will trigger the native dialog
+    return 'prompt';
+  }
+}
+
 export async function requestCamera(
   facingMode: 'user' | 'environment' = 'user',
   includeAudio: boolean = false
