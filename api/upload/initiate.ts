@@ -45,9 +45,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // ── Authenticate with Google Drive via OAuth2 ────────────────────
     const { drive, oauth2Client } = await getDriveClient(clientId, clientSecret, refreshToken);
 
-    // ── Create folder structure ─────────────────────────────────────
-    const byGuestFolder = await findOrCreateFolder(drive, 'By Guest', rootFolderId);
-    const guestFolder = await findOrCreateFolder(drive, guestName, byGuestFolder);
+    // ── Create folder structure: Wedding Media / {Guest} / {Event} ──
+    const guestFolder = await findOrCreateFolder(drive, guestName, rootFolderId);
     const eventFolder = await findOrCreateFolder(drive, eventSlug, guestFolder);
 
     // ════════════════════════════════════════════════════════════════
@@ -111,23 +110,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       fields: 'id, name',
       supportsAllDrives: true,
     });
-
-    // Create shortcut in By Event folder (best-effort)
-    try {
-      const byEventFolder = await findOrCreateFolder(drive, 'By Event', rootFolderId);
-      const eventDateFolder = await findOrCreateFolder(drive, eventSlug, byEventFolder);
-      await drive.files.create({
-        requestBody: {
-          name: safeName,
-          mimeType: 'application/vnd.google-apps.shortcut',
-          shortcutDetails: { targetId: driveFile.data.id! },
-          parents: [eventDateFolder],
-        },
-        supportsAllDrives: true,
-      });
-    } catch (err) {
-      console.error('Shortcut creation failed (non-fatal):', err);
-    }
 
     // Record in database (best-effort)
     if (dbUrl) {
