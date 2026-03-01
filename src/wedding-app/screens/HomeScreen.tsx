@@ -457,9 +457,44 @@ export default function HomeScreen() {
           ))}
         </div>
 
-        {/* Save reminder tip */}
+        {/* Personalized video message */}
         <div style={{
           margin: '18px 24px 0',
+          padding: '16px 18px',
+          borderRadius: 16,
+          background: 'linear-gradient(135deg, rgba(232,134,90,0.06) 0%, rgba(196,112,75,0.03) 100%)',
+          border: '1px solid rgba(196,112,75,0.12)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 12,
+          opacity: loaded ? 1 : 0,
+          transition: 'all 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.55s',
+        }}>
+          <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>&#x1F3AC;</span>
+          <div>
+            <p style={{
+              margin: 0,
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#2C2825',
+              lineHeight: 1.4,
+            }}>
+              Your memories, one film
+            </p>
+            <p style={{
+              margin: '4px 0 0',
+              fontSize: 13,
+              color: '#8A8078',
+              lineHeight: 1.5,
+            }}>
+              Every photo and video you capture here will be woven into a personalized wedding video just for you. So snap away!
+            </p>
+          </div>
+        </div>
+
+        {/* Save reminder tip */}
+        <div style={{
+          margin: '12px 24px 0',
           padding: '14px 18px',
           borderRadius: 14,
           background: 'linear-gradient(135deg, rgba(122,139,92,0.08) 0%, rgba(122,139,92,0.04) 100%)',

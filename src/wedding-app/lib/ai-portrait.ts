@@ -205,33 +205,119 @@ export function preparePhotoForAI(canvas: HTMLCanvasElement): string {
 }
 
 /**
- * Placeholder for actual Replicate API call.
- * In production, this would call a backend proxy endpoint
- * (e.g. /api/ai-portrait) to keep the API key server-side.
- *
- * For now it simulates generation with a timer.
+ * Call the backend /api/ai-portrait/generate endpoint which uses Replicate SDXL.
+ * Progress is simulated on the client since Replicate's run() is synchronous
+ * (blocks until done). The real generation takes ~15-40s.
  */
 export async function generateAIPortrait(
   photoDataUrl: string,
   style: AIPortraitStyle,
   onProgress: (pct: number) => void,
 ): Promise<string> {
-  // Simulate AI generation with progress updates
-  // Replace this with actual Replicate API calls in production
-  return new Promise((resolve, _reject) => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 15 + 5;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        onProgress(100);
-        // Return the original photo as placeholder
-        // In production: return the Replicate output URL
-        setTimeout(() => resolve(photoDataUrl), 500);
-      } else {
-        onProgress(Math.round(progress));
-      }
-    }, 800);
+  // Start simulated progress while the backend processes
+  let progress = 0;
+  let done = false;
+  const progressInterval = setInterval(() => {
+    if (done) return;
+    // Ramp up quickly to ~85%, then slow down
+    const remaining = 85 - progress;
+    progress += Math.max(1, remaining * 0.08 + Math.random() * 3);
+    progress = Math.min(progress, 85);
+    onProgress(Math.round(progress));
+  }, 800);
+
+  try {
+    const res = await fetch('/api/ai-portrait/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image: photoDataUrl,
+        styleId: style.id,
+        prompt: style.prompt,
+        negativePrompt: style.negativePrompt,
+      }),
+    });
+
+    done = true;
+    clearInterval(progressInterval);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Generation failed' }));
+      throw new Error(err.error || `Server error: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    if (!data.output) {
+      throw new Error('No output image returned');
+    }
+
+    onProgress(100);
+    return data.output;
+  } catch (error) {
+    done = true;
+    clearInterval(progressInterval);
+    throw error;
+  }
+}
+
+/**
+ * Upload an AI portrait image to Google Drive via the existing upload endpoint.
+ * The imageDataUrl should be a base64 data URL (returned by the generate endpoint).
+ * Returns the drive file ID on success.
+ */
+export async function savePortraitToDrive(
+  imageDataUrl: string,
+  styleId: string,
+  guestId: number,
+  guestName: string,
+): Promise<{ success: boolean; driveFileId?: string }> {
+  // Extract base64 content from the data URL
+  let base64Content: string;
+  let mimeType = 'image/jpeg';
+
+  if (imageDataUrl.startsWith('data:')) {
+    // Already a data URL — extract base64 part directly
+    const [header, data] = imageDataUrl.split(',');
+    base64Content = data;
+    const mimeMatch = header.match(/data:([^;]+)/);
+    if (mimeMatch) mimeType = mimeMatch[1];
+  } else {
+    // External URL fallback — fetch and convert (may fail due to CORS)
+    const imageRes = await fetch(imageDataUrl);
+    const blob = await imageRes.blob();
+    mimeType = blob.type || 'image/jpeg';
+    const reader = new FileReader();
+    const dataUrl = await new Promise<string>((resolve) => {
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+    base64Content = dataUrl.split(',')[1];
+  }
+
+  const filename = `ai-portrait_${styleId}_${guestName.toLowerCase().replace(/\s+/g, '-')}_${new Date().toISOString().replace(/[:.]/g, '-')}.jpg`;
+
+  const res = await fetch('/api/upload/initiate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      file: base64Content,
+      metadata: {
+        guestId,
+        guestName,
+        eventSlug: 'wedding_reception',
+        mediaType: 'photo',
+        filterApplied: `ai-portrait-${styleId}`,
+      },
+      filename,
+      contentType: mimeType,
+    }),
   });
+
+  if (!res.ok) {
+    const errorBody = await res.text().catch(() => '');
+    throw new Error(`Failed to save to Google Drive: ${res.status} ${errorBody}`);
+  }
+
+  return res.json();
 }
