@@ -67,19 +67,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { google } = await import('googleapis');
 
     // Parse service account key — supports both base64-encoded and raw JSON.
-    // Vercel can mangle the private_key newlines, so we fix those after parsing.
-    let credentialsJson: string;
     const trimmed = serviceAccountKey.trim();
-    if (trimmed.startsWith('{')) {
-      // Raw JSON stored directly in the env var
-      credentialsJson = trimmed;
-    } else {
-      // Base64-encoded JSON
-      credentialsJson = Buffer.from(trimmed, 'base64').toString('utf-8');
+    const credentialsJson = trimmed.startsWith('{')
+      ? trimmed
+      : Buffer.from(trimmed, 'base64').toString('utf-8');
+
+    let credentials: Record<string, unknown>;
+    try {
+      credentials = JSON.parse(credentialsJson);
+    } catch {
+      // JSON.parse fails when Vercel turns \n inside private_key into literal
+      // newlines (0x0A), which are illegal inside JSON strings. Fix that field
+      // in the raw text and re-parse.
+      const fixed = credentialsJson.replace(
+        /("private_key"\s*:\s*")([^"]*)/,
+        (_m, pre, val) => pre + val.replace(/\n/g, '\\n').replace(/\r/g, ''),
+      );
+      credentials = JSON.parse(fixed);
     }
-    const credentials = JSON.parse(credentialsJson);
-    // Fix private_key if Vercel turned \n escapes into literal newlines
-    if (credentials.private_key && typeof credentials.private_key === 'string') {
+    // Also handle double-escaped \\n → real newlines
+    if (typeof credentials.private_key === 'string') {
       credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
     }
     const auth = new google.auth.GoogleAuth({
@@ -161,7 +168,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 async function findOrCreateFolder(drive: any, name: string, parentId: string): Promise<string> {
   // Search for existing folder
   const search = await drive.files.list({
-    q: `name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    q: `name='${name.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
     fields: 'files(id)',
   });
 
