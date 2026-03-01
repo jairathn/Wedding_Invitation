@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStoredSession } from '../lib/session';
-import { addToQueue } from '../lib/upload-queue';
+import { addToQueue, processQueue } from '../lib/upload-queue';
 import { generateFilename } from '../lib/camera';
 import { getCurrentEvent, FILTER_CATEGORIES } from '../constants';
 import type { CapturedMedia } from '../types';
@@ -115,6 +115,8 @@ export default function ReviewScreen() {
         retryCount: 0,
       });
     }
+    // Start uploading immediately (don't wait for 30s interval)
+    processQueue();
   };
 
   // ── Save to wedding album (upload queue → Google Drive) ──
