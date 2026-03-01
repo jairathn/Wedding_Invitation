@@ -229,6 +229,58 @@ export function getFiltersForEvent(eventSlug: string): FilterConfig[] {
   return FILTERS.filter(f => f.event === 'all' || f.event === eventSlug);
 }
 
+// ─── Categorized Filter UI (for photo booth carousel) ────
+export interface FilterCategory {
+  label: string;
+  filters: {
+    id: string;
+    name: string;
+    preview: string; // CSS gradient for the swatch circle
+    cssFilter: string;
+    textOverlay?: FilterConfig['textOverlay'];
+  }[];
+}
+
+export const FILTER_CATEGORIES: FilterCategory[] = [
+  {
+    label: 'Classic',
+    filters: [
+      { id: 'none', name: 'No Filter', preview: 'linear-gradient(135deg, #e8e0d4 0%, #d4ccc0 100%)', cssFilter: 'none' },
+      { id: 'film', name: 'Film', preview: 'linear-gradient(135deg, #c9b896 0%, #a89878 100%)', cssFilter: 'saturate(0.9) contrast(1.05) sepia(0.1)' },
+      { id: 'bw', name: 'B&W', preview: 'linear-gradient(135deg, #888 0%, #555 100%)', cssFilter: 'grayscale(1) contrast(1.2)' },
+      { id: 'vintage', name: 'Vintage', preview: 'linear-gradient(135deg, #c4a882 0%, #9e8468 100%)', cssFilter: 'sepia(0.3) saturate(1.2) contrast(1.05) brightness(1.05)' },
+      { id: 'golden', name: 'Golden Hr', preview: 'linear-gradient(135deg, #d4a853 0%, #b8923e 100%)', cssFilter: 'sepia(0.2) saturate(1.4) brightness(1.1) contrast(1.05)' },
+    ],
+  },
+  {
+    label: 'Haldi \u2728',
+    filters: [
+      { id: 'marigold', name: 'Marigold', preview: 'linear-gradient(135deg, #e8b84d 0%, #d4a030 100%)', cssFilter: 'saturate(1.3) sepia(0.15) brightness(1.05)', textOverlay: { text: '#JayWalkingToJairath  Haldi', position: 'bottom', font: 'Playfair Display', color: '#ffffff' } },
+      { id: 'henna', name: 'Henna', preview: 'linear-gradient(135deg, #c4704b 0%, #a05a38 100%)', cssFilter: 'sepia(0.2) contrast(1.1) saturate(1.1)' },
+      { id: 'bazaar', name: 'Bazaar', preview: 'linear-gradient(135deg, #e8865a 0%, #c46e44 100%)', cssFilter: 'contrast(1.15) saturate(1.3) brightness(1.05)' },
+      { id: 'turmeric', name: 'Turmeric', preview: 'linear-gradient(135deg, #ddc040 0%, #c4a830 100%)', cssFilter: 'saturate(1.4) sepia(0.1) brightness(1.08)' },
+    ],
+  },
+  {
+    label: 'Sangeet \uD83C\uDFA4',
+    filters: [
+      { id: 'bollywood', name: 'Bollywood', preview: 'linear-gradient(135deg, #e84870 0%, #c43058 100%)', cssFilter: 'contrast(1.2) saturate(1.3) hue-rotate(-5deg)', textOverlay: { text: '#JayWalkingToJairath  Sangeet Night', position: 'bottom', font: 'Playfair Display', color: '#ffffff' } },
+      { id: 'stage', name: 'Stage', preview: 'linear-gradient(135deg, #8844aa 0%, #6a2d8e 100%)', cssFilter: 'contrast(1.25) brightness(1.05) saturate(1.2)' },
+      { id: 'disco', name: 'Disco', preview: 'linear-gradient(135deg, #e8865a 0%, #d46840 100%)', cssFilter: 'saturate(1.5) contrast(1.1) brightness(1.05)' },
+      { id: 'strings', name: 'Lights', preview: 'linear-gradient(135deg, #d4a853 0%, #e8c878 100%)', cssFilter: 'brightness(1.1) contrast(1.05) saturate(1.15)' },
+    ],
+  },
+  {
+    label: 'Wedding \uD83D\uDC8D',
+    filters: [
+      { id: 'mediterranean', name: 'Barcelona', preview: 'linear-gradient(135deg, #2b5f8a 0%, #1a4a70 100%)', cssFilter: 'saturate(0.9) contrast(1.15) hue-rotate(10deg) brightness(0.95)', textOverlay: { text: '#JayWalkingToJairath', position: 'bottom', font: 'Playfair Display', color: '#ffffff' } },
+      { id: 'mandap', name: 'Mandap', preview: 'linear-gradient(135deg, #c48da0 0%, #a06e80 100%)', cssFilter: 'saturate(1.15) brightness(1.05) sepia(0.08)' },
+      { id: 'romance', name: 'Romance', preview: 'linear-gradient(135deg, #e8c4b8 0%, #d4a898 100%)', cssFilter: 'saturate(0.85) brightness(1.1) contrast(0.95) sepia(0.1)' },
+      { id: 'starry', name: 'Starry', preview: 'linear-gradient(135deg, #1a2040 0%, #2a3060 100%)', cssFilter: 'sepia(0.15) saturate(1.2) brightness(1.08) contrast(1.05)' },
+    ],
+  },
+];
+
 // ─── Auto-detect current event by date ────────────────────
 export function getCurrentEvent(): WeddingEvent | null {
   const today = new Date().toISOString().split('T')[0];

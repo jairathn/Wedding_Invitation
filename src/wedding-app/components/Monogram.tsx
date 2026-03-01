@@ -1,85 +1,63 @@
-// Wedding Monogram — N & S
-// Terracotta on light backgrounds, white on dark/camera backgrounds
+// Wedding Monogram — Circular terracotta gradient badge with "N&S"
+// Matches design: warm gradient circle, white Playfair text
 
-export default function Monogram({ size = 80, variant = 'default', className = '' }: {
+export default function Monogram({ size = 44, variant = 'default', className = '' }: {
   size?: number;
-  variant?: 'default' | 'light'; // 'light' = white version for dark backgrounds
+  variant?: 'default' | 'light';
   className?: string;
 }) {
-  const mainColor = variant === 'light' ? '#FFFFFF' : '#C4704B';
-  const accentColor = variant === 'light' ? 'rgba(255,255,255,0.4)' : '#2B5F8A';
+  // 'light' variant: white circle with terracotta text (for dark backgrounds like camera screens)
+  if (variant === 'light') {
+    return (
+      <div
+        className={className}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.15)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        aria-label="Neil & Shriya monogram"
+      >
+        <span style={{
+          fontFamily: "'Playfair Display', serif",
+          fontSize: size * 0.36,
+          fontWeight: 600,
+          color: 'white',
+          letterSpacing: '0.05em',
+        }}>N&S</span>
+      </div>
+    );
+  }
 
+  // Default: terracotta gradient circle with white text
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 200 200"
+    <div
       className={className}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #C4704B 0%, #A85D3E 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 2px 12px rgba(196, 112, 75, 0.25)',
+        flexShrink: 0,
+      }}
       aria-label="Neil & Shriya monogram"
     >
-      {/* Outer circle */}
-      <circle
-        cx="100"
-        cy="100"
-        r="92"
-        fill="none"
-        stroke={mainColor}
-        strokeWidth="1.5"
-        opacity="0.6"
-      />
-      {/* Inner decorative circle */}
-      <circle
-        cx="100"
-        cy="100"
-        r="85"
-        fill="none"
-        stroke={mainColor}
-        strokeWidth="0.5"
-        strokeDasharray="4 4"
-        opacity="0.3"
-      />
-      {/* N letter */}
-      <text
-        x="78"
-        y="125"
-        fontFamily="'Playfair Display', Georgia, serif"
-        fontSize="72"
-        fontWeight="600"
-        fill={mainColor}
-        textAnchor="middle"
-      >
-        N
-      </text>
-      {/* Ampersand */}
-      <text
-        x="100"
-        y="108"
-        fontFamily="'Playfair Display', Georgia, serif"
-        fontSize="22"
-        fontWeight="400"
-        fontStyle="italic"
-        fill={accentColor}
-        textAnchor="middle"
-      >
-        &amp;
-      </text>
-      {/* S letter */}
-      <text
-        x="122"
-        y="125"
-        fontFamily="'Playfair Display', Georgia, serif"
-        fontSize="72"
-        fontWeight="600"
-        fill={mainColor}
-        textAnchor="middle"
-      >
-        S
-      </text>
-      {/* Small decorative dots */}
-      <circle cx="50" cy="100" r="2" fill={mainColor} opacity="0.3" />
-      <circle cx="150" cy="100" r="2" fill={mainColor} opacity="0.3" />
-      <circle cx="100" cy="50" r="2" fill={mainColor} opacity="0.3" />
-      <circle cx="100" cy="150" r="2" fill={mainColor} opacity="0.3" />
-    </svg>
+      <span style={{
+        fontFamily: "'Playfair Display', serif",
+        fontSize: size * 0.36,
+        fontWeight: 600,
+        color: 'white',
+        letterSpacing: '0.05em',
+      }}>N&S</span>
+    </div>
   );
 }
