@@ -1,49 +1,7 @@
-// POST /api/upload/initiate — Handle file upload, store in Google Drive
+// POST /api/upload/initiate — Create Drive folder structure and return a
+// resumable upload URL.  The client uploads the file directly to Google
+// Drive, bypassing Vercel's 4.5 MB body-size limit entirely.
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-export const config = {
-  api: {
-    bodyParser: false, // Handle multipart form data manually
-  },
-};
-
-// Parse multipart form data (simplified for Vercel)
-async function parseFormData(req: VercelRequest): Promise<{ file: Buffer; metadata: Record<string, unknown>; filename: string; contentType: string }> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on('data', (chunk: Buffer) => chunks.push(chunk));
-    req.on('end', () => {
-      const body = Buffer.concat(chunks);
-      const contentType = req.headers['content-type'] || '';
-
-      // Try to parse as JSON with base64 file
-      if (contentType.includes('application/json')) {
-        try {
-          const json = JSON.parse(body.toString());
-          resolve({
-            file: Buffer.from(json.file, 'base64'),
-            metadata: json.metadata || {},
-            filename: json.filename || 'upload',
-            contentType: json.contentType || 'application/octet-stream',
-          });
-        } catch (e) {
-          reject(e);
-        }
-        return;
-      }
-
-      // For multipart, extract the file from the raw body
-      // This is a simplified parser — in production, use a library like busboy
-      resolve({
-        file: body,
-        metadata: {},
-        filename: 'upload',
-        contentType: 'application/octet-stream',
-      });
-    });
-    req.on('error', reject);
-  });
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -53,127 +11,116 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
     const rootFolderId = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
-    const dbUrl = process.env.DATABASE_URL;
 
     if (!serviceAccountKey || !rootFolderId) {
-      console.error('Google Drive not configured. GOOGLE_SERVICE_ACCOUNT_KEY and GOOGLE_DRIVE_ROOT_FOLDER_ID must be set.');
+      console.error('Missing GOOGLE_SERVICE_ACCOUNT_KEY or GOOGLE_DRIVE_ROOT_FOLDER_ID');
       return res.status(503).json({
         error: 'Google Drive not configured',
-        message: 'Upload could not be saved — the wedding album storage is not set up yet. Please contact the couple.',
+        message: 'Upload could not be saved — the wedding album storage is not set up yet.',
       });
     }
 
-    // Google Drive upload logic
+    const { filename, contentType, guestName, eventSlug } = req.body;
+
     const { google } = await import('googleapis');
 
-    // Parse service account key — try base64 first, then raw JSON.
-    // Also fix newlines inside the private_key that Vercel may mangle.
-    let credentialsJson: string;
+    // ── Parse service account key (base64 or raw JSON) ──────────────
+    const trimmed = serviceAccountKey.trim();
+    const credentialsJson = trimmed.startsWith('{')
+      ? trimmed
+      : Buffer.from(trimmed, 'base64').toString('utf-8');
+
+    let credentials: Record<string, unknown>;
     try {
-      credentialsJson = Buffer.from(serviceAccountKey, 'base64').toString('utf-8');
+      credentials = JSON.parse(credentialsJson);
     } catch {
-      credentialsJson = serviceAccountKey;
+      // Literal newlines inside private_key break JSON.parse — fix them.
+      const fixed = credentialsJson.replace(
+        /("private_key"\s*:\s*")([^"]*)/,
+        (_m, pre, val) => pre + val.replace(/\n/g, '\\n').replace(/\r/g, ''),
+      );
+      credentials = JSON.parse(fixed);
     }
-    // Replace literal newlines/carriage-returns inside JSON string values
-    // (common when env vars are copy-pasted through web UIs)
-    credentialsJson = credentialsJson.replace(/\r?\n/g, '\\n');
-    const credentials = JSON.parse(credentialsJson);
+    if (typeof credentials.private_key === 'string') {
+      credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+    }
+
     const auth = new google.auth.GoogleAuth({
       credentials,
       scopes: ['https://www.googleapis.com/auth/drive.file'],
     });
-
     const drive = google.drive({ version: 'v3', auth });
 
-    const { file, metadata, filename, contentType } = await parseFormData(req);
-    const guestName = (metadata as { guestName?: string }).guestName || 'Unknown';
-    const eventSlug = (metadata as { eventSlug?: string }).eventSlug || 'general';
+    // ── Create folder structure ─────────────────────────────────────
+    const safeName = (guestName as string) || 'Unknown';
+    const safeEvent = (eventSlug as string) || 'general';
 
-    // Ensure folder structure exists
-    // By Guest / {guestName} / {eventSlug}
     const byGuestFolder = await findOrCreateFolder(drive, 'By Guest', rootFolderId);
-    const guestFolder = await findOrCreateFolder(drive, guestName, byGuestFolder);
-    const eventFolder = await findOrCreateFolder(drive, eventSlug, guestFolder);
+    const guestFolder = await findOrCreateFolder(drive, safeName, byGuestFolder);
+    const eventFolder = await findOrCreateFolder(drive, safeEvent, guestFolder);
 
-    // Upload file
-    const { Readable } = await import('stream');
-    const fileStream = new Readable();
-    fileStream.push(file);
-    fileStream.push(null);
+    // ── Initiate resumable upload session ───────────────────────────
+    const authClient = await auth.getClient();
+    const { token } = await authClient.getAccessToken();
 
-    const driveFile = await drive.files.create({
-      requestBody: {
-        name: filename,
-        parents: [eventFolder],
-      },
-      media: {
-        mimeType: contentType,
-        body: fileStream,
-      },
-      fields: 'id, name',
-    });
+    // Derive client origin so Google sets the right CORS headers
+    const origin = req.headers.origin
+      || (req.headers.referer ? new URL(req.headers.referer as string).origin : undefined)
+      || `https://${req.headers.host}`;
 
-    // Create shortcut in By Event folder
-    const byEventFolder = await findOrCreateFolder(drive, 'By Event', rootFolderId);
-    const eventDateFolder = await findOrCreateFolder(drive, eventSlug, byEventFolder);
-    await drive.files.create({
-      requestBody: {
-        name: filename,
-        mimeType: 'application/vnd.google-apps.shortcut',
-        shortcutDetails: {
-          targetId: driveFile.data.id!,
+    const driveRes = await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&origin=${encodeURIComponent(origin)}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json; charset=UTF-8',
+          'X-Upload-Content-Type': (contentType as string) || 'application/octet-stream',
         },
-        parents: [eventDateFolder],
+        body: JSON.stringify({
+          name: (filename as string) || 'upload',
+          parents: [eventFolder],
+        }),
       },
-    });
+    );
 
-    // Record in database
-    if (dbUrl) {
-      try {
-        const { neon } = await import('@neondatabase/serverless');
-        const sql = neon(dbUrl);
-        const uploadId = crypto.randomUUID();
-        const meta = metadata as { guestId?: number; eventSlug?: string; mediaType?: string; filterApplied?: string; promptAnswered?: string };
-        await sql`
-          INSERT INTO uploads (id, guest_id, event, media_type, filename, drive_file_id, drive_folder_id, upload_status, uploaded_at, filter_applied, prompt_answered)
-          VALUES (${uploadId}, ${meta.guestId || 0}, ${meta.eventSlug || 'unknown'}, ${meta.mediaType || 'photo'}, ${filename}, ${driveFile.data.id}, ${eventFolder}, ${'complete'}, ${new Date().toISOString()}, ${meta.filterApplied || null}, ${meta.promptAnswered || null})
-        `;
-      } catch (dbErr) {
-        console.error('DB error:', dbErr);
-      }
+    if (!driveRes.ok) {
+      const body = await driveRes.text();
+      console.error('Resumable upload init failed:', driveRes.status, body);
+      return res.status(502).json({ error: 'Failed to initiate upload with Google Drive' });
+    }
+
+    const uploadUrl = driveRes.headers.get('location');
+    if (!uploadUrl) {
+      return res.status(502).json({ error: 'Google Drive did not return an upload URL' });
     }
 
     return res.status(200).json({
-      success: true,
-      driveFileId: driveFile.data.id,
+      uploadUrl,
+      eventFolderId: eventFolder,
     });
   } catch (error) {
-    console.error('Upload error:', error);
-    return res.status(500).json({ error: 'Upload failed' });
+    console.error('Upload initiate error:', error);
+    return res.status(500).json({ error: 'Failed to initiate upload' });
   }
 }
 
-// Helper: find or create a folder in Google Drive
+// ── Helpers ───────────────────────────────────────────────────────────
+
 async function findOrCreateFolder(drive: any, name: string, parentId: string): Promise<string> {
-  // Search for existing folder
+  const escapedName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   const search = await drive.files.list({
-    q: `name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    q: `name='${escapedName}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
     fields: 'files(id)',
   });
 
-  if (search.data.files && search.data.files.length > 0) {
+  if (search.data.files?.length) {
     return search.data.files[0].id;
   }
 
-  // Create new folder
   const folder = await drive.files.create({
-    requestBody: {
-      name,
-      mimeType: 'application/vnd.google-apps.folder',
-      parents: [parentId],
-    },
+    requestBody: { name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] },
     fields: 'id',
   });
-
   return folder.data.id;
 }
