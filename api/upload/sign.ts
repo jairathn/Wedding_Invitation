@@ -1,11 +1,15 @@
-// POST /api/upload/sign — Generate a GCS V4 signed upload URL.
+// POST /api/upload/sign — Initiate a Google Drive resumable upload.
 //
-// Uses manual V4 signing with Node crypto — no @google-cloud/storage needed.
-// The client uploads directly to GCS using this URL (any size, proper CORS).
-// After upload, the client calls /api/upload/complete to move GCS → Drive.
+// Creates the folder structure (Root / Guest / Event) then starts a
+// resumable upload session.  Returns the session URI to the client,
+// which PUTs file data directly to googleapis.com (CORS built-in).
+//
+// No GCS bucket, no signed URLs, no CORS config needed.
+//
+// Request:  { filename, contentType, metadata }
+// Response: { signedUrl, objectPath, folderId }
 //
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import crypto from 'crypto';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -13,118 +17,92 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-    const bucketName = process.env.GCS_BUCKET_NAME;
+    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+    const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
+    const rootFolderId = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
 
-    if (!serviceAccountKey || !bucketName) {
+    if (!clientId || !clientSecret || !refreshToken || !rootFolderId) {
       return res.status(503).json({
-        error: 'Storage not configured',
-        message: 'GCS_BUCKET_NAME and GOOGLE_SERVICE_ACCOUNT_KEY must be set.',
+        error: 'Drive not configured',
+        message: 'GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, GOOGLE_OAUTH_REFRESH_TOKEN, and GOOGLE_DRIVE_ROOT_FOLDER_ID must be set.',
       });
     }
 
     const { filename, contentType, metadata } = req.body;
     const meta = (metadata || {}) as Record<string, unknown>;
-    const guestName = (meta.guestName as string) || 'unknown';
+    const guestName = (meta.guestName as string) || 'Unknown';
     const eventSlug = (meta.eventSlug as string) || 'general';
     const safeContentType = (contentType as string) || 'application/octet-stream';
+    const safeName = (filename as string) || 'upload';
 
-    const timestamp = Date.now();
-    const safeName = ((filename as string) || 'upload').replace(/[^a-zA-Z0-9._-]/g, '_');
-    const objectPath = `uploads/${guestName}/${eventSlug}/${timestamp}_${safeName}`;
+    // ── Authenticate ─────────────────────────────────────────────────
+    const { google } = await import('googleapis');
+    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
+    const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-    const credentials = parseCredentials(serviceAccountKey);
-    const clientEmail = credentials.client_email as string;
-    const privateKey = credentials.private_key as string;
+    // ── Create folder structure: Root / {Guest} / {Event} ────────────
+    const guestFolder = await findOrCreateFolder(drive, guestName, rootFolderId);
+    const eventFolder = await findOrCreateFolder(drive, eventSlug, guestFolder);
 
-    const signedUrl = createV4SignedUrl(bucketName, objectPath, safeContentType, clientEmail, privateKey);
+    // ── Initiate resumable upload to Drive ────────────────────────────
+    const { token } = await oauth2Client.getAccessToken();
 
-    return res.status(200).json({ signedUrl, objectPath });
+    const initRes = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-Upload-Content-Type': safeContentType,
+        },
+        body: JSON.stringify({
+          name: safeName,
+          parents: [eventFolder],
+        }),
+      },
+    );
+
+    if (!initRes.ok) {
+      const body = await initRes.text();
+      console.error('Drive resumable init failed:', initRes.status, body);
+      return res.status(502).json({ error: 'Failed to initiate upload', detail: body });
+    }
+
+    const signedUrl = initRes.headers.get('Location');
+    if (!signedUrl) {
+      console.error('Drive resumable init: no Location header');
+      return res.status(502).json({ error: 'Drive did not return upload URI' });
+    }
+
+    return res.status(200).json({
+      signedUrl,
+      objectPath: `drive/${eventFolder}/${safeName}`,
+      folderId: eventFolder,
+    });
   } catch (error) {
     console.error('Sign URL error:', error);
     return res.status(500).json({ error: 'Failed to generate upload URL' });
   }
 }
 
-// ── Manual GCS V4 signed URL generation ──────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────
 
-function createV4SignedUrl(
-  bucket: string,
-  object: string,
-  contentType: string,
-  clientEmail: string,
-  privateKey: string,
-): string {
-  const now = new Date();
-  const datestamp = now.toISOString().replace(/[-:T]/g, '').substring(0, 15) + 'Z';
-  const dateOnly = datestamp.substring(0, 8);
-
-  const credentialScope = `${dateOnly}/auto/storage/goog4_request`;
-  const host = `storage.googleapis.com`;
-  const canonicalUri = `/${bucket}/${object.split('/').map(encodeRfc3986).join('/')}`;
-
-  const expiresSeconds = 1800; // 30 minutes
-
-  const params: [string, string][] = [
-    ['X-Goog-Algorithm', 'GOOG4-RSA-SHA256'],
-    ['X-Goog-Credential', `${clientEmail}/${credentialScope}`],
-    ['X-Goog-Date', datestamp],
-    ['X-Goog-Expires', String(expiresSeconds)],
-    ['X-Goog-SignedHeaders', 'content-type;host'],
-  ];
-  params.sort((a, b) => a[0].localeCompare(b[0]));
-  const canonicalQueryString = params.map(([k, v]) => `${encodeRfc3986(k)}=${encodeRfc3986(v)}`).join('&');
-
-  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\n`;
-  const signedHeaders = 'content-type;host';
-
-  const canonicalRequest = [
-    'PUT',
-    canonicalUri,
-    canonicalQueryString,
-    canonicalHeaders,
-    signedHeaders,
-    'UNSIGNED-PAYLOAD',
-  ].join('\n');
-
-  const stringToSign = [
-    'GOOG4-RSA-SHA256',
-    datestamp,
-    credentialScope,
-    crypto.createHash('sha256').update(canonicalRequest).digest('hex'),
-  ].join('\n');
-
-  const sign = crypto.createSign('RSA-SHA256');
-  sign.update(stringToSign);
-  const signature = sign.sign(privateKey, 'hex');
-
-  return `https://${host}${canonicalUri}?${canonicalQueryString}&X-Goog-Signature=${signature}`;
-}
-
-function encodeRfc3986(str: string): string {
-  return encodeURIComponent(str).replace(/[!'()*]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
-}
-
-// ── Credential parsing ───────────────────────────────────────────────
-
-function parseCredentials(serviceAccountKey: string): Record<string, unknown> {
-  const trimmed = serviceAccountKey.trim();
-  const json = trimmed.startsWith('{')
-    ? trimmed
-    : Buffer.from(trimmed, 'base64').toString('utf-8');
-
-  let creds: Record<string, unknown>;
-  try {
-    creds = JSON.parse(json);
-  } catch {
-    const fixed = json.replace(
-      /("private_key"\s*:\s*")([^"]*)/,
-      (_m, pre, val) => pre + val.replace(/\n/g, '\\n').replace(/\r/g, ''),
-    );
-    creds = JSON.parse(fixed);
-  }
-  if (typeof creds.private_key === 'string') {
-    creds.private_key = creds.private_key.replace(/\\n/g, '\n');
-  }
-  return creds;
+async function findOrCreateFolder(drive: any, name: string, parentId: string): Promise<string> {
+  const escapedName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const search = await drive.files.list({
+    q: `name='${escapedName}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields: 'files(id)',
+    includeItemsFromAllDrives: true,
+    supportsAllDrives: true,
+  });
+  if (search.data.files?.length) return search.data.files[0].id;
+  const folder = await drive.files.create({
+    requestBody: { name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] },
+    fields: 'id',
+    supportsAllDrives: true,
+  });
+  return folder.data.id;
 }

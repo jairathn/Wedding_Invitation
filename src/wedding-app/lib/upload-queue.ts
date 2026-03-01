@@ -2,9 +2,10 @@
 //
 // Upload flow (same for photos and videos):
 //   1. Compress photos client-side (videos pass through as-is)
-//   2. GET a GCS signed upload URL from /api/upload/sign
-//   3. PUT the file directly to GCS (any size, proper CORS)
-//   4. POST to /api/upload/complete → server streams GCS → Drive
+//   2. POST /api/upload/sign → server creates Drive folders, starts
+//      resumable upload, returns session URI
+//   3. PUT the file directly to googleapis.com (CORS built-in)
+//   4. POST /api/upload/complete → record in database
 //
 
 import { get, set, del, keys } from 'idb-keyval';
@@ -67,9 +68,9 @@ export async function updateQueueItem(id: string, updates: Partial<QueuedUpload>
 // ── Upload a single item ────────────────────────────────────────────
 //
 // 1. Compress photos (videos pass through)
-// 2. Get signed GCS URL from our API
-// 3. PUT file directly to GCS (browser → GCS, any size)
-// 4. Tell our API to move it from GCS → Drive
+// 2. POST /api/upload/sign → get Drive resumable upload session URI
+// 3. PUT file directly to googleapis.com (CORS built-in, any size)
+// 4. POST /api/upload/complete → record in database
 //
 async function processUpload(upload: QueuedUpload): Promise<boolean> {
   try {
@@ -83,7 +84,7 @@ async function processUpload(upload: QueuedUpload): Promise<boolean> {
     }
     const contentType = blob.type || (isPhoto ? 'image/jpeg' : 'video/webm');
 
-    // Step 1: Get a signed GCS upload URL
+    // Step 1: Get a Drive resumable upload session URI
     const signRes = await fetch('/api/upload/sign', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -99,35 +100,48 @@ async function processUpload(upload: QueuedUpload): Promise<boolean> {
       throw new Error(`Sign failed: ${signRes.status} — ${body}`);
     }
 
-    const { signedUrl, objectPath } = await signRes.json();
+    const { signedUrl, folderId } = await signRes.json();
 
-    // Step 2: Upload directly to GCS (no size limit, proper CORS)
+    // Step 2: Upload directly to Google Drive (googleapis.com has CORS)
     const putRes = await fetch(signedUrl, {
       method: 'PUT',
-      headers: { 'Content-Type': contentType },
+      headers: {
+        'Content-Type': contentType,
+        'Content-Length': String(blob.size),
+      },
       body: blob,
     });
 
     if (!putRes.ok) {
       const body = await putRes.text();
-      throw new Error(`GCS upload failed: ${putRes.status} — ${body}`);
+      throw new Error(`Drive upload failed: ${putRes.status} — ${body}`);
     }
 
-    // Step 3: Tell the server to move from GCS → Drive
-    const completeRes = await fetch('/api/upload/complete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        objectPath,
-        filename: upload.metadata.filename,
-        contentType,
-        metadata: upload.metadata,
-      }),
-    });
+    // Parse the Drive response to get the file ID
+    let driveFileId: string | null = null;
+    try {
+      const driveData = await putRes.json();
+      driveFileId = driveData.id || null;
+    } catch {
+      // Response might not be JSON — upload still succeeded
+    }
 
-    if (!completeRes.ok) {
-      const body = await completeRes.text();
-      throw new Error(`Complete failed: ${completeRes.status} — ${body}`);
+    // Step 3: Record in database (best-effort)
+    try {
+      await fetch('/api/upload/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          driveFileId,
+          folderId,
+          filename: upload.metadata.filename,
+          contentType,
+          metadata: upload.metadata,
+        }),
+      });
+    } catch (dbErr) {
+      // DB recording failed — file is still in Drive, that's OK
+      console.warn('DB record failed (non-fatal):', dbErr);
     }
 
     // Success — remove from queue
