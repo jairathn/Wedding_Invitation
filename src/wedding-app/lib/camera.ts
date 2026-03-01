@@ -2,14 +2,23 @@
 
 export type CameraPermission = 'granted' | 'denied' | 'prompt';
 
+const CAMERA_PERM_KEY = 'camera_permission_granted';
+
 /** Check camera permission state without triggering a prompt */
 export async function checkCameraPermission(): Promise<CameraPermission> {
   try {
     const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
     return result.state as CameraPermission;
   } catch {
-    // Firefox / older browsers don't support permissions.query for camera
-    // Return 'prompt' so we attempt getUserMedia which will trigger the native dialog
+    // Firefox / older browsers don't support permissions.query for camera.
+    // Check our localStorage cache — if the user previously granted access,
+    // treat it as 'granted' so we skip the custom permission screen and go
+    // straight to getUserMedia (the browser will allow it silently).
+    try {
+      if (localStorage.getItem(CAMERA_PERM_KEY) === 'true') {
+        return 'granted';
+      }
+    } catch { /* localStorage unavailable */ }
     return 'prompt';
   }
 }
@@ -28,7 +37,12 @@ export async function requestCamera(
     audio: includeAudio,
   };
 
-  return navigator.mediaDevices.getUserMedia(constraints);
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+  // getUserMedia succeeded — remember that the user granted camera access
+  try { localStorage.setItem(CAMERA_PERM_KEY, 'true'); } catch { /* ok */ }
+
+  return stream;
 }
 
 export function stopStream(stream: MediaStream | null): void {
