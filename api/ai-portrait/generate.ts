@@ -1,5 +1,5 @@
-// POST /api/ai-portrait/generate — Generate an AI portrait via Replicate SDXL
-// Expects JSON body: { image: string (base64 data URL), styleId: string, prompt: string, negativePrompt: string }
+// POST /api/ai-portrait/generate — Generate an AI portrait via Replicate FLUX Kontext Pro
+// Expects JSON body: { image: string (base64 data URL), styleId: string, prompt: string }
 // Returns: { status: string, output: string (base64 data URL) }
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { image, styleId, prompt, negativePrompt } = req.body;
+    const { image, styleId, prompt } = req.body;
 
     if (!image || !prompt) {
       return res.status(400).json({ error: 'Missing required fields: image, prompt' });
@@ -64,26 +64,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const Replicate = (await import('replicate')).default;
     const replicate = new Replicate({ auth: apiToken });
 
-    // Use SDXL img2img for style transfer with the user's photo as input
+    // Use FLUX Kontext Pro for text-guided style transfer with the user's photo
     const output = await runWithRetry(
       replicate,
-      'stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc',
+      'black-forest-labs/flux-kontext-pro',
       {
-        image,
+        input_image: image,
         prompt,
-        negative_prompt: negativePrompt || 'deformed, ugly, blurry, low quality, watermark, text',
-        prompt_strength: 0.65,
-        num_inference_steps: 30,
-        guidance_scale: 7.5,
-        width: 1024,
-        height: 1024,
-        scheduler: 'K_EULER',
-        refine: 'expert_ensemble_refiner',
-        high_noise_frac: 0.8,
+        aspect_ratio: '1:1',
+        output_format: 'jpg',
+        safety_tolerance: 2,
       },
     );
 
-    // Replicate returns an array of output URLs for image models
+    // Kontext Pro returns a single FileOutput (URL string via toString)
     const outputUrl = Array.isArray(output) ? output[0] : output;
 
     if (!outputUrl) {

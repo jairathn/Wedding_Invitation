@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Monogram from '../components/Monogram';
-import { getStoredSession } from '../lib/session';
+import { getStoredSession, clearSession } from '../lib/session';
 import { getCurrentEvent, getNextEvent, EVENTS } from '../constants';
 import { getAllGuests } from '../lib/guest-search';
 
@@ -107,6 +107,7 @@ export default function HomeScreen() {
 
   const [loaded, setLoaded] = useState(false);
   const [tappedCard, setTappedCard] = useState<string | null>(null);
+  const [showMenu, setShowMenu] = useState(false);
 
   const guestCount = useMemo(() => getAllGuests().length, []);
 
@@ -205,7 +206,64 @@ export default function HomeScreen() {
               letterSpacing: '-0.01em',
             }}>{firstName}</h1>
           </div>
-          <Monogram size={44} />
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              }}
+            >
+              <Monogram size={44} />
+            </button>
+            {showMenu && (
+              <>
+                {/* Backdrop to close menu */}
+                <div
+                  onClick={() => setShowMenu(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 49 }}
+                />
+                {/* Dropdown */}
+                <div style={{
+                  position: 'absolute', top: 52, right: 0, zIndex: 50,
+                  background: 'white', borderRadius: 14,
+                  boxShadow: '0 8px 32px rgba(44,40,37,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid rgba(232,221,211,0.6)',
+                  overflow: 'hidden', minWidth: 170,
+                }}>
+                  <div style={{
+                    padding: '14px 16px 10px',
+                    borderBottom: '1px solid rgba(232,221,211,0.5)',
+                  }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#2C2825' }}>
+                      {session?.guest ? `${session.guest.firstName} ${session.guest.lastName}` : 'Guest'}
+                    </p>
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: '#A09890' }}>
+                      Wedding Guest
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      clearSession();
+                      navigate('/app');
+                    }}
+                    style={{
+                      width: '100%', padding: '12px 16px',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      textAlign: 'left',
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4726A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16 17 21 12 16 7"/>
+                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span style={{ fontSize: 14, color: '#D4726A', fontWeight: 500 }}>Log Out</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Event Banner */}
