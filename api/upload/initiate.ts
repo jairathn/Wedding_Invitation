@@ -56,28 +56,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const dbUrl = process.env.DATABASE_URL;
 
     if (!serviceAccountKey || !rootFolderId) {
-      // Google Drive not configured — accept upload but log warning
-      console.warn('Google Drive not configured. Upload accepted but not stored in Drive.');
-
-      // Still record in database if available
-      if (dbUrl) {
-        try {
-          const { neon } = await import('@neondatabase/serverless');
-          const sql = neon(dbUrl);
-          const uploadId = crypto.randomUUID();
-          await sql`
-            INSERT INTO uploads (id, guest_id, event, media_type, filename, upload_status)
-            VALUES (${uploadId}, ${0}, ${'unknown'}, ${'photo'}, ${'upload'}, ${'pending'})
-          `;
-        } catch {
-          // DB unavailable too
-        }
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: 'Upload accepted (Drive not configured)',
-        driveFileId: null,
+      console.error('Google Drive not configured. GOOGLE_SERVICE_ACCOUNT_KEY and GOOGLE_DRIVE_ROOT_FOLDER_ID must be set.');
+      return res.status(503).json({
+        error: 'Google Drive not configured',
+        message: 'Upload could not be saved — the wedding album storage is not set up yet. Please contact the couple.',
       });
     }
 

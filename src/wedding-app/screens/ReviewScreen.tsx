@@ -287,37 +287,38 @@ export default function ReviewScreen() {
         {!saved ? (
           <>
             {/* Primary CTA: Save to Both */}
-            <button
-              onClick={saveToBoth}
-              disabled={saving}
-              style={{
-                width: '100%', padding: 16, borderRadius: 16,
-                background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
-                border: 'none', cursor: saving ? 'wait' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
-                position: 'relative', overflow: 'hidden',
-                opacity: saving ? 0.7 : 1, transition: 'opacity 0.2s',
-              }}
-            >
-              {/* Recommended badge */}
+            <div style={{ position: 'relative', marginTop: 8 }}>
+              {/* Recommended badge — outside button to avoid clipping */}
               <div style={{
-                position: 'absolute', top: -10, right: 16,
+                position: 'absolute', top: -8, right: 16, zIndex: 1,
                 background: '#D4A853', padding: '2px 10px 4px',
                 borderRadius: '0 0 8px 8px', fontSize: 10, fontWeight: 700,
                 color: 'white', letterSpacing: '0.05em', textTransform: 'uppercase',
               }}>Recommended</div>
 
-              <span style={{ fontSize: 18 }}>&#11088;</span>
-              <div style={{ textAlign: 'left' }}>
-                <p style={{ margin: 0, color: 'white', fontWeight: 600, fontSize: 16 }}>
-                  {saving ? 'Saving...' : 'Save to Both'}
-                </p>
-                <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>
-                  Wedding album + your phone
-                </p>
-              </div>
-            </button>
+              <button
+                onClick={saveToBoth}
+                disabled={saving}
+                style={{
+                  width: '100%', padding: '18px 16px 16px', borderRadius: 16,
+                  background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
+                  border: 'none', cursor: saving ? 'wait' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
+                  opacity: saving ? 0.7 : 1, transition: 'opacity 0.2s',
+                }}
+              >
+                <span style={{ fontSize: 18 }}>&#11088;</span>
+                <div style={{ textAlign: 'left' }}>
+                  <p style={{ margin: 0, color: 'white', fontWeight: 600, fontSize: 16 }}>
+                    {saving ? 'Saving...' : 'Save to Both'}
+                  </p>
+                  <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>
+                    Wedding album + your phone
+                  </p>
+                </div>
+              </button>
+            </div>
 
             {/* Secondary: side-by-side */}
             <div style={{ display: 'flex', gap: 10 }}>
