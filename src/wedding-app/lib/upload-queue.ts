@@ -1,11 +1,10 @@
 // IndexedDB-based offline upload queue
 //
-// Upload flow (same for photos and videos):
+// Upload flow:
 //   1. Compress photos client-side (videos pass through as-is)
-//   2. POST /api/upload/sign → server creates Drive folders, starts
-//      resumable upload, returns session URI
-//   3. PUT the file directly to googleapis.com (CORS built-in)
-//   4. POST /api/upload/complete → record in database
+//   2. POST /api/upload/initiate with base64 file data
+//   3. Server creates Drive folders + uploads to Drive + records in DB
+//   All same-origin — no CORS, no signed URLs, no intermediate storage.
 //
 
 import { get, set, del, keys } from 'idb-keyval';
@@ -68,9 +67,8 @@ export async function updateQueueItem(id: string, updates: Partial<QueuedUpload>
 // ── Upload a single item ────────────────────────────────────────────
 //
 // 1. Compress photos (videos pass through)
-// 2. POST /api/upload/sign → get Drive resumable upload session URI
-// 3. PUT file directly to googleapis.com (CORS built-in, any size)
-// 4. POST /api/upload/complete → record in database
+// 2. Convert blob to base64
+// 3. POST to /api/upload/initiate (same origin — server uploads to Drive)
 //
 async function processUpload(upload: QueuedUpload): Promise<boolean> {
   try {
@@ -84,64 +82,24 @@ async function processUpload(upload: QueuedUpload): Promise<boolean> {
     }
     const contentType = blob.type || (isPhoto ? 'image/jpeg' : 'video/webm');
 
-    // Step 1: Get a Drive resumable upload session URI
-    const signRes = await fetch('/api/upload/sign', {
+    // Convert blob to base64 for JSON transport
+    const base64 = await blobToBase64(blob);
+
+    // Single same-origin POST — server handles folders + Drive upload + DB
+    const res = await fetch('/api/upload/initiate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        file: base64,
         filename: upload.metadata.filename,
         contentType,
         metadata: upload.metadata,
       }),
     });
 
-    if (!signRes.ok) {
-      const body = await signRes.text();
-      throw new Error(`Sign failed: ${signRes.status} — ${body}`);
-    }
-
-    const { signedUrl, folderId } = await signRes.json();
-
-    // Step 2: Upload directly to Google Drive (googleapis.com has CORS)
-    const putRes = await fetch(signedUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': String(blob.size),
-      },
-      body: blob,
-    });
-
-    if (!putRes.ok) {
-      const body = await putRes.text();
-      throw new Error(`Drive upload failed: ${putRes.status} — ${body}`);
-    }
-
-    // Parse the Drive response to get the file ID
-    let driveFileId: string | null = null;
-    try {
-      const driveData = await putRes.json();
-      driveFileId = driveData.id || null;
-    } catch {
-      // Response might not be JSON — upload still succeeded
-    }
-
-    // Step 3: Record in database (best-effort)
-    try {
-      await fetch('/api/upload/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          driveFileId,
-          folderId,
-          filename: upload.metadata.filename,
-          contentType,
-          metadata: upload.metadata,
-        }),
-      });
-    } catch (dbErr) {
-      // DB recording failed — file is still in Drive, that's OK
-      console.warn('DB record failed (non-fatal):', dbErr);
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Upload failed: ${res.status} — ${body}`);
     }
 
     // Success — remove from queue
@@ -157,6 +115,19 @@ async function processUpload(upload: QueuedUpload): Promise<boolean> {
     });
     return false;
   }
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      // Strip the "data:...;base64," prefix
+      resolve(dataUrl.split(',')[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 // Process the queue (called periodically or on connectivity change)
