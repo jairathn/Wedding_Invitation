@@ -1,5 +1,5 @@
-// Snapchat-style photo booth filters
-// Each filter owns its entire canvas render pipeline — color grading, overlays, borders, text
+// Photo booth filters — pixel-level color grading with Canvas 2D
+// Each filter owns its entire render pipeline: color manipulation, overlays, borders, text
 
 export interface PhotoFilter {
   id: string;
@@ -13,8 +13,9 @@ export interface PhotoFilter {
   ): void;
 }
 
-// ── Helpers ─────────────────────────────────────────────────
+// ── Pixel helpers ─────────────────────────────────────────
 
+/** Draw video frame to canvas, optionally mirrored */
 function drawVideo(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
@@ -33,6 +34,71 @@ function drawVideo(
   ctx.filter = 'none';
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
+
+/** Apply a pixel-level color grade using a callback on RGBA values */
+function colorGrade(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  grade: (r: number, g: number, b: number) => [number, number, number]
+) {
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const d = imageData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const [r, g, b] = grade(d[i], d[i + 1], d[i + 2]);
+    d[i] = r;
+    d[i + 1] = g;
+    d[i + 2] = b;
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+/** Clamp a value to 0-255 */
+function clamp(v: number): number {
+  return v < 0 ? 0 : v > 255 ? 255 : v;
+}
+
+/** Mix two values by a factor (0 = a, 1 = b) */
+function mix(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+/** Luminance (perceived brightness) */
+function luminance(r: number, g: number, b: number): number {
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+/** Split-tone: tint shadows one color, highlights another */
+function splitTone(
+  r: number, g: number, b: number,
+  shadowR: number, shadowG: number, shadowB: number,
+  highlightR: number, highlightG: number, highlightB: number,
+  strength: number = 0.25
+): [number, number, number] {
+  const lum = luminance(r, g, b) / 255;
+  // Shadow influence = more in darks, less in lights
+  const shadowMix = (1 - lum) * strength;
+  // Highlight influence = more in lights, less in darks
+  const highlightMix = lum * strength;
+
+  return [
+    clamp(r + (shadowR - 128) * shadowMix + (highlightR - 128) * highlightMix),
+    clamp(g + (shadowG - 128) * shadowMix + (highlightG - 128) * highlightMix),
+    clamp(b + (shadowB - 128) * shadowMix + (highlightB - 128) * highlightMix),
+  ];
+}
+
+/** Apply S-curve contrast */
+function sCurve(v: number, intensity: number = 0.5): number {
+  const x = v / 255;
+  // Sigmoid-like S-curve
+  const curved = x < 0.5
+    ? 0.5 * Math.pow(2 * x, 1 + intensity)
+    : 1 - 0.5 * Math.pow(2 * (1 - x), 1 + intensity);
+  return clamp(curved * 255);
+}
+
+// ── Drawing helpers ───────────────────────────────────────
 
 function vignette(
   ctx: CanvasRenderingContext2D,
@@ -112,7 +178,24 @@ function badge(
   ctx.restore();
 }
 
-// ── Sketch (Sobel edge detection) ───────────────────────────
+/** Scatter film-grain noise over the canvas */
+function filmGrain(
+  ctx: CanvasRenderingContext2D,
+  w: number, h: number,
+  intensity: number = 0.06
+) {
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const d = imageData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const noise = (Math.random() - 0.5) * 255 * intensity;
+    d[i] = clamp(d[i] + noise);
+    d[i + 1] = clamp(d[i + 1] + noise);
+    d[i + 2] = clamp(d[i + 2] + noise);
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// ── Sketch (Sobel edge detection) ────────────────────────
 
 let _sketchBuf: HTMLCanvasElement | null = null;
 
@@ -133,7 +216,6 @@ function renderSketch(
   const sctx = _sketchBuf.getContext('2d');
   if (!sctx) return;
 
-  // Draw grayscale video at reduced resolution
   sctx.filter = 'grayscale(1) contrast(1.5)';
   sctx.save();
   if (mirror) { sctx.translate(sw, 0); sctx.scale(-1, 1); }
@@ -141,7 +223,6 @@ function renderSketch(
   sctx.restore();
   sctx.filter = 'none';
 
-  // Sobel edge detection
   const src = sctx.getImageData(0, 0, sw, sh);
   const dst = sctx.createImageData(sw, sh);
   const sd = src.data, dd = dst.data;
@@ -162,7 +243,6 @@ function renderSketch(
       const gy = -tl - 2 * t - tr + bl + 2 * b + br;
       const mag = Math.sqrt(gx * gx + gy * gy);
 
-      // Pencil: white paper, dark lines. Threshold for clean look.
       const val = mag > 25 ? Math.max(30, 250 - mag * 1.8) : 252;
       dd[i] = val;
       dd[i + 1] = val;
@@ -173,7 +253,6 @@ function renderSketch(
 
   sctx.putImageData(dst, 0, 0);
 
-  // Scale up to main canvas
   ctx.imageSmoothingEnabled = true;
   ctx.drawImage(_sketchBuf, 0, 0, w, h);
 
@@ -184,7 +263,7 @@ function renderSketch(
   ctx.globalCompositeOperation = 'source-over';
 }
 
-// ── Filter definitions ──────────────────────────────────────
+// ── Filter definitions ───────────────────────────────────
 
 const none: PhotoFilter = {
   id: 'none',
@@ -196,24 +275,132 @@ const none: PhotoFilter = {
   },
 };
 
+const filmClassic: PhotoFilter = {
+  id: 'film',
+  name: 'Film',
+  preview: 'linear-gradient(135deg, #c9b896 0%, #a89878 100%)',
+  render(ctx, canvas, video, mirror) {
+    const w = canvas.width, h = canvas.height;
+    drawVideo(ctx, canvas, video, mirror);
+
+    // Pixel-level film look: fade blacks, warm mids, cool shadows
+    colorGrade(ctx, w, h, (r, g, b) => {
+      // Lift blacks (fade the shadows)
+      r = clamp(r * 0.92 + 18);
+      g = clamp(g * 0.92 + 16);
+      b = clamp(b * 0.92 + 14);
+
+      // S-curve contrast
+      r = sCurve(r, 0.3);
+      g = sCurve(g, 0.3);
+      b = sCurve(b, 0.3);
+
+      // Warm split-tone: teal shadows, amber highlights
+      return splitTone(r, g, b, 90, 130, 145, 180, 155, 110, 0.2);
+    });
+
+    // Subtle grain
+    filmGrain(ctx, w, h, 0.04);
+    vignette(ctx, w, h, 'rgba(30, 20, 10, 0.7)', 0.3);
+    hashtag(ctx, w, h, 'Film');
+    badge(ctx, w, h, '🎞️ Film', 'rgba(120, 95, 60, 0.8)');
+  },
+};
+
+const bwClassic: PhotoFilter = {
+  id: 'bw',
+  name: 'B&W',
+  preview: 'linear-gradient(135deg, #888 0%, #444 100%)',
+  render(ctx, canvas, video, mirror) {
+    const w = canvas.width, h = canvas.height;
+    drawVideo(ctx, canvas, video, mirror);
+
+    // High-contrast B&W with channel-weighted conversion
+    colorGrade(ctx, w, h, (r, g, b) => {
+      // Weighted luminance (green-heavy, like Kodak Tri-X)
+      let lum = 0.25 * r + 0.65 * g + 0.1 * b;
+
+      // Strong S-curve for punchy contrast
+      lum = sCurve(lum, 0.7);
+
+      // Slight warm tone in the highlights (silver gelatin look)
+      const warmR = clamp(lum * 1.02 + 3);
+      const warmG = clamp(lum * 1.0 + 1);
+      const warmB = clamp(lum * 0.96 - 2);
+
+      return [warmR, warmG, warmB];
+    });
+
+    filmGrain(ctx, w, h, 0.06);
+    vignette(ctx, w, h, 'rgba(0, 0, 0, 0.8)', 0.4);
+    hashtag(ctx, w, h);
+    badge(ctx, w, h, '🖤 B&W', 'rgba(60, 60, 60, 0.8)');
+  },
+};
+
+const goldenHour: PhotoFilter = {
+  id: 'golden',
+  name: 'Golden Hour',
+  preview: 'linear-gradient(135deg, #E8A848 0%, #D4884C 50%, #C4704B 100%)',
+  render(ctx, canvas, video, mirror) {
+    const w = canvas.width, h = canvas.height;
+    drawVideo(ctx, canvas, video, mirror);
+
+    colorGrade(ctx, w, h, (r, g, b) => {
+      // Warm up: boost reds, warm greens, pull back blues
+      r = clamp(r * 1.12 + 10);
+      g = clamp(g * 1.04 + 5);
+      b = clamp(b * 0.85);
+
+      // Gentle S-curve
+      r = sCurve(r, 0.25);
+      g = sCurve(g, 0.2);
+      b = sCurve(b, 0.15);
+
+      // Split-tone: warm shadows, golden highlights
+      return splitTone(r, g, b, 160, 120, 80, 200, 170, 100, 0.2);
+    });
+
+    // Golden glow overlay
+    ctx.globalCompositeOperation = 'screen';
+    const glowGrad = ctx.createRadialGradient(w * 0.7, h * 0.3, 0, w * 0.7, h * 0.3, w * 0.6);
+    glowGrad.addColorStop(0, 'rgba(255, 200, 80, 0.08)');
+    glowGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'source-over';
+
+    vignette(ctx, w, h, 'rgba(120, 60, 20, 0.6)', 0.35);
+    hashtag(ctx, w, h, 'Golden Hour');
+    badge(ctx, w, h, '☀️ Golden', 'rgba(200, 140, 60, 0.85)');
+  },
+};
+
 const rajasthani: PhotoFilter = {
   id: 'rajasthani',
   name: 'Rajasthani',
   preview: 'linear-gradient(135deg, #d4a853 0%, #c4704b 50%, #8b4513 100%)',
   render(ctx, canvas, video, mirror) {
     const w = canvas.width, h = canvas.height;
+    drawVideo(ctx, canvas, video, mirror);
 
-    // Rich warm desert tones
-    drawVideo(ctx, canvas, video, mirror,
-      'saturate(1.6) sepia(0.4) brightness(1.05) contrast(1.15)');
+    // Rich warm desert tones with pixel-level grading
+    colorGrade(ctx, w, h, (r, g, b) => {
+      // Boost saturation and warmth
+      const lum = luminance(r, g, b);
+      r = clamp(mix(lum, r, 1.5) * 1.08 + 8);
+      g = clamp(mix(lum, g, 1.5) * 0.98);
+      b = clamp(mix(lum, b, 1.4) * 0.82);
 
-    // Golden overlay
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.fillStyle = 'rgba(255, 210, 140, 0.15)';
-    ctx.fillRect(0, 0, w, h);
-    ctx.globalCompositeOperation = 'source-over';
+      // S-curve for punch
+      r = sCurve(r, 0.35);
+      g = sCurve(g, 0.3);
+      b = sCurve(b, 0.25);
 
-    // Gold vignette
+      // Split-tone: deep amber shadows, gold highlights
+      return splitTone(r, g, b, 150, 100, 50, 210, 180, 120, 0.25);
+    });
+
     vignette(ctx, w, h, 'rgba(139, 69, 19, 0.7)', 0.45);
 
     // Ornate gold border
@@ -237,7 +424,6 @@ const rajasthani: PhotoFilter = {
       ctx.rotate(Math.PI / 4);
       ctx.fillRect(-ds / 2, -ds / 2, ds, ds);
       ctx.restore();
-      // Center dot
       ctx.beginPath();
       ctx.arc(cx, cy, ds * 0.25, 0, Math.PI * 2);
       ctx.fill();
@@ -282,27 +468,29 @@ const sketch: PhotoFilter = {
 
 const spanish: PhotoFilter = {
   id: 'spanish',
-  name: 'Spanish',
+  name: 'Barcelona',
   preview: 'linear-gradient(135deg, #2b5f8a 0%, #e8865a 100%)',
   render(ctx, canvas, video, mirror) {
     const w = canvas.width, h = canvas.height;
+    drawVideo(ctx, canvas, video, mirror);
 
-    // Mediterranean color grading
-    drawVideo(ctx, canvas, video, mirror,
-      'saturate(1.3) contrast(1.12) brightness(1.06)');
+    // Mediterranean color grading — rich blues and warm terracotta
+    colorGrade(ctx, w, h, (r, g, b) => {
+      // Boost saturation slightly
+      const lum = luminance(r, g, b);
+      r = clamp(mix(lum, r, 1.25));
+      g = clamp(mix(lum, g, 1.2));
+      b = clamp(mix(lum, b, 1.3));
 
-    // Blue shadow split-tone
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.fillStyle = 'rgba(43, 95, 138, 0.14)';
-    ctx.fillRect(0, 0, w, h);
+      // S-curve
+      r = sCurve(r, 0.3);
+      g = sCurve(g, 0.25);
+      b = sCurve(b, 0.3);
 
-    // Warm highlight split-tone
-    ctx.globalCompositeOperation = 'screen';
-    ctx.fillStyle = 'rgba(232, 134, 90, 0.09)';
-    ctx.fillRect(0, 0, w, h);
-    ctx.globalCompositeOperation = 'source-over';
+      // Split-tone: blue shadows, warm orange highlights
+      return splitTone(r, g, b, 60, 100, 160, 210, 160, 120, 0.22);
+    });
 
-    // Cool blue vignette
     vignette(ctx, w, h, 'rgba(20, 50, 80, 0.6)', 0.35);
 
     // Blue border
@@ -327,7 +515,7 @@ const spanish: PhotoFilter = {
       ctx.stroke();
     }
 
-    hashtag(ctx, w, h, 'Barcelona 🇪🇸');
+    hashtag(ctx, w, h, 'Barcelona');
     badge(ctx, w, h, '🏰 Barcelona', 'rgba(43, 95, 138, 0.85)');
   },
 };
@@ -338,18 +526,30 @@ const haldiFilter: PhotoFilter = {
   preview: 'linear-gradient(135deg, #e8b84d 0%, #d4a030 50%, #c49020 100%)',
   render(ctx, canvas, video, mirror) {
     const w = canvas.width, h = canvas.height;
+    drawVideo(ctx, canvas, video, mirror);
 
-    // Deep turmeric golden glow
-    drawVideo(ctx, canvas, video, mirror,
-      'saturate(1.6) sepia(0.3) brightness(1.1) hue-rotate(-15deg) contrast(1.05)');
+    // Deep turmeric golden glow — pixel-level
+    colorGrade(ctx, w, h, (r, g, b) => {
+      // Shift toward golden/yellow
+      r = clamp(r * 1.1 + 12);
+      g = clamp(g * 1.05 + 8);
+      b = clamp(b * 0.78 - 5);
 
-    // Yellow overlay
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.fillStyle = 'rgba(255, 220, 100, 0.12)';
-    ctx.fillRect(0, 0, w, h);
-    ctx.globalCompositeOperation = 'source-over';
+      // Boost saturation toward warm
+      const lum = luminance(r, g, b);
+      r = clamp(mix(lum, r, 1.4));
+      g = clamp(mix(lum, g, 1.3));
+      b = clamp(mix(lum, b, 1.1));
 
-    // Warm golden vignette
+      // S-curve
+      r = sCurve(r, 0.25);
+      g = sCurve(g, 0.2);
+      b = sCurve(b, 0.15);
+
+      // Split-tone: deep gold shadows, bright yellow highlights
+      return splitTone(r, g, b, 160, 130, 50, 220, 200, 100, 0.2);
+    });
+
     vignette(ctx, w, h, 'rgba(200, 150, 0, 0.5)', 0.4);
 
     // Marigold gradient border
@@ -363,24 +563,22 @@ const haldiFilter: PhotoFilter = {
     ctx.strokeRect(bw / 2, bw / 2, w - bw, h - bw);
 
     // Marigold flower circles at corners
-    const r = Math.floor(Math.min(w, h) * 0.022);
+    const r2 = Math.floor(Math.min(w, h) * 0.022);
     const offset = bw * 3;
     for (const [cx, cy] of [[offset, offset], [w - offset, offset], [offset, h - offset], [w - offset, h - offset]] as const) {
-      // Petals
       ctx.fillStyle = 'rgba(255, 200, 50, 0.45)';
       for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
         ctx.beginPath();
-        ctx.arc(cx + Math.cos(a) * r * 0.7, cy + Math.sin(a) * r * 0.7, r * 0.45, 0, Math.PI * 2);
+        ctx.arc(cx + Math.cos(a) * r2 * 0.7, cy + Math.sin(a) * r2 * 0.7, r2 * 0.45, 0, Math.PI * 2);
         ctx.fill();
       }
-      // Center
       ctx.fillStyle = 'rgba(232, 160, 50, 0.7)';
       ctx.beginPath();
-      ctx.arc(cx, cy, r * 0.4, 0, Math.PI * 2);
+      ctx.arc(cx, cy, r2 * 0.4, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    hashtag(ctx, w, h, 'Haldi ✨');
+    hashtag(ctx, w, h, 'Haldi');
     badge(ctx, w, h, '✨ Haldi', 'rgba(200, 160, 30, 0.85)');
   },
 };
@@ -391,23 +589,30 @@ const sangeet: PhotoFilter = {
   preview: 'linear-gradient(135deg, #8844aa 0%, #e84870 50%, #d46840 100%)',
   render(ctx, canvas, video, mirror) {
     const w = canvas.width, h = canvas.height;
+    drawVideo(ctx, canvas, video, mirror);
 
-    // Vibrant purple/magenta stage lighting
-    drawVideo(ctx, canvas, video, mirror,
-      'saturate(1.7) contrast(1.2) brightness(0.95) hue-rotate(-10deg)');
+    // Vibrant purple/magenta stage lighting — pixel-level
+    colorGrade(ctx, w, h, (r, g, b) => {
+      // Boost saturation heavily
+      const lum = luminance(r, g, b);
+      r = clamp(mix(lum, r, 1.6));
+      g = clamp(mix(lum, g, 1.4));
+      b = clamp(mix(lum, b, 1.5));
 
-    // Purple shadows
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.fillStyle = 'rgba(136, 68, 170, 0.1)';
-    ctx.fillRect(0, 0, w, h);
+      // Push purple tint
+      r = clamp(r * 1.05 + 5);
+      b = clamp(b * 1.08 + 8);
+      g = clamp(g * 0.92);
 
-    // Pink highlights
-    ctx.globalCompositeOperation = 'screen';
-    ctx.fillStyle = 'rgba(232, 72, 112, 0.06)';
-    ctx.fillRect(0, 0, w, h);
-    ctx.globalCompositeOperation = 'source-over';
+      // Strong S-curve for dramatic contrast
+      r = sCurve(r, 0.45);
+      g = sCurve(g, 0.4);
+      b = sCurve(b, 0.45);
 
-    // Purple vignette
+      // Split-tone: deep purple shadows, pink highlights
+      return splitTone(r, g, b, 100, 40, 140, 220, 100, 160, 0.25);
+    });
+
     vignette(ctx, w, h, 'rgba(80, 20, 100, 0.7)', 0.45);
 
     // Neon glow border
@@ -437,13 +642,12 @@ const sangeet: PhotoFilter = {
       ctx.beginPath();
       ctx.arc(sx, sy, ss, 0, Math.PI * 2);
       ctx.fill();
-      // Cross sparkle rays
       ctx.fillRect(sx - ss * 2.5, sy - 0.5, ss * 5, 1);
       ctx.fillRect(sx - 0.5, sy - ss * 2.5, 1, ss * 5);
     }
     ctx.globalAlpha = 1;
 
-    hashtag(ctx, w, h, 'Sangeet Night 🎤');
+    hashtag(ctx, w, h, 'Sangeet Night');
     badge(ctx, w, h, '🎤 Sangeet', 'rgba(136, 68, 170, 0.85)');
   },
 };
@@ -454,10 +658,24 @@ const wedding: PhotoFilter = {
   preview: 'linear-gradient(135deg, #e8c4b8 0%, #f0ddd4 50%, #d4a898 100%)',
   render(ctx, canvas, video, mirror) {
     const w = canvas.width, h = canvas.height;
+    drawVideo(ctx, canvas, video, mirror);
 
-    // Soft romantic base
-    drawVideo(ctx, canvas, video, mirror,
-      'saturate(0.9) brightness(1.08) contrast(0.95) sepia(0.06)');
+    // Soft romantic — pixel-level
+    colorGrade(ctx, w, h, (r, g, b) => {
+      // Slight desaturation for softness
+      const lum = luminance(r, g, b);
+      r = clamp(mix(lum, r, 0.88) + 8);
+      g = clamp(mix(lum, g, 0.88) + 5);
+      b = clamp(mix(lum, b, 0.88) + 3);
+
+      // Gentle S-curve
+      r = sCurve(r, 0.15);
+      g = sCurve(g, 0.12);
+      b = sCurve(b, 0.1);
+
+      // Split-tone: rosy shadows, creamy highlights
+      return splitTone(r, g, b, 160, 120, 130, 200, 185, 175, 0.18);
+    });
 
     // Dreamy bloom — re-draw blurred at low opacity
     ctx.save();
@@ -469,7 +687,6 @@ const wedding: PhotoFilter = {
     ctx.filter = 'none';
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-    // Rose-gold vignette
     vignette(ctx, w, h, 'rgba(200, 160, 140, 0.5)', 0.35);
 
     // Elegant double border
@@ -499,10 +716,51 @@ const wedding: PhotoFilter = {
   },
 };
 
-// ── Export ───────────────────────────────────────────────────
+const vintage: PhotoFilter = {
+  id: 'vintage',
+  name: 'Vintage',
+  preview: 'linear-gradient(135deg, #c4a882 0%, #9e8468 100%)',
+  render(ctx, canvas, video, mirror) {
+    const w = canvas.width, h = canvas.height;
+    drawVideo(ctx, canvas, video, mirror);
+
+    // Faded vintage look — crushed blacks, desaturated, warm
+    colorGrade(ctx, w, h, (r, g, b) => {
+      // Desaturate moderately
+      const lum = luminance(r, g, b);
+      r = clamp(mix(lum, r, 0.7));
+      g = clamp(mix(lum, g, 0.7));
+      b = clamp(mix(lum, b, 0.7));
+
+      // Lift blacks heavily (faded look)
+      r = clamp(r * 0.82 + 35);
+      g = clamp(g * 0.82 + 30);
+      b = clamp(b * 0.82 + 25);
+
+      // Crush highlights slightly
+      r = clamp(Math.min(r, 235));
+      g = clamp(Math.min(g, 230));
+      b = clamp(Math.min(b, 220));
+
+      // Warm sepia-like tint
+      return splitTone(r, g, b, 140, 110, 80, 190, 170, 140, 0.3);
+    });
+
+    filmGrain(ctx, w, h, 0.07);
+    vignette(ctx, w, h, 'rgba(80, 50, 20, 0.7)', 0.45);
+    hashtag(ctx, w, h, 'Vintage');
+    badge(ctx, w, h, '📷 Vintage', 'rgba(160, 120, 70, 0.8)');
+  },
+};
+
+// ── Export ────────────────────────────────────────────────
 
 export const PHOTO_FILTERS: PhotoFilter[] = [
   none,
+  filmClassic,
+  bwClassic,
+  goldenHour,
+  vintage,
   rajasthani,
   sketch,
   spanish,

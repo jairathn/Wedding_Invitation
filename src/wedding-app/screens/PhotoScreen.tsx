@@ -1,12 +1,23 @@
 // Photo Booth Screen — /app/photo
-// Full working camera with categorized filter carousel matching design spec
+// Dual mode: real-time Filters (camera) + AI Portrait (capture → pick → generating → reveal)
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { requestCamera, stopStream, capturePhotoFromFilteredCanvas, checkCameraPermission } from '../lib/camera';
 import { getStoredSession } from '../lib/session';
 import { PHOTO_FILTERS } from '../lib/filters';
+import {
+  AI_PORTRAIT_STYLES,
+  canGeneratePortrait,
+  getRemainingPortraits,
+  incrementPortraitCount,
+  generateAIPortrait,
+  preparePhotoForAI,
+} from '../lib/ai-portrait';
+import type { AIPortraitStyle, AIPortraitStep } from '../lib/ai-portrait';
 import type { CapturedMedia } from '../types';
+
+type TabMode = 'filters' | 'ai-portrait';
 
 export default function PhotoScreen() {
   const navigate = useNavigate();
@@ -21,9 +32,23 @@ export default function PhotoScreen() {
   const [permState, setPermState] = useState<'loading' | 'needs-permission' | 'denied' | 'ready'>('loading');
   const [flash, setFlash] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [mode, setMode] = useState<'single' | 'strip'>('single');
 
+  // Tab mode
+  const [tabMode, setTabMode] = useState<TabMode>('filters');
+
+  // Filter mode state
   const [activeFilter, setActiveFilter] = useState('none');
+
+  // AI Portrait state
+  const [aiStep, setAiStep] = useState<AIPortraitStep>('capture');
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState<AIPortraitStyle | null>(null);
+  const [aiProgress, setAiProgress] = useState(0);
+  const [aiResult, setAiResult] = useState<string | null>(null);
+  const [showCompare, setShowCompare] = useState(false);
+  const [confettiParticles, setConfettiParticles] = useState<Array<{
+    x: number; y: number; vx: number; vy: number; color: string; size: number;
+  }>>([]);
 
   const guestName = session?.guest
     ? `${session.guest.firstName} ${session.guest.lastName}`
@@ -46,19 +71,16 @@ export default function PhotoScreen() {
     }
   }, [stream]);
 
-  // Check permissions on mount, then init camera if already granted
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const perm = await checkCameraPermission();
       if (cancelled) return;
       if (perm === 'granted') {
-        // Permission remembered — go straight to camera
         initCamera('user');
       } else if (perm === 'denied') {
         setPermState('denied');
       } else {
-        // 'prompt' — show our friendly UI first
         setPermState('needs-permission');
       }
     })();
@@ -72,7 +94,12 @@ export default function PhotoScreen() {
 
   // ── Live canvas render with filter ──
   useEffect(() => {
-    const filter = PHOTO_FILTERS.find(f => f.id === activeFilter) || PHOTO_FILTERS[0];
+    // Only render canvas loop in filter mode or during AI capture
+    if (tabMode === 'ai-portrait' && aiStep !== 'capture') return;
+
+    const filter = tabMode === 'filters'
+      ? (PHOTO_FILTERS.find(f => f.id === activeFilter) || PHOTO_FILTERS[0])
+      : PHOTO_FILTERS[0]; // AI portrait capture uses original (no filter)
     const mirror = facingMode === 'user';
 
     const draw = () => {
@@ -88,15 +115,13 @@ export default function PhotoScreen() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Delegate entire render to the filter
       filter.render(ctx, canvas, video, mirror);
-
       animFrameRef.current = requestAnimationFrame(draw);
     };
 
     animFrameRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [activeFilter, facingMode]);
+  }, [activeFilter, facingMode, tabMode, aiStep]);
 
   // ── Camera actions ──
   const toggleCamera = async () => {
@@ -113,18 +138,21 @@ export default function PhotoScreen() {
       if (count === 0) {
         clearInterval(interval);
         setCountdown(null);
-        takePhoto();
+        if (tabMode === 'ai-portrait') {
+          takePhotoForAI();
+        } else {
+          takePhotoForFilter();
+        }
       } else {
         setCountdown(count);
       }
     }, 1000);
   };
 
-  const takePhoto = () => {
+  const takePhotoForFilter = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // White flash
     setFlash(true);
     setTimeout(() => setFlash(false), 150);
 
@@ -150,6 +178,545 @@ export default function PhotoScreen() {
     navigate('/app/review');
   };
 
+  const takePhotoForAI = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    setFlash(true);
+    setTimeout(() => setFlash(false), 150);
+
+    const dataUrl = preparePhotoForAI(canvas);
+    setCapturedPhoto(dataUrl);
+    setAiStep('pick');
+  };
+
+  // ── AI Portrait: generate ──
+  const startGeneration = async (style: AIPortraitStyle) => {
+    if (!capturedPhoto || !canGeneratePortrait()) return;
+
+    setSelectedStyle(style);
+    setAiStep('generating');
+    setAiProgress(0);
+
+    try {
+      const result = await generateAIPortrait(
+        capturedPhoto,
+        style,
+        (pct) => setAiProgress(pct),
+      );
+      incrementPortraitCount();
+      setAiResult(result);
+      triggerConfetti();
+      setAiStep('reveal');
+    } catch {
+      // On failure, go back to pick
+      setAiStep('pick');
+    }
+  };
+
+  const triggerConfetti = () => {
+    const colors = ['#C4704B', '#D4A853', '#E8865A', '#2B5F8A', '#7A8B5C', '#E8C4B8', '#E84870'];
+    const particles = Array.from({ length: 40 }, () => ({
+      x: Math.random() * 430,
+      y: -10,
+      vx: (Math.random() - 0.5) * 6,
+      vy: Math.random() * 3 + 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: Math.random() * 8 + 4,
+    }));
+    setConfettiParticles(particles);
+    setTimeout(() => setConfettiParticles([]), 3000);
+  };
+
+  const resetAIPortrait = () => {
+    setAiStep('capture');
+    setCapturedPhoto(null);
+    setSelectedStyle(null);
+    setAiResult(null);
+    setAiProgress(0);
+    setShowCompare(false);
+  };
+
+  const saveAIPortrait = () => {
+    if (!aiResult) return;
+
+    // Download the image
+    const link = document.createElement('a');
+    link.href = aiResult;
+    link.download = `ai-portrait-${selectedStyle?.id || 'photo'}-${Date.now()}.jpg`;
+    link.click();
+
+    setAiStep('saved');
+  };
+
+  // ── Switch tabs ──
+  const switchTab = (newTab: TabMode) => {
+    setTabMode(newTab);
+    if (newTab === 'ai-portrait') {
+      resetAIPortrait();
+    }
+  };
+
+  // ── Render helpers ──
+  const renderPermissionScreen = () => {
+    if (permState === 'loading') {
+      return (
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', background: '#1e1c1a', zIndex: 5,
+        }}>
+          <div style={{
+            width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)',
+            borderTopColor: '#C4704B', borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }} />
+        </div>
+      );
+    }
+
+    if (permState === 'needs-permission') {
+      return (
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          background: 'linear-gradient(180deg, #FEF9F2 0%, #FEFCF9 100%)', zIndex: 5,
+          padding: '0 32px', textAlign: 'center', fontFamily: "'DM Sans', sans-serif",
+        }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%',
+            background: 'linear-gradient(135deg, rgba(196,112,75,0.12) 0%, rgba(232,134,90,0.08) 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+          }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C4704B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+              <circle cx="12" cy="13" r="3"/>
+            </svg>
+          </div>
+          <p style={{ margin: 0, fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 600, color: '#2C2825' }}>Camera Access</p>
+          <p style={{ margin: '10px 0 28px', fontSize: 15, color: '#8A8078', lineHeight: 1.5 }}>
+            We need your camera to take photos for the wedding album. Your photos stay on your device until you choose to share them.
+          </p>
+          <button
+            onClick={() => initCamera(facingMode)}
+            style={{
+              padding: '14px 40px', borderRadius: 24,
+              background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
+              border: 'none', cursor: 'pointer', color: 'white',
+              fontWeight: 600, fontSize: 16, fontFamily: "'DM Sans', sans-serif",
+              boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
+            }}
+          >
+            Allow Camera
+          </button>
+          <button
+            onClick={() => { stopStream(stream); navigate('/app/home'); }}
+            style={{
+              marginTop: 14, padding: '10px 24px', borderRadius: 20,
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: '#A09890', fontSize: 14, fontWeight: 500,
+            }}
+          >
+            Maybe Later
+          </button>
+        </div>
+      );
+    }
+
+    if (permState === 'denied') {
+      return (
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          background: 'linear-gradient(180deg, #FEF9F2 0%, #FEFCF9 100%)', zIndex: 5,
+          padding: '0 32px', textAlign: 'center', fontFamily: "'DM Sans', sans-serif",
+        }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%',
+            background: 'linear-gradient(135deg, rgba(212,114,106,0.12) 0%, rgba(212,114,106,0.06) 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+          }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#D4726A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+              <circle cx="12" cy="13" r="3"/>
+              <line x1="2" y1="2" x2="22" y2="22"/>
+            </svg>
+          </div>
+          <p style={{ margin: 0, fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 600, color: '#2C2825' }}>Camera Blocked</p>
+          <p style={{ margin: '10px 0 8px', fontSize: 15, color: '#8A8078', lineHeight: 1.5 }}>
+            Camera access was denied. To enable it:
+          </p>
+          <div style={{
+            background: 'rgba(196,112,75,0.06)', borderRadius: 16, padding: '16px 20px',
+            margin: '8px 0 24px', textAlign: 'left', width: '100%',
+          }}>
+            <p style={{ margin: '0 0 6px', fontSize: 13, color: '#6B6158', lineHeight: 1.6 }}>
+              1. Tap the lock/info icon in your browser's address bar
+            </p>
+            <p style={{ margin: '0 0 6px', fontSize: 13, color: '#6B6158', lineHeight: 1.6 }}>
+              2. Find "Camera" and change it to "Allow"
+            </p>
+            <p style={{ margin: 0, fontSize: 13, color: '#6B6158', lineHeight: 1.6 }}>
+              3. Refresh the page
+            </p>
+          </div>
+          <button
+            onClick={() => initCamera(facingMode)}
+            style={{
+              padding: '14px 40px', borderRadius: 24,
+              background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
+              border: 'none', cursor: 'pointer', color: 'white',
+              fontWeight: 600, fontSize: 16, fontFamily: "'DM Sans', sans-serif",
+              boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
+            }}
+          >
+            Try Again
+          </button>
+          <button
+            onClick={() => { stopStream(stream); navigate('/app/home'); }}
+            style={{
+              marginTop: 14, padding: '10px 24px', borderRadius: 20,
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: '#A09890', fontSize: 14, fontWeight: 500,
+            }}
+          >
+            Go Back
+          </button>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  // ── AI Portrait: Style Picker ──
+  const renderStylePicker = () => {
+    const popularStyles = AI_PORTRAIT_STYLES.filter(s => s.popular);
+    const allStyles = AI_PORTRAIT_STYLES;
+    const remaining = getRemainingPortraits();
+
+    return (
+      <div style={{
+        position: 'absolute', inset: 0, background: '#FEFCF9', zIndex: 30,
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: '16px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <button
+            onClick={resetAIPortrait}
+            style={{
+              width: 40, height: 40, borderRadius: '50%', background: 'rgba(44,40,37,0.06)',
+              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2C2825" strokeWidth="2.2" strokeLinecap="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ margin: 0, fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 600, color: '#2C2825' }}>
+              Choose a Style
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#B8AFA6' }}>
+              {remaining} portrait{remaining !== 1 ? 's' : ''} remaining
+            </p>
+          </div>
+          <div style={{ width: 40 }} />
+        </div>
+
+        {/* Preview thumbnail */}
+        {capturedPhoto && (
+          <div style={{ padding: '12px 20px 0', display: 'flex', justifyContent: 'center' }}>
+            <div style={{
+              width: 80, height: 80, borderRadius: 16, overflow: 'hidden',
+              border: '2px solid rgba(196,112,75,0.2)',
+            }}>
+              <img src={capturedPhoto} alt="Your photo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+          </div>
+        )}
+
+        {/* Scrollable styles */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px 100px' }} className="scrollbar-hide">
+          {/* Most Popular */}
+          <p style={{
+            margin: '8px 0 10px', fontSize: 13, fontWeight: 600, color: '#8A8078',
+            textTransform: 'uppercase', letterSpacing: 1,
+          }}>Most Popular</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+            {popularStyles.map(style => (
+              <StyleCard key={style.id} style={style} onSelect={startGeneration} disabled={!canGeneratePortrait()} />
+            ))}
+          </div>
+
+          {/* All Styles */}
+          <p style={{
+            margin: '8px 0 10px', fontSize: 13, fontWeight: 600, color: '#8A8078',
+            textTransform: 'uppercase', letterSpacing: 1,
+          }}>All Styles</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {allStyles.map(style => (
+              <StyleCard key={style.id} style={style} onSelect={startGeneration} disabled={!canGeneratePortrait()} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── AI Portrait: Generating ──
+  const renderGenerating = () => {
+    if (!selectedStyle) return null;
+
+    return (
+      <div style={{
+        position: 'absolute', inset: 0, background: '#0c0a08', zIndex: 30,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: '0 32px',
+      }}>
+        {/* Shimmer preview */}
+        <div style={{
+          width: 200, height: 200, borderRadius: 24, overflow: 'hidden', marginBottom: 32,
+          position: 'relative',
+        }}>
+          {capturedPhoto && (
+            <img src={capturedPhoto} alt="" style={{
+              width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(8px) brightness(0.5)',
+            }} />
+          )}
+          {/* Shimmer overlay */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: `linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%)`,
+            animation: 'shimmer 1.5s infinite',
+          }} />
+        </div>
+
+        <p style={{
+          fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 600,
+          color: 'white', margin: '0 0 4px', textAlign: 'center',
+        }}>
+          Creating your {selectedStyle.name}
+        </p>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', margin: '0 0 24px' }}>
+          {selectedStyle.timeEstimate} • AI magic in progress
+        </p>
+
+        {/* Progress bar */}
+        <div style={{
+          width: '100%', maxWidth: 260, height: 4, borderRadius: 2,
+          background: 'rgba(255,255,255,0.1)', overflow: 'hidden', marginBottom: 32,
+        }}>
+          <div style={{
+            width: `${aiProgress}%`, height: '100%', borderRadius: 2,
+            background: 'linear-gradient(90deg, #C4704B 0%, #E8865A 100%)',
+            transition: 'width 0.5s ease-out',
+          }} />
+        </div>
+
+        {/* Fun fact */}
+        <div style={{
+          background: 'rgba(255,255,255,0.06)', borderRadius: 16,
+          padding: '16px 20px', maxWidth: 300, textAlign: 'center',
+        }}>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 1 }}>
+            Did you know?
+          </p>
+          <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+            {selectedStyle.funFact}
+          </p>
+        </div>
+
+        <style>{`
+          @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+        `}</style>
+      </div>
+    );
+  };
+
+  // ── AI Portrait: Reveal ──
+  const renderReveal = () => {
+    if (!aiResult || !selectedStyle) return null;
+
+    return (
+      <div style={{
+        position: 'absolute', inset: 0, background: '#FEFCF9', zIndex: 30,
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      }}>
+        {/* Confetti */}
+        {confettiParticles.map((p, i) => (
+          <div key={i} style={{
+            position: 'absolute', left: p.x, top: p.y, width: p.size, height: p.size,
+            background: p.color, borderRadius: p.size > 6 ? '50%' : 1,
+            zIndex: 50, pointerEvents: 'none',
+            animation: `confetti-fall 2.5s ease-out forwards`,
+            '--vx': `${p.vx * 40}px`,
+            '--vy': `${p.vy * 80}px`,
+          } as React.CSSProperties} />
+        ))}
+
+        {/* Header */}
+        <div style={{ padding: '16px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button
+            onClick={resetAIPortrait}
+            style={{
+              width: 40, height: 40, borderRadius: '50%', background: 'rgba(44,40,37,0.06)',
+              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2C2825" strokeWidth="2.2" strokeLinecap="round">
+              <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+          </button>
+          <p style={{
+            margin: 0, fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 600, color: '#2C2825',
+          }}>
+            {selectedStyle.emoji} {selectedStyle.name}
+          </p>
+          <div style={{ width: 40 }} />
+        </div>
+
+        {/* Result image */}
+        <div style={{ flex: 1, padding: '16px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{
+            width: '100%', maxWidth: 340, borderRadius: 20, overflow: 'hidden',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
+            animation: 'revealScale 0.5s ease-out',
+          }}>
+            <img
+              src={showCompare ? (capturedPhoto || '') : aiResult}
+              alt={showCompare ? 'Original' : 'AI Portrait'}
+              style={{ width: '100%', display: 'block' }}
+            />
+          </div>
+
+          {/* Compare toggle */}
+          <div style={{
+            marginTop: 16, display: 'flex', gap: 6,
+            background: 'rgba(44,40,37,0.06)', borderRadius: 20, padding: 3,
+          }}>
+            <button
+              onClick={() => setShowCompare(false)}
+              style={{
+                padding: '8px 18px', borderRadius: 17, border: 'none',
+                background: !showCompare ? '#2C2825' : 'transparent',
+                color: !showCompare ? 'white' : '#8A8078',
+                fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              }}
+            >
+              AI Portrait
+            </button>
+            <button
+              onClick={() => setShowCompare(true)}
+              style={{
+                padding: '8px 18px', borderRadius: 17, border: 'none',
+                background: showCompare ? '#2C2825' : 'transparent',
+                color: showCompare ? 'white' : '#8A8078',
+                fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              }}
+            >
+              Original
+            </button>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ padding: '0 20px 32px', display: 'flex', gap: 10 }}>
+          <button
+            onClick={resetAIPortrait}
+            style={{
+              flex: 1, padding: '14px 0', borderRadius: 24,
+              background: 'rgba(44,40,37,0.06)', border: 'none', cursor: 'pointer',
+              color: '#2C2825', fontWeight: 600, fontSize: 15,
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            Try Another
+          </button>
+          <button
+            onClick={saveAIPortrait}
+            style={{
+              flex: 1, padding: '14px 0', borderRadius: 24,
+              background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
+              border: 'none', cursor: 'pointer', color: 'white',
+              fontWeight: 600, fontSize: 15, fontFamily: "'DM Sans', sans-serif",
+              boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
+            }}
+          >
+            Save Portrait
+          </button>
+        </div>
+
+        <style>{`
+          @keyframes revealScale {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
+      </div>
+    );
+  };
+
+  // ── AI Portrait: Saved confirmation ──
+  const renderSaved = () => {
+    if (!selectedStyle) return null;
+
+    return (
+      <div style={{
+        position: 'absolute', inset: 0, background: '#FEFCF9', zIndex: 30,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: '0 32px', textAlign: 'center',
+      }}>
+        <div style={{
+          width: 80, height: 80, borderRadius: '50%', marginBottom: 20,
+          background: 'linear-gradient(135deg, rgba(122,139,92,0.12) 0%, rgba(122,139,92,0.06) 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#7A8B5C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <p style={{
+          margin: 0, fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 600, color: '#2C2825',
+        }}>
+          Portrait Saved!
+        </p>
+        <p style={{ margin: '8px 0 32px', fontSize: 15, color: '#8A8078', lineHeight: 1.5 }}>
+          Your {selectedStyle.name} portrait has been saved to your device.
+        </p>
+        <button
+          onClick={resetAIPortrait}
+          style={{
+            padding: '14px 40px', borderRadius: 24,
+            background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
+            border: 'none', cursor: 'pointer', color: 'white',
+            fontWeight: 600, fontSize: 16, fontFamily: "'DM Sans', sans-serif",
+            boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
+          }}
+        >
+          Create Another
+        </button>
+        <button
+          onClick={() => { stopStream(stream); navigate('/app/home'); }}
+          style={{
+            marginTop: 14, padding: '10px 24px', borderRadius: 20,
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: '#A09890', fontSize: 14, fontWeight: 500,
+          }}
+        >
+          Back to Home
+        </button>
+      </div>
+    );
+  };
+
+  // ── Determine if we show AI overlay screens ──
+  const showAIOverlay = tabMode === 'ai-portrait' && aiStep !== 'capture';
+
   return (
     <div style={{
       height: '100vh',
@@ -171,6 +738,12 @@ export default function PhotoScreen() {
         }} />
       )}
 
+      {/* AI Portrait overlay screens */}
+      {showAIOverlay && aiStep === 'pick' && renderStylePicker()}
+      {showAIOverlay && aiStep === 'generating' && renderGenerating()}
+      {showAIOverlay && aiStep === 'reveal' && renderReveal()}
+      {showAIOverlay && aiStep === 'saved' && renderSaved()}
+
       {/* Camera viewfinder area */}
       <div style={{
         flex: 1,
@@ -187,148 +760,14 @@ export default function PhotoScreen() {
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0 }}
         />
 
-        {/* Rendered canvas (with filter applied in real time) */}
+        {/* Rendered canvas */}
         <canvas
           ref={canvasRef}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
         />
 
-        {/* Permission: loading */}
-        {permState === 'loading' && (
-          <div style={{
-            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', background: '#1e1c1a', zIndex: 5,
-          }}>
-            <div style={{
-              width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)',
-              borderTopColor: '#C4704B', borderRadius: '50%',
-              animation: 'spin 0.8s linear infinite',
-            }} />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          </div>
-        )}
-
-        {/* Permission: needs-permission — friendly prompt */}
-        {permState === 'needs-permission' && (
-          <div style={{
-            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            background: 'linear-gradient(180deg, #FEF9F2 0%, #FEFCF9 100%)', zIndex: 5,
-            padding: '0 32px', textAlign: 'center',
-            fontFamily: "'DM Sans', sans-serif",
-          }}>
-            {/* Camera icon */}
-            <div style={{
-              width: 80, height: 80, borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(196,112,75,0.12) 0%, rgba(232,134,90,0.08) 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24,
-            }}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C4704B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-                <circle cx="12" cy="13" r="3"/>
-              </svg>
-            </div>
-            <p style={{
-              margin: 0, fontFamily: "'Playfair Display', serif",
-              fontSize: 22, fontWeight: 600, color: '#2C2825',
-            }}>Camera Access</p>
-            <p style={{
-              margin: '10px 0 28px', fontSize: 15, color: '#8A8078', lineHeight: 1.5,
-            }}>
-              We need your camera to take photos for the wedding album. Your photos stay on your device until you choose to share them.
-            </p>
-            <button
-              onClick={() => initCamera(facingMode)}
-              style={{
-                padding: '14px 40px', borderRadius: 24,
-                background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
-                border: 'none', cursor: 'pointer', color: 'white',
-                fontWeight: 600, fontSize: 16, fontFamily: "'DM Sans', sans-serif",
-                boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
-              }}
-            >
-              Allow Camera
-            </button>
-            <button
-              onClick={() => { stopStream(stream); navigate('/app/home'); }}
-              style={{
-                marginTop: 14, padding: '10px 24px', borderRadius: 20,
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                color: '#A09890', fontSize: 14, fontWeight: 500,
-              }}
-            >
-              Maybe Later
-            </button>
-          </div>
-        )}
-
-        {/* Permission: denied — instructions */}
-        {permState === 'denied' && (
-          <div style={{
-            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            background: 'linear-gradient(180deg, #FEF9F2 0%, #FEFCF9 100%)', zIndex: 5,
-            padding: '0 32px', textAlign: 'center',
-            fontFamily: "'DM Sans', sans-serif",
-          }}>
-            <div style={{
-              width: 80, height: 80, borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(212,114,106,0.12) 0%, rgba(212,114,106,0.06) 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24,
-            }}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#D4726A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-                <circle cx="12" cy="13" r="3"/>
-                <line x1="2" y1="2" x2="22" y2="22"/>
-              </svg>
-            </div>
-            <p style={{
-              margin: 0, fontFamily: "'Playfair Display', serif",
-              fontSize: 22, fontWeight: 600, color: '#2C2825',
-            }}>Camera Blocked</p>
-            <p style={{
-              margin: '10px 0 8px', fontSize: 15, color: '#8A8078', lineHeight: 1.5,
-            }}>
-              Camera access was denied. To enable it:
-            </p>
-            <div style={{
-              background: 'rgba(196,112,75,0.06)', borderRadius: 16, padding: '16px 20px',
-              margin: '8px 0 24px', textAlign: 'left', width: '100%',
-            }}>
-              <p style={{ margin: '0 0 6px', fontSize: 13, color: '#6B6158', lineHeight: 1.6 }}>
-                1. Tap the lock/info icon in your browser's address bar
-              </p>
-              <p style={{ margin: '0 0 6px', fontSize: 13, color: '#6B6158', lineHeight: 1.6 }}>
-                2. Find "Camera" and change it to "Allow"
-              </p>
-              <p style={{ margin: 0, fontSize: 13, color: '#6B6158', lineHeight: 1.6 }}>
-                3. Refresh the page
-              </p>
-            </div>
-            <button
-              onClick={() => initCamera(facingMode)}
-              style={{
-                padding: '14px 40px', borderRadius: 24,
-                background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
-                border: 'none', cursor: 'pointer', color: 'white',
-                fontWeight: 600, fontSize: 16, fontFamily: "'DM Sans', sans-serif",
-                boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
-              }}
-            >
-              Try Again
-            </button>
-            <button
-              onClick={() => { stopStream(stream); navigate('/app/home'); }}
-              style={{
-                marginTop: 14, padding: '10px 24px', borderRadius: 20,
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                color: '#A09890', fontSize: 14, fontWeight: 500,
-              }}
-            >
-              Go Back
-            </button>
-          </div>
-        )}
+        {/* Permission screens */}
+        {renderPermissionScreen()}
 
         {/* Countdown overlay */}
         {countdown !== null && (
@@ -396,21 +835,21 @@ export default function PhotoScreen() {
           </button>
         </div>
 
-        {/* Mode toggle (Single / Strip of 3) */}
+        {/* Filters / AI Portrait tab toggle */}
         <div style={{
           position: 'absolute', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 20,
           display: 'flex', background: 'rgba(255,255,255,0.08)', borderRadius: 24,
           padding: 3, backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.06)',
         }}>
-          {([['single', 'Single'], ['strip', 'Strip of 3']] as const).map(([id, label]) => (
+          {([['filters', 'Filters'], ['ai-portrait', 'AI Portrait']] as [TabMode, string][]).map(([id, label]) => (
             <button
               key={id}
-              onClick={() => setMode(id)}
+              onClick={() => switchTab(id)}
               style={{
                 padding: '7px 16px', borderRadius: 21, border: 'none',
-                background: mode === id ? 'rgba(255,255,255,0.2)' : 'transparent',
-                color: mode === id ? 'white' : 'rgba(255,255,255,0.5)',
-                fontSize: 13, fontWeight: mode === id ? 600 : 400,
+                background: tabMode === id ? 'rgba(255,255,255,0.2)' : 'transparent',
+                color: tabMode === id ? 'white' : 'rgba(255,255,255,0.5)',
+                fontSize: 13, fontWeight: tabMode === id ? 600 : 400,
                 cursor: 'pointer', transition: 'all 0.25s ease', whiteSpace: 'nowrap',
               }}
             >{label}</button>
@@ -428,47 +867,66 @@ export default function PhotoScreen() {
 
       {/* Bottom controls area */}
       <div style={{ background: '#0c0a08', padding: '16px 0 24px', position: 'relative' }}>
-        {/* Filter carousel */}
-        <div style={{
-          overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'none', padding: '0 20px 16px', display: 'flex', gap: 10,
-        }} className="scrollbar-hide">
-          {PHOTO_FILTERS.map(filter => {
-            const isActive = activeFilter === filter.id;
-            return (
-              <button
-                key={filter.id}
-                onClick={() => setActiveFilter(filter.id)}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  padding: '4px 4px', flexShrink: 0,
-                  transition: 'transform 0.2s', transform: isActive ? 'scale(1.1)' : 'scale(1)',
-                }}
-              >
-                <div style={{
-                  width: 56, height: 56, borderRadius: '50%', background: filter.preview,
-                  border: isActive ? '3px solid white' : '2px solid rgba(255,255,255,0.15)',
-                  boxShadow: isActive
-                    ? '0 0 0 3px #C4704B, 0 4px 14px rgba(196,112,75,0.35)'
-                    : '0 2px 8px rgba(0,0,0,0.3)',
-                  transition: 'all 0.25s ease', position: 'relative', overflow: 'hidden',
-                }}>
+        {/* Filter carousel (only in filter mode) */}
+        {tabMode === 'filters' && (
+          <div style={{
+            overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none', padding: '0 20px 16px', display: 'flex', gap: 10,
+          }} className="scrollbar-hide">
+            {PHOTO_FILTERS.map(filter => {
+              const isActive = activeFilter === filter.id;
+              return (
+                <button
+                  key={filter.id}
+                  onClick={() => setActiveFilter(filter.id)}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '4px 4px', flexShrink: 0,
+                    transition: 'transform 0.2s', transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                  }}
+                >
                   <div style={{
-                    position: 'absolute', inset: 0,
-                    background: 'radial-gradient(circle at 35% 35%, rgba(255,255,255,0.25) 0%, transparent 60%)',
-                  }} />
-                </div>
-                <span style={{
-                  fontSize: 11,
-                  color: isActive ? 'white' : 'rgba(255,255,255,0.4)',
-                  fontWeight: isActive ? 600 : 400,
-                  transition: 'all 0.2s', whiteSpace: 'nowrap',
-                }}>{filter.name}</span>
-              </button>
-            );
-          })}
-        </div>
+                    width: 56, height: 56, borderRadius: '50%', background: filter.preview,
+                    border: isActive ? '3px solid white' : '2px solid rgba(255,255,255,0.15)',
+                    boxShadow: isActive
+                      ? '0 0 0 3px #C4704B, 0 4px 14px rgba(196,112,75,0.35)'
+                      : '0 2px 8px rgba(0,0,0,0.3)',
+                    transition: 'all 0.25s ease', position: 'relative', overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'radial-gradient(circle at 35% 35%, rgba(255,255,255,0.25) 0%, transparent 60%)',
+                    }} />
+                  </div>
+                  <span style={{
+                    fontSize: 11,
+                    color: isActive ? 'white' : 'rgba(255,255,255,0.4)',
+                    fontWeight: isActive ? 600 : 400,
+                    transition: 'all 0.2s', whiteSpace: 'nowrap',
+                  }}>{filter.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* AI Portrait info bar (in AI portrait capture mode) */}
+        {tabMode === 'ai-portrait' && aiStep === 'capture' && (
+          <div style={{
+            padding: '0 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}>
+            <div style={{
+              background: 'rgba(255,255,255,0.06)', borderRadius: 16, padding: '10px 18px',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{ fontSize: 18 }}>✨</span>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
+                Take a photo, then pick an AI style
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Shutter row */}
         <div style={{
@@ -490,19 +948,27 @@ export default function PhotoScreen() {
             disabled={!cameraReady || countdown !== null}
             style={{
               width: 76, height: 76, borderRadius: '50%', background: 'transparent',
-              border: '4px solid white', cursor: 'pointer', position: 'relative',
+              border: tabMode === 'ai-portrait'
+                ? '4px solid #D4A853'
+                : '4px solid white',
+              cursor: 'pointer', position: 'relative',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 0 6px rgba(255,255,255,0.08)',
-              transition: 'transform 0.15s ease',
+              boxShadow: tabMode === 'ai-portrait'
+                ? '0 0 0 6px rgba(212,168,83,0.15)'
+                : '0 0 0 6px rgba(255,255,255,0.08)',
+              transition: 'all 0.2s ease',
               opacity: (!cameraReady || countdown !== null) ? 0.4 : 1,
             }}
           >
             <div style={{
-              width: 62, height: 62, borderRadius: '50%', background: 'white',
+              width: 62, height: 62, borderRadius: '50%',
+              background: tabMode === 'ai-portrait'
+                ? 'linear-gradient(135deg, #D4A853 0%, #E8C878 100%)'
+                : 'white',
             }} />
           </button>
 
-          {/* Flash toggle (placeholder) */}
+          {/* Flash toggle */}
           <button style={{
             width: 44, height: 44, borderRadius: '50%',
             background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer',
@@ -514,6 +980,74 @@ export default function PhotoScreen() {
           </button>
         </div>
       </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
+  );
+}
+
+// ── StyleCard sub-component ──────────────────────────────
+
+function StyleCard({
+  style,
+  onSelect,
+  disabled,
+}: {
+  style: AIPortraitStyle;
+  onSelect: (s: AIPortraitStyle) => void;
+  disabled: boolean;
+}) {
+  return (
+    <button
+      onClick={() => !disabled && onSelect(style)}
+      disabled={disabled}
+      style={{
+        background: style.gradient,
+        border: 'none',
+        borderRadius: 16,
+        padding: '20px 14px 14px',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        textAlign: 'left',
+        position: 'relative',
+        overflow: 'hidden',
+        opacity: disabled ? 0.5 : 1,
+        transition: 'transform 0.2s',
+        minHeight: 110,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+      }}
+    >
+      {/* Gradient overlay for text readability */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 100%)',
+      }} />
+
+      {/* Popular badge */}
+      {style.popular && (
+        <div style={{
+          position: 'absolute', top: 8, right: 8, background: 'rgba(255,255,255,0.25)',
+          borderRadius: 8, padding: '3px 8px', backdropFilter: 'blur(4px)',
+        }}>
+          <span style={{ fontSize: 10, color: 'white', fontWeight: 600 }}>Popular</span>
+        </div>
+      )}
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <span style={{ fontSize: 22, display: 'block', marginBottom: 4 }}>{style.emoji}</span>
+        <p style={{
+          margin: 0, fontSize: 14, fontWeight: 600, color: 'white',
+          textShadow: '0 1px 4px rgba(0,0,0,0.3)',
+        }}>
+          {style.name}
+        </p>
+        <p style={{
+          margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.75)',
+        }}>
+          {style.subtitle}
+        </p>
+      </div>
+    </button>
   );
 }
