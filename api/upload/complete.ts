@@ -70,6 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       requestBody: { name: safeName, parents: [eventFolder] },
       media: { mimeType: safeContentType, body: gcsStream },
       fields: 'id, name',
+      supportsAllDrives: true,
     });
 
     // ── Create By-Event shortcut (best-effort) ──────────────────────
@@ -83,6 +84,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           shortcutDetails: { targetId: driveFile.data.id! },
           parents: [eventDateFolder],
         },
+        supportsAllDrives: true,
       });
     } catch (err) {
       console.error('Shortcut creation failed (non-fatal):', err);
@@ -149,11 +151,14 @@ async function findOrCreateFolder(drive: any, name: string, parentId: string): P
   const search = await drive.files.list({
     q: `name='${escapedName}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
     fields: 'files(id)',
+    includeItemsFromAllDrives: true,
+    supportsAllDrives: true,
   });
   if (search.data.files?.length) return search.data.files[0].id;
   const folder = await drive.files.create({
     requestBody: { name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] },
     fields: 'id',
+    supportsAllDrives: true,
   });
   return folder.data.id;
 }
