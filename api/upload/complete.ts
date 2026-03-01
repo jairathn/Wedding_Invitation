@@ -1,17 +1,12 @@
 // POST /api/upload/complete — After the client uploads directly to GCS,
 // this endpoint streams the file from GCS → Google Drive, creates the
-// folder structure + By-Event shortcut, and records in the database.
+// folder structure, and records in the database.
 //
-// Request:
-//   { objectPath, filename, contentType, metadata }
-//
-// The GCS → Drive transfer is server-to-server (no CORS, no size limits).
+// Uses fetch for GCS operations (no @google-cloud/storage needed).
 //
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export const config = {
-  // Allow up to 60s for large video transfers (GCS → Drive).
-  // Vercel Hobby = 10s max, Pro = 60s max.
   maxDuration: 60,
 };
 
@@ -42,29 +37,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const credentials = parseCredentials(serviceAccountKey);
 
-    // ── Set up GCS client (service account) ──────────────────────────
-    const { Storage } = await import('@google-cloud/storage');
-    const storage = new Storage({
-      credentials: {
-        client_email: credentials.client_email as string,
-        private_key: credentials.private_key as string,
-      },
-      projectId: credentials.project_id as string,
+    // ── Get a GCS access token via service account JWT ───────────────
+    const { google } = await import('googleapis');
+    const saAuth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/devstorage.read_write'],
     });
+    const saClient = await saAuth.getClient();
+    const { token: gcsToken } = await saClient.getAccessToken();
 
     // ── Set up Drive client (OAuth2 — uploads as you) ────────────────
-    const { google } = await import('googleapis');
     const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
     oauth2Client.setCredentials({ refresh_token: refreshToken });
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-    // ── Create Drive folder structure: Root / {Guest} / {Event} ─────
+    // ── Create Drive folder structure: Root / {Guest} / {Event} ──────
     const guestFolder = await findOrCreateFolder(drive, guestName, rootFolderId);
     const eventFolder = await findOrCreateFolder(drive, eventSlug, guestFolder);
 
-    // ── Stream from GCS → Drive ─────────────────────────────────────
-    const gcsFile = storage.bucket(bucketName).file(objectPath as string);
-    const gcsStream = gcsFile.createReadStream();
+    // ── Download from GCS via REST API ───────────────────────────────
+    const encodedObject = encodeURIComponent(objectPath as string);
+    const gcsUrl = `https://storage.googleapis.com/storage/v1/b/${bucketName}/o/${encodedObject}?alt=media`;
+    const gcsRes = await fetch(gcsUrl, {
+      headers: { Authorization: `Bearer ${gcsToken}` },
+    });
+
+    if (!gcsRes.ok) {
+      const body = await gcsRes.text();
+      console.error('GCS download failed:', gcsRes.status, body);
+      return res.status(502).json({ error: 'Failed to read file from GCS' });
+    }
+
+    // ── Upload to Drive ──────────────────────────────────────────────
+    const { Readable } = await import('stream');
+    const gcsBuffer = Buffer.from(await gcsRes.arrayBuffer());
+    const gcsStream = new Readable();
+    gcsStream.push(gcsBuffer);
+    gcsStream.push(null);
 
     const driveFile = await drive.files.create({
       requestBody: { name: safeName, parents: [eventFolder] },
@@ -73,7 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       supportsAllDrives: true,
     });
 
-    // ── Record in database (best-effort) ────────────────────────────
+    // ── Record in database (best-effort) ─────────────────────────────
     if (dbUrl) {
       try {
         const { neon } = await import('@neondatabase/serverless');
@@ -88,9 +97,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // ── Clean up GCS (best-effort) ──────────────────────────────────
+    // ── Clean up GCS (best-effort) ───────────────────────────────────
     try {
-      await gcsFile.delete();
+      const deleteUrl = `https://storage.googleapis.com/storage/v1/b/${bucketName}/o/${encodedObject}`;
+      await fetch(deleteUrl, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${gcsToken}` },
+      });
     } catch (err) {
       console.error('GCS cleanup failed (non-fatal):', err);
     }

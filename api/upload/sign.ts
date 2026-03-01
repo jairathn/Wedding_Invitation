@@ -1,13 +1,11 @@
-// POST /api/upload/sign — Generate a GCS signed upload URL.
+// POST /api/upload/sign — Generate a GCS V4 signed upload URL.
 //
+// Uses manual V4 signing with Node crypto — no @google-cloud/storage needed.
 // The client uploads directly to GCS using this URL (any size, proper CORS).
-// After the upload completes, the client calls /api/upload/complete to move
-// the file from GCS → Google Drive.
-//
-// Request:  { filename, contentType, metadata }
-// Response: { signedUrl, objectPath }
+// After upload, the client calls /api/upload/complete to move GCS → Drive.
 //
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import crypto from 'crypto';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -31,32 +29,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const eventSlug = (meta.eventSlug as string) || 'general';
     const safeContentType = (contentType as string) || 'application/octet-stream';
 
-    // Build a unique object path in GCS
     const timestamp = Date.now();
     const safeName = ((filename as string) || 'upload').replace(/[^a-zA-Z0-9._-]/g, '_');
     const objectPath = `uploads/${guestName}/${eventSlug}/${timestamp}_${safeName}`;
 
-    // Parse service account credentials
     const credentials = parseCredentials(serviceAccountKey);
+    const clientEmail = credentials.client_email as string;
+    const privateKey = credentials.private_key as string;
 
-    const { Storage } = await import('@google-cloud/storage');
-    const storage = new Storage({
-      credentials: {
-        client_email: credentials.client_email as string,
-        private_key: credentials.private_key as string,
-      },
-      projectId: credentials.project_id as string,
-    });
-
-    const bucket = storage.bucket(bucketName);
-    const file = bucket.file(objectPath);
-
-    const [signedUrl] = await file.generateSignedUrl({
-      version: 'v4',
-      action: 'write',
-      expires: Date.now() + 30 * 60 * 1000, // 30 minutes
-      contentType: safeContentType,
-    });
+    const signedUrl = createV4SignedUrl(bucketName, objectPath, safeContentType, clientEmail, privateKey);
 
     return res.status(200).json({ signedUrl, objectPath });
   } catch (error) {
@@ -64,6 +45,67 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Failed to generate upload URL' });
   }
 }
+
+// ── Manual GCS V4 signed URL generation ──────────────────────────────
+
+function createV4SignedUrl(
+  bucket: string,
+  object: string,
+  contentType: string,
+  clientEmail: string,
+  privateKey: string,
+): string {
+  const now = new Date();
+  const datestamp = now.toISOString().replace(/[-:T]/g, '').substring(0, 15) + 'Z';
+  const dateOnly = datestamp.substring(0, 8);
+
+  const credentialScope = `${dateOnly}/auto/storage/goog4_request`;
+  const host = `storage.googleapis.com`;
+  const canonicalUri = `/${bucket}/${object.split('/').map(encodeRfc3986).join('/')}`;
+
+  const expiresSeconds = 1800; // 30 minutes
+
+  const params: [string, string][] = [
+    ['X-Goog-Algorithm', 'GOOG4-RSA-SHA256'],
+    ['X-Goog-Credential', `${clientEmail}/${credentialScope}`],
+    ['X-Goog-Date', datestamp],
+    ['X-Goog-Expires', String(expiresSeconds)],
+    ['X-Goog-SignedHeaders', 'content-type;host'],
+  ];
+  params.sort((a, b) => a[0].localeCompare(b[0]));
+  const canonicalQueryString = params.map(([k, v]) => `${encodeRfc3986(k)}=${encodeRfc3986(v)}`).join('&');
+
+  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\n`;
+  const signedHeaders = 'content-type;host';
+
+  const canonicalRequest = [
+    'PUT',
+    canonicalUri,
+    canonicalQueryString,
+    canonicalHeaders,
+    signedHeaders,
+    'UNSIGNED-PAYLOAD',
+  ].join('\n');
+
+  const stringToSign = [
+    'GOOG4-RSA-SHA256',
+    datestamp,
+    credentialScope,
+    crypto.createHash('sha256').update(canonicalRequest).digest('hex'),
+  ].join('\n');
+
+  const sign = crypto.createSign('RSA-SHA256');
+  sign.update(stringToSign);
+  const signature = sign.sign(privateKey, 'hex');
+
+  return `https://${host}${canonicalUri}?${canonicalQueryString}&X-Goog-Signature=${signature}`;
+}
+
+function encodeRfc3986(str: string): string {
+  return encodeURIComponent(str).replace(/[!'()*]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+}
+
+// ── Credential parsing ───────────────────────────────────────────────
 
 function parseCredentials(serviceAccountKey: string): Record<string, unknown> {
   const trimmed = serviceAccountKey.trim();
