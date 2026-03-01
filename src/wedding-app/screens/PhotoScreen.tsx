@@ -5,7 +5,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { requestCamera, stopStream, capturePhotoFromFilteredCanvas, checkCameraPermission } from '../lib/camera';
 import { getStoredSession } from '../lib/session';
-import { FILTER_CATEGORIES } from '../constants';
+import { PHOTO_FILTERS } from '../lib/filters';
 import type { CapturedMedia } from '../types';
 
 export default function PhotoScreen() {
@@ -24,9 +24,6 @@ export default function PhotoScreen() {
   const [mode, setMode] = useState<'single' | 'strip'>('single');
 
   const [activeFilter, setActiveFilter] = useState('none');
-  const activeFilterData = FILTER_CATEGORIES
-    .flatMap(c => c.filters)
-    .find(f => f.id === activeFilter);
 
   const guestName = session?.guest
     ? `${session.guest.firstName} ${session.guest.lastName}`
@@ -75,6 +72,9 @@ export default function PhotoScreen() {
 
   // ── Live canvas render with filter ──
   useEffect(() => {
+    const filter = PHOTO_FILTERS.find(f => f.id === activeFilter) || PHOTO_FILTERS[0];
+    const mirror = facingMode === 'user';
+
     const draw = () => {
       const video = videoRef.current;
       const canvas = canvasRef.current;
@@ -88,40 +88,15 @@ export default function PhotoScreen() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Apply CSS filter
-      ctx.filter = activeFilterData?.cssFilter || 'none';
-
-      // Mirror for front camera
-      if (facingMode === 'user') {
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-      }
-
-      ctx.drawImage(video, 0, 0);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.filter = 'none';
-
-      // Text overlay (hashtag watermark from filter)
-      if (activeFilterData?.textOverlay) {
-        const { text, position, color } = activeFilterData.textOverlay;
-        ctx.save();
-        ctx.font = `${Math.floor(canvas.height * 0.025)}px 'Playfair Display', Georgia, serif`;
-        ctx.fillStyle = color;
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = 4;
-        ctx.shadowOffsetY = 2;
-        const x = canvas.width * 0.04;
-        const y = position === 'bottom' ? canvas.height * 0.96 : canvas.height * 0.05;
-        ctx.fillText(text, x, y);
-        ctx.restore();
-      }
+      // Delegate entire render to the filter
+      filter.render(ctx, canvas, video, mirror);
 
       animFrameRef.current = requestAnimationFrame(draw);
     };
 
     animFrameRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [activeFilterData, facingMode]);
+  }, [activeFilter, facingMode]);
 
   // ── Camera actions ──
   const toggleCamera = async () => {
@@ -442,30 +417,6 @@ export default function PhotoScreen() {
           ))}
         </div>
 
-        {/* Active filter name badge */}
-        {activeFilter !== 'none' && activeFilterData && (
-          <div style={{
-            position: 'absolute', top: 118, left: '50%', transform: 'translateX(-50%)', zIndex: 20,
-          }}>
-            <div style={{
-              background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(12px)',
-              padding: '5px 14px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)',
-            }}>
-              <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: 500 }}>
-                {activeFilterData.name}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Hashtag watermark */}
-        <div style={{ position: 'absolute', bottom: 16, left: 20, zIndex: 5 }}>
-          <p style={{
-            margin: 0, fontFamily: "'Playfair Display', serif", fontSize: 14,
-            color: 'rgba(255,255,255,0.15)', fontStyle: 'italic', letterSpacing: '0.02em',
-          }}>#JayWalkingToJairath</p>
-        </div>
-
         {/* Rule-of-thirds grid */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 3, opacity: 0.04 }}>
           <div style={{ position: 'absolute', left: '33.33%', top: 0, bottom: 0, width: 1, background: 'white' }} />
@@ -477,65 +428,46 @@ export default function PhotoScreen() {
 
       {/* Bottom controls area */}
       <div style={{ background: '#0c0a08', padding: '16px 0 24px', position: 'relative' }}>
-        {/* Filter carousel with category labels */}
+        {/* Filter carousel */}
         <div style={{
           overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'none', padding: '0 20px 16px', display: 'flex', gap: 4,
+          scrollbarWidth: 'none', padding: '0 20px 16px', display: 'flex', gap: 10,
         }} className="scrollbar-hide">
-          {FILTER_CATEGORIES.map((category, ci) => (
-            <div key={ci} style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
-              {/* Category divider + label */}
-              {ci > 0 && (
+          {PHOTO_FILTERS.map(filter => {
+            const isActive = activeFilter === filter.id;
+            return (
+              <button
+                key={filter.id}
+                onClick={() => setActiveFilter(filter.id)}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  padding: '4px 4px', flexShrink: 0,
+                  transition: 'transform 0.2s', transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                }}
+              >
                 <div style={{
-                  display: 'flex', alignItems: 'center', padding: '0 6px 0 10px', alignSelf: 'center',
+                  width: 56, height: 56, borderRadius: '50%', background: filter.preview,
+                  border: isActive ? '3px solid white' : '2px solid rgba(255,255,255,0.15)',
+                  boxShadow: isActive
+                    ? '0 0 0 3px #C4704B, 0 4px 14px rgba(196,112,75,0.35)'
+                    : '0 2px 8px rgba(0,0,0,0.3)',
+                  transition: 'all 0.25s ease', position: 'relative', overflow: 'hidden',
                 }}>
-                  <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.08)', marginRight: 10 }} />
-                  <span style={{
-                    fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 600,
-                    textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap',
-                  }}>{category.label}</span>
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'radial-gradient(circle at 35% 35%, rgba(255,255,255,0.25) 0%, transparent 60%)',
+                  }} />
                 </div>
-              )}
-
-              {/* Filter swatches */}
-              {category.filters.map(filter => {
-                const isActive = activeFilter === filter.id;
-                return (
-                  <button
-                    key={filter.id}
-                    onClick={() => setActiveFilter(filter.id)}
-                    style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      padding: '4px 6px', flexShrink: 0,
-                      transition: 'transform 0.2s', transform: isActive ? 'scale(1.08)' : 'scale(1)',
-                    }}
-                  >
-                    <div style={{
-                      width: 52, height: 52, borderRadius: '50%', background: filter.preview,
-                      border: isActive ? '2.5px solid white' : '2px solid rgba(255,255,255,0.15)',
-                      boxShadow: isActive
-                        ? '0 0 0 2.5px #C4704B, 0 4px 12px rgba(196,112,75,0.3)'
-                        : '0 2px 8px rgba(0,0,0,0.3)',
-                      transition: 'all 0.25s ease', position: 'relative', overflow: 'hidden',
-                    }}>
-                      <div style={{
-                        position: 'absolute', inset: 0,
-                        background: 'radial-gradient(circle at 35% 35%, rgba(255,255,255,0.2) 0%, transparent 60%)',
-                      }} />
-                    </div>
-                    <span style={{
-                      fontSize: 10,
-                      color: isActive ? '#C4704B' : 'rgba(255,255,255,0.4)',
-                      fontWeight: isActive ? 600 : 400,
-                      transition: 'all 0.2s', whiteSpace: 'nowrap',
-                      maxWidth: 56, overflow: 'hidden', textOverflow: 'ellipsis',
-                    }}>{filter.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+                <span style={{
+                  fontSize: 11,
+                  color: isActive ? 'white' : 'rgba(255,255,255,0.4)',
+                  fontWeight: isActive ? 600 : 400,
+                  transition: 'all 0.2s', whiteSpace: 'nowrap',
+                }}>{filter.name}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Shutter row */}
