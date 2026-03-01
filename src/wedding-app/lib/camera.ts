@@ -52,19 +52,27 @@ export function stopStream(stream: MediaStream | null): void {
 }
 
 export function getSupportedMimeType(): string {
-  // Prefer mp4 — universally playable on all devices, Apple Photos, editors.
-  // webm (VP9/VP8) is fallback for browsers that don't support mp4 recording.
+  // Prefer mp4 (H.264 + AAC) — universally playable everywhere including
+  // Google Drive's web player, Apple Photos, and video editors.
+  // webm with Opus audio causes "Audio decoder error" in Google Drive.
+  // Chrome 116+ supports mp4 MediaRecorder; Safari uses mp4 natively.
   const types = [
-    'video/mp4',
+    'video/mp4;codecs=avc1.42E01E,mp4a.40.2', // H.264 Baseline + AAC-LC
+    'video/mp4;codecs=avc1',                    // H.264 (let browser pick audio)
+    'video/mp4',                                // Generic mp4
+    'video/webm;codecs=vp9,opus',              // Fallback: VP9 + Opus
+    'video/webm;codecs=vp8,opus',              // Fallback: VP8 + Opus
     'video/webm;codecs=vp9',
     'video/webm;codecs=vp8',
     'video/webm',
   ];
   for (const type of types) {
     if (MediaRecorder.isTypeSupported(type)) {
+      console.log(`[camera] Selected recording format: ${type}`);
       return type;
     }
   }
+  console.warn('[camera] No preferred format supported, falling back to video/webm');
   return 'video/webm';
 }
 
