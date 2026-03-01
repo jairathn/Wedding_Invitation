@@ -1,10 +1,17 @@
 // IndexedDB-based offline upload queue
 //
-// Upload flow:
-//   1. Compress photos client-side (videos pass through as-is)
-//   2. POST /api/upload/initiate with base64 file data
-//   3. Server creates Drive folders + uploads to Drive + records in DB
-//   All same-origin — no CORS, no signed URLs, no intermediate storage.
+// Upload flow — two paths:
+//
+//   PHOTOS (< 4.5 MB):
+//     1. Convert blob to base64
+//     2. POST /api/upload/initiate with file data
+//     3. Server uploads to Drive + records in DB
+//
+//   VIDEOS (any size):
+//     1. POST /api/upload/initiate with totalSize only (no file data)
+//     2. Server creates Drive folders, returns a resumable session URI
+//     3. Client PUTs chunks directly to Google Drive (bypasses Vercel)
+//     4. POST /api/upload/complete to record in DB
 //
 
 import { get, set, del, keys } from 'idb-keyval';
@@ -64,27 +71,27 @@ export async function updateQueueItem(id: string, updates: Partial<QueuedUpload>
 }
 
 // ── Upload a single item ────────────────────────────────────────────
-//
-// 1. Compress photos (videos pass through)
-// 2. Convert blob to base64
-// 3. POST to /api/upload/initiate (same origin — server uploads to Drive)
-//
+
 async function processUpload(upload: QueuedUpload): Promise<boolean> {
+  const isVideo = upload.metadata.mediaType === 'video';
+  return isVideo ? processVideoUpload(upload) : processPhotoUpload(upload);
+}
+
+// ── Photo: base64 → POST to Vercel → Drive ──────────────────────────
+
+async function processPhotoUpload(upload: QueuedUpload): Promise<boolean> {
   const label = `[upload-queue] ${upload.id} "${upload.metadata.filename}"`;
   try {
-    console.log(`${label} — starting (attempt ${upload.retryCount + 1}, blob ${(upload.blob.size / 1024).toFixed(1)} KB, type=${upload.blob.type})`);
+    console.log(`${label} — PHOTO starting (attempt ${upload.retryCount + 1}, blob ${(upload.blob.size / 1024).toFixed(1)} KB, type=${upload.blob.type})`);
     await updateQueueItem(upload.id, { status: 'uploading', lastAttempt: new Date().toISOString() });
 
-    // Use the original blob as-is (no compression — keep full quality)
     const blob = upload.blob;
     const contentType = blob.type || 'application/octet-stream';
 
-    // Convert blob to base64 for JSON transport
     console.log(`${label} — encoding to base64...`);
     const base64 = await blobToBase64(blob);
     console.log(`${label} — base64 length: ${(base64.length / 1024).toFixed(1)} KB`);
 
-    // Single same-origin POST — server handles folders + Drive upload + DB
     console.log(`${label} — POSTing to /api/upload/initiate...`);
     const res = await fetch('/api/upload/initiate', {
       method: 'POST',
@@ -105,13 +112,136 @@ async function processUpload(upload: QueuedUpload): Promise<boolean> {
     const result = await res.json();
     console.log(`${label} — success! driveFileId=${result.driveFileId}`);
 
-    // Success — remove from queue
     await removeFromQueue(upload.id);
     return true;
   } catch (err: any) {
     const newRetryCount = upload.retryCount + 1;
     const maxRetries = RETRY_DELAYS.length;
-    console.error(`${label} — FAILED (attempt ${newRetryCount}/${maxRetries}):`, err?.message || err);
+    console.error(`${label} — PHOTO FAILED (attempt ${newRetryCount}/${maxRetries}):`, err?.message || err);
+    await updateQueueItem(upload.id, {
+      status: 'failed',
+      retryCount: newRetryCount,
+      lastAttempt: new Date().toISOString(),
+    });
+    return false;
+  }
+}
+
+// ── Video: metadata → Vercel, chunks → Google Drive directly ────────
+//
+// Google Drive resumable upload protocol:
+//   - PUT chunks to the session URI
+//   - Each chunk must be a multiple of 256 KB (except the last)
+//   - Header: Content-Range: bytes start-end/total
+//   - Final chunk returns 200 with file metadata
+//
+const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MB per chunk (multiple of 256 KB)
+
+async function processVideoUpload(upload: QueuedUpload): Promise<boolean> {
+  const label = `[upload-queue] ${upload.id} "${upload.metadata.filename}"`;
+  try {
+    const blob = upload.blob;
+    const contentType = blob.type || 'video/webm';
+    const totalSize = blob.size;
+
+    console.log(`${label} — VIDEO starting (attempt ${upload.retryCount + 1}, ${(totalSize / (1024 * 1024)).toFixed(1)} MB, type=${contentType})`);
+    await updateQueueItem(upload.id, { status: 'uploading', lastAttempt: new Date().toISOString() });
+
+    // Step 1: Get resumable session URI from our server (tiny JSON payload)
+    console.log(`${label} — requesting resumable session...`);
+    const initRes = await fetch('/api/upload/initiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filename: upload.metadata.filename,
+        contentType,
+        totalSize,
+        metadata: upload.metadata,
+      }),
+    });
+
+    if (!initRes.ok) {
+      const body = await initRes.text();
+      throw new Error(`Session init failed ${initRes.status}: ${body}`);
+    }
+
+    const { sessionUri, eventFolderId } = await initRes.json();
+    console.log(`${label} — got session URI, uploading ${Math.ceil(totalSize / CHUNK_SIZE)} chunks...`);
+
+    // Step 2: Upload chunks directly to Google Drive
+    let offset = 0;
+    let driveFileId: string | undefined;
+
+    while (offset < totalSize) {
+      const end = Math.min(offset + CHUNK_SIZE, totalSize);
+      const chunk = blob.slice(offset, end);
+      const chunkNum = Math.floor(offset / CHUNK_SIZE) + 1;
+      const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
+
+      console.log(`${label} — chunk ${chunkNum}/${totalChunks} (bytes ${offset}-${end - 1}/${totalSize})`);
+
+      const putRes = await fetch(sessionUri, {
+        method: 'PUT',
+        headers: {
+          'Content-Length': String(end - offset),
+          'Content-Range': `bytes ${offset}-${end - 1}/${totalSize}`,
+        },
+        body: chunk,
+      });
+
+      if (putRes.status === 200 || putRes.status === 201) {
+        // Final chunk — upload complete
+        const result = await putRes.json();
+        driveFileId = result.id;
+        console.log(`${label} — final chunk done, driveFileId=${driveFileId}`);
+      } else if (putRes.status === 308) {
+        // Chunk accepted, more to go — check Range header for actual offset
+        const range = putRes.headers.get('Range');
+        if (range) {
+          const match = range.match(/bytes=0-(\d+)/);
+          if (match) {
+            offset = parseInt(match[1], 10) + 1;
+            continue;
+          }
+        }
+      } else {
+        const body = await putRes.text();
+        throw new Error(`Chunk upload failed ${putRes.status}: ${body}`);
+      }
+
+      offset = end;
+    }
+
+    if (!driveFileId) {
+      throw new Error('Upload completed but no file ID returned');
+    }
+
+    // Step 3: Record in database via our server
+    console.log(`${label} — recording in database...`);
+    const completeRes = await fetch('/api/upload/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        driveFileId,
+        folderId: eventFolderId,
+        filename: upload.metadata.filename,
+        metadata: upload.metadata,
+      }),
+    });
+
+    if (!completeRes.ok) {
+      console.warn(`${label} — DB record failed (non-fatal): ${completeRes.status}`);
+    } else {
+      console.log(`${label} — DB record complete`);
+    }
+
+    console.log(`${label} — VIDEO upload success!`);
+    await removeFromQueue(upload.id);
+    return true;
+  } catch (err: any) {
+    const newRetryCount = upload.retryCount + 1;
+    const maxRetries = RETRY_DELAYS.length;
+    console.error(`${label} — VIDEO FAILED (attempt ${newRetryCount}/${maxRetries}):`, err?.message || err);
     await updateQueueItem(upload.id, {
       status: 'failed',
       retryCount: newRetryCount,
