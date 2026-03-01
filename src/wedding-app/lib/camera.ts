@@ -52,11 +52,13 @@ export function stopStream(stream: MediaStream | null): void {
 }
 
 export function getSupportedMimeType(): string {
+  // Prefer mp4 — universally playable on all devices, Apple Photos, editors.
+  // webm (VP9/VP8) is fallback for browsers that don't support mp4 recording.
   const types = [
+    'video/mp4',
     'video/webm;codecs=vp9',
     'video/webm;codecs=vp8',
     'video/webm',
-    'video/mp4',
   ];
   for (const type of types) {
     if (MediaRecorder.isTypeSupported(type)) {
@@ -120,10 +122,14 @@ export function capturePhotoFromFilteredCanvas(
 export function generateFilename(
   mediaType: 'video' | 'photo',
   eventSlug: string,
-  guestName: string
+  guestName: string,
+  mimeType?: string
 ): string {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const safeName = guestName.toLowerCase().replace(/\s+/g, '-');
-  const ext = mediaType === 'video' ? 'webm' : 'jpg';
+  let ext = 'jpg';
+  if (mediaType === 'video') {
+    ext = mimeType?.includes('mp4') ? 'mp4' : 'webm';
+  }
   return `${mediaType}_${eventSlug}_${safeName}_${timestamp}.${ext}`;
 }

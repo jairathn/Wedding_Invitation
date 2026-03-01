@@ -60,7 +60,7 @@ export default function ReviewScreen() {
   const saveToDevice = async () => {
     if (!capturedBlobs[currentIndex]) return;
     const blob = capturedBlobs[currentIndex].blob;
-    const filename = generateFilename(currentMedia.type, eventSlug, guestName);
+    const filename = generateFilename(currentMedia.type, eventSlug, guestName, blob.type);
 
     // Use Web Share API on mobile only (saves to Camera Roll via share sheet).
     // On desktop, skip straight to download — the share picker is confusing there.
@@ -68,7 +68,7 @@ export default function ReviewScreen() {
     if (isMobile && navigator.share && navigator.canShare) {
       try {
         const file = new File([blob], filename, {
-          type: currentMedia.type === 'photo' ? 'image/jpeg' : 'video/webm',
+          type: blob.type || (currentMedia.type === 'photo' ? 'image/jpeg' : 'video/mp4'),
         });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
@@ -97,7 +97,7 @@ export default function ReviewScreen() {
   const queueForAlbum = async () => {
     if (!capturedBlobs.length) return;
     for (const media of capturedBlobs) {
-      const filename = generateFilename(media.type, eventSlug, guestName);
+      const filename = generateFilename(media.type, eventSlug, guestName, media.blob.type);
       await addToQueue({
         id: crypto.randomUUID(),
         blob: media.blob,
