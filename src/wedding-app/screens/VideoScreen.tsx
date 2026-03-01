@@ -5,7 +5,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SwitchCamera, Mic, MicOff, ChevronRight, SkipForward, X } from 'lucide-react';
-import { requestCamera, stopStream, getSupportedMimeType, generateFilename } from '../lib/camera';
+import { requestCamera, stopStream, getSupportedMimeType, generateFilename, checkCameraPermission } from '../lib/camera';
 import { getStoredSession } from '../lib/session';
 import { getRandomPrompts, MAX_PROMPTED_DURATION, MAX_FREEFORM_DURATION, getCurrentEvent } from '../constants';
 import type { VideoMode, CapturedMedia } from '../types';
@@ -25,6 +25,7 @@ export default function VideoScreen() {
   const [isMuted, setIsMuted] = useState(false);
   const [timer, setTimer] = useState(0);
   const [cameraReady, setCameraReady] = useState(false);
+  const [permState, setPermState] = useState<'loading' | 'needs-permission' | 'denied' | 'ready'>('loading');
 
   const [prompts] = useState(() => getRandomPrompts(3));
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
@@ -43,14 +44,29 @@ export default function VideoScreen() {
         videoRef.current.srcObject = newStream;
       }
       setCameraReady(true);
+      setPermState('ready');
     } catch (err) {
       console.error('Camera error:', err);
+      setPermState('denied');
     }
   }, [stream]);
 
+  // Check permissions on mount, then init camera if already granted
   useEffect(() => {
-    initCamera('user');
+    let cancelled = false;
+    (async () => {
+      const perm = await checkCameraPermission();
+      if (cancelled) return;
+      if (perm === 'granted') {
+        initCamera('user');
+      } else if (perm === 'denied') {
+        setPermState('denied');
+      } else {
+        setPermState('needs-permission');
+      }
+    })();
     return () => {
+      cancelled = true;
       if (stream) stopStream(stream);
       if (timerRef.current) clearInterval(timerRef.current);
     };
@@ -193,6 +209,144 @@ export default function VideoScreen() {
           className="absolute inset-0 w-full h-full object-cover"
           style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
         />
+
+        {/* Permission: loading */}
+        {permState === 'loading' && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', background: '#1e1c1a', zIndex: 30,
+          }}>
+            <div style={{
+              width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)',
+              borderTopColor: '#C4704B', borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
+
+        {/* Permission: needs-permission — friendly prompt */}
+        {permState === 'needs-permission' && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            background: 'linear-gradient(180deg, #FEF9F2 0%, #FEFCF9 100%)', zIndex: 30,
+            padding: '0 32px', textAlign: 'center',
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            <div style={{
+              width: 80, height: 80, borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(196,112,75,0.12) 0%, rgba(232,134,90,0.08) 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+            }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C4704B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m15.2 3.9-2.2 2.2L10.8 3.9A2 2 0 0 0 9.4 3.4H4a2 2 0 0 0-2 2v13.2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-1.4"/>
+                <circle cx="12" cy="13" r="3"/>
+              </svg>
+            </div>
+            <p style={{
+              margin: 0, fontFamily: "'Playfair Display', serif",
+              fontSize: 22, fontWeight: 600, color: '#2C2825',
+            }}>Camera & Mic Access</p>
+            <p style={{
+              margin: '10px 0 28px', fontSize: 15, color: '#8A8078', lineHeight: 1.5,
+            }}>
+              We need your camera and microphone to record video messages for Neil & Shriya. Your recordings stay on your device until you share them.
+            </p>
+            <button
+              onClick={() => initCamera(facingMode)}
+              style={{
+                padding: '14px 40px', borderRadius: 24,
+                background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
+                border: 'none', cursor: 'pointer', color: 'white',
+                fontWeight: 600, fontSize: 16, fontFamily: "'DM Sans', sans-serif",
+                boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
+              }}
+            >
+              Allow Access
+            </button>
+            <button
+              onClick={() => { stopStream(stream); navigate('/app/home'); }}
+              style={{
+                marginTop: 14, padding: '10px 24px', borderRadius: 20,
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: '#A09890', fontSize: 14, fontWeight: 500,
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              Maybe Later
+            </button>
+          </div>
+        )}
+
+        {/* Permission: denied — instructions */}
+        {permState === 'denied' && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            background: 'linear-gradient(180deg, #FEF9F2 0%, #FEFCF9 100%)', zIndex: 30,
+            padding: '0 32px', textAlign: 'center',
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            <div style={{
+              width: 80, height: 80, borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(212,114,106,0.12) 0%, rgba(212,114,106,0.06) 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+            }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#D4726A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                <circle cx="12" cy="13" r="3"/>
+                <line x1="2" y1="2" x2="22" y2="22"/>
+              </svg>
+            </div>
+            <p style={{
+              margin: 0, fontFamily: "'Playfair Display', serif",
+              fontSize: 22, fontWeight: 600, color: '#2C2825',
+            }}>Camera Blocked</p>
+            <p style={{
+              margin: '10px 0 8px', fontSize: 15, color: '#8A8078', lineHeight: 1.5,
+            }}>
+              Camera access was denied. To enable it:
+            </p>
+            <div style={{
+              background: 'rgba(196,112,75,0.06)', borderRadius: 16, padding: '16px 20px',
+              margin: '8px 0 24px', textAlign: 'left', width: '100%',
+            }}>
+              <p style={{ margin: '0 0 6px', fontSize: 13, color: '#6B6158', lineHeight: 1.6 }}>
+                1. Tap the lock/info icon in your browser's address bar
+              </p>
+              <p style={{ margin: '0 0 6px', fontSize: 13, color: '#6B6158', lineHeight: 1.6 }}>
+                2. Find "Camera" and "Microphone" and change to "Allow"
+              </p>
+              <p style={{ margin: 0, fontSize: 13, color: '#6B6158', lineHeight: 1.6 }}>
+                3. Refresh the page
+              </p>
+            </div>
+            <button
+              onClick={() => initCamera(facingMode)}
+              style={{
+                padding: '14px 40px', borderRadius: 24,
+                background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
+                border: 'none', cursor: 'pointer', color: 'white',
+                fontWeight: 600, fontSize: 16, fontFamily: "'DM Sans', sans-serif",
+                boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
+              }}
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => { stopStream(stream); navigate('/app/home'); }}
+              style={{
+                marginTop: 14, padding: '10px 24px', borderRadius: 20,
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: '#A09890', fontSize: 14, fontWeight: 500,
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              Go Back
+            </button>
+          </div>
+        )}
 
         {/* Soft gradient overlays for readability */}
         <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/40 to-transparent" />
