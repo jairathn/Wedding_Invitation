@@ -1,5 +1,11 @@
 // IndexedDB-based offline upload queue
-// Uses idb-keyval for simple key-value storage
+//
+// Upload flow (same for photos and videos):
+//   1. Compress photos client-side (videos pass through as-is)
+//   2. GET a GCS signed upload URL from /api/upload/sign
+//   3. PUT the file directly to GCS (any size, proper CORS)
+//   4. POST to /api/upload/complete → server streams GCS → Drive
+//
 
 import { get, set, del, keys } from 'idb-keyval';
 import type { QueuedUpload } from '../types';
@@ -58,82 +64,77 @@ export async function updateQueueItem(id: string, updates: Partial<QueuedUpload>
   }
 }
 
-// ── Upload a single item via the two-step resumable flow ────────────
+// ── Upload a single item ────────────────────────────────────────────
 //
-// 1. POST metadata to /api/upload/initiate  → { uploadUrl, eventFolderId }
-// 2. PUT file blob directly to Google Drive  → { id: driveFileId }
-// 3. POST result to /api/upload/complete     → shortcut + DB record
+// 1. Compress photos (videos pass through)
+// 2. Get signed GCS URL from our API
+// 3. PUT file directly to GCS (browser → GCS, any size)
+// 4. Tell our API to move it from GCS → Drive
 //
-// The file never passes through Vercel, so there is no 4.5 MB limit.
-
 async function processUpload(upload: QueuedUpload): Promise<boolean> {
   try {
     await updateQueueItem(upload.id, { status: 'uploading', lastAttempt: new Date().toISOString() });
 
-    // Compress photos before uploading
+    // Compress photos, pass videos through as-is
     let blob = upload.blob;
     const isPhoto = upload.metadata.mediaType === 'photo' || blob.type.startsWith('image/');
     if (isPhoto) {
       blob = await compressPhoto(blob);
     }
-
     const contentType = blob.type || (isPhoto ? 'image/jpeg' : 'video/webm');
 
-    // Step 1: Get a resumable upload URL from our API
-    const initRes = await fetch('/api/upload/initiate', {
+    // Step 1: Get a signed GCS upload URL
+    const signRes = await fetch('/api/upload/sign', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         filename: upload.metadata.filename,
         contentType,
-        guestName: upload.metadata.guestName,
-        eventSlug: upload.metadata.eventSlug,
+        metadata: upload.metadata,
       }),
     });
 
-    if (!initRes.ok) {
-      throw new Error(`Initiate failed: ${initRes.status}`);
+    if (!signRes.ok) {
+      const body = await signRes.text();
+      throw new Error(`Sign failed: ${signRes.status} — ${body}`);
     }
 
-    const { uploadUrl, eventFolderId } = await initRes.json();
+    const { signedUrl, objectPath } = await signRes.json();
 
-    // Step 2: Upload the file directly to Google Drive
-    const putRes = await fetch(uploadUrl, {
+    // Step 2: Upload directly to GCS (no size limit, proper CORS)
+    const putRes = await fetch(signedUrl, {
       method: 'PUT',
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': String(blob.size),
-      },
+      headers: { 'Content-Type': contentType },
       body: blob,
     });
 
     if (!putRes.ok) {
-      throw new Error(`Drive upload failed: ${putRes.status}`);
+      const body = await putRes.text();
+      throw new Error(`GCS upload failed: ${putRes.status} — ${body}`);
     }
 
-    const driveFile = await putRes.json();
-
-    // Step 3: Record in DB + create By-Event shortcut (best-effort)
-    fetch('/api/upload/complete', {
+    // Step 3: Tell the server to move from GCS → Drive
+    const completeRes = await fetch('/api/upload/complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        driveFileId: driveFile.id,
-        eventFolderId,
+        objectPath,
         filename: upload.metadata.filename,
-        eventSlug: upload.metadata.eventSlug,
-        guestId: upload.metadata.guestId,
-        mediaType: upload.metadata.mediaType,
-        filterApplied: upload.metadata.filterApplied,
-        promptAnswered: upload.metadata.promptAnswered,
+        contentType,
+        metadata: upload.metadata,
       }),
-    }).catch(err => console.warn('Upload complete call failed (non-fatal):', err));
+    });
 
-    // Upload succeeded — remove from queue
+    if (!completeRes.ok) {
+      const body = await completeRes.text();
+      throw new Error(`Complete failed: ${completeRes.status} — ${body}`);
+    }
+
+    // Success — remove from queue
     await removeFromQueue(upload.id);
     return true;
-  } catch {
-    // Upload failed — update retry count
+  } catch (err) {
+    console.error('Upload error for', upload.id, err);
     const newRetryCount = upload.retryCount + 1;
     await updateQueueItem(upload.id, {
       status: 'failed',
@@ -155,7 +156,6 @@ export async function processQueue(): Promise<void> {
     const allUploads = await getAllQueued();
     const pending = allUploads.filter(u => {
       if (u.status === 'uploading') return false;
-      // Check if enough time has passed since last attempt based on retry delay
       if (u.lastAttempt && u.retryCount > 0) {
         const delayIndex = Math.min(u.retryCount - 1, RETRY_DELAYS.length - 1);
         const delay = RETRY_DELAYS[delayIndex];
@@ -165,7 +165,6 @@ export async function processQueue(): Promise<void> {
       return true;
     });
 
-    // Process up to MAX_CONCURRENT_UPLOADS at a time
     const batch = pending.slice(0, MAX_CONCURRENT_UPLOADS);
     await Promise.all(batch.map(processUpload));
   } finally {
@@ -178,11 +177,8 @@ let intervalId: ReturnType<typeof setInterval> | null = null;
 
 export function startQueueProcessor(): void {
   if (intervalId) return;
-  // Process every 30 seconds
   intervalId = setInterval(processQueue, 30_000);
-  // Also process immediately
   processQueue();
-  // Listen for online events
   window.addEventListener('online', () => processQueue());
 }
 
