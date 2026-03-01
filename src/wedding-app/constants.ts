@@ -60,6 +60,25 @@ export function getRandomPrompts(count: number = 3): string[] {
   return shuffled.slice(0, count);
 }
 
+export interface StructuredPrompt {
+  text: string;
+  emoji: string;
+  category: 'heartfelt' | 'fun';
+}
+
+const HEARTFELT_EMOJIS = ['💭', '💡', '✨', '💕', '🌟', '🙏'];
+const FUN_EMOJIS = ['😂', '💃', '🎬', '🎤', '🤔', '🎉'];
+
+export function getRandomStructuredPrompts(count: number = 6): StructuredPrompt[] {
+  const pool: StructuredPrompt[] = [
+    ...PROMPTS.heartfelt.map((text, i) => ({ text, emoji: HEARTFELT_EMOJIS[i % HEARTFELT_EMOJIS.length], category: 'heartfelt' as const })),
+    ...PROMPTS.fun.map((text, i) => ({ text, emoji: FUN_EMOJIS[i % FUN_EMOJIS.length], category: 'fun' as const })),
+    ...PROMPTS.quickTakes.map((text, i) => ({ text, emoji: HEARTFELT_EMOJIS[(i + 2) % HEARTFELT_EMOJIS.length], category: 'heartfelt' as const })),
+  ];
+  const shuffled = pool.sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
+
 // ─── Filters ──────────────────────────────────────────────
 export const FILTERS: FilterConfig[] = [
   // Classic / Universal
