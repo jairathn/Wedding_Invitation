@@ -49,7 +49,10 @@ export async function getAllQueued(): Promise<QueuedUpload[]> {
 
 export async function getPendingCount(): Promise<number> {
   const all = await getAllQueued();
-  return all.filter(u => u.status === 'queued' || u.status === 'uploading').length;
+  return all.filter(u =>
+    (u.status === 'queued' || u.status === 'uploading') ||
+    (u.status === 'failed' && u.retryCount < RETRY_DELAYS.length)
+  ).length;
 }
 
 /** Remove items that have been stuck/failed for over 1 hour */
@@ -275,6 +278,8 @@ export async function processQueue(): Promise<void> {
     const allUploads = await getAllQueued();
     const pending = allUploads.filter(u => {
       if (u.status === 'uploading') return false;
+      // Give up after exhausting all retry slots
+      if (u.retryCount >= RETRY_DELAYS.length) return false;
       if (u.lastAttempt && u.retryCount > 0) {
         const delayIndex = Math.min(u.retryCount - 1, RETRY_DELAYS.length - 1);
         const delay = RETRY_DELAYS[delayIndex];
