@@ -10,7 +10,6 @@
 import { get, set, del, keys } from 'idb-keyval';
 import type { QueuedUpload } from '../types';
 import { RETRY_DELAYS, MAX_CONCURRENT_UPLOADS } from '../constants';
-import { compressPhoto } from './compress';
 
 const QUEUE_PREFIX = 'upload_';
 
@@ -74,13 +73,9 @@ async function processUpload(upload: QueuedUpload): Promise<boolean> {
   try {
     await updateQueueItem(upload.id, { status: 'uploading', lastAttempt: new Date().toISOString() });
 
-    // Compress photos, pass videos through as-is
-    let blob = upload.blob;
-    const isPhoto = upload.metadata.mediaType === 'photo' || blob.type.startsWith('image/');
-    if (isPhoto) {
-      blob = await compressPhoto(blob);
-    }
-    const contentType = blob.type || (isPhoto ? 'image/jpeg' : 'video/webm');
+    // Use the original blob as-is (no compression — keep full quality)
+    const blob = upload.blob;
+    const contentType = blob.type || 'application/octet-stream';
 
     // Convert blob to base64 for JSON transport
     const base64 = await blobToBase64(blob);

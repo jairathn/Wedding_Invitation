@@ -29,8 +29,8 @@ export async function requestCamera(
 ): Promise<MediaStream> {
   const constraints: MediaStreamConstraints = {
     video: {
-      width: { ideal: 1920 },
-      height: { ideal: 1080 },
+      width: { ideal: 3840 },
+      height: { ideal: 2160 },
       frameRate: { ideal: 30 },
       facingMode,
     },
@@ -87,7 +87,7 @@ export function capturePhotoFromCanvas(
   ctx.scale(-1, 1);
   ctx.drawImage(video, 0, 0);
 
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
   // Convert to blob
   const byteString = atob(dataUrl.split(',')[1]);
@@ -105,7 +105,7 @@ export function capturePhotoFromCanvas(
 export function capturePhotoFromFilteredCanvas(
   canvas: HTMLCanvasElement
 ): { blob: Blob; dataUrl: string } | null {
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
   const byteString = atob(dataUrl.split(',')[1]);
   const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
   const ab = new ArrayBuffer(byteString.length);
