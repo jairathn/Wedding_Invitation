@@ -1,48 +1,48 @@
 // Home Screen — /app/home
-// Grid of cards for each feature, with current event highlight
+// Warm card grid with Barcelona sunshine feel
 
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Video, Camera, CalendarDays, Users, Images } from 'lucide-react';
+import { Video, Camera, CalendarDays, Users, Images, Sparkles } from 'lucide-react';
 import Monogram from '../components/Monogram';
 import { getStoredSession } from '../lib/session';
 import { getCurrentEvent, getNextEvent } from '../constants';
 
-const CARDS = [
+const FEATURES = [
   {
     icon: Video,
     title: 'Video Message',
-    subtitle: 'Record a message for the bride & groom',
+    subtitle: 'Record a wish for the couple',
     path: '/app/video',
-    color: '#c45c5c',
+    iconColor: '#C4704B',
   },
   {
     icon: Camera,
     title: 'Photo Booth',
-    subtitle: 'Take photos with wedding filters',
+    subtitle: 'Take photos with fun filters',
     path: '/app/photo',
-    color: '#c9a84c',
+    iconColor: '#2B5F8A',
   },
   {
     icon: CalendarDays,
     title: 'Schedule',
-    subtitle: 'View the wedding weekend events',
+    subtitle: 'Wedding weekend events',
     path: '/app/schedule',
-    color: '#7d9b76',
+    iconColor: '#7A8B5C',
   },
   {
     icon: Users,
-    title: 'Guest Directory',
+    title: 'Guests',
     subtitle: 'Find your fellow guests',
     path: '/app/directory',
-    color: '#d4a0a0',
+    iconColor: '#E8865A',
   },
   {
     icon: Images,
-    title: 'My Media',
+    title: 'My Gallery',
     subtitle: 'View your photos & videos',
     path: '/app/gallery',
-    color: '#d4a843',
+    iconColor: '#D4A853',
   },
 ];
 
@@ -52,72 +52,85 @@ export default function HomeScreen() {
   const currentEvent = getCurrentEvent();
   const nextEvent = getNextEvent();
   const activeEvent = currentEvent || nextEvent;
+  const firstName = session?.guest?.firstName || 'Guest';
 
   return (
-    <div className="min-h-full px-4 py-6 pb-4">
+    <div className="min-h-full px-5 pt-6 pb-4 bg-[#FEFCF9]">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-3 mb-6"
+        transition={{ duration: 0.4 }}
+        className="flex items-center justify-between mb-6"
       >
-        <Monogram size={44} />
         <div>
-          <p className="text-sm text-[#a0998c] font-sans">Welcome,</p>
-          <h1 className="text-xl font-serif font-semibold text-[#f5f0e8]">
-            {session?.guest?.firstName || 'Guest'}
+          <p className="text-[13px] text-[#8A8078] mb-0.5">Welcome,</p>
+          <h1 className="text-[24px] font-serif font-semibold text-[#2C2825] leading-tight">
+            {firstName}
           </h1>
         </div>
+        <Monogram size={44} />
       </motion.div>
 
       {/* Current event banner */}
       {activeEvent && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
+        <motion.button
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-gradient-to-r from-[#c9a84c]/15 to-[#c9a84c]/5 border border-[#c9a84c]/20 rounded-2xl p-4 mb-6"
+          transition={{ delay: 0.08, duration: 0.4 }}
+          onClick={() => navigate('/app/schedule')}
+          className="w-full mb-6 group text-left"
         >
-          <p className="text-xs text-[#c9a84c] font-sans font-medium uppercase tracking-wider">
-            {currentEvent ? 'Happening Now' : 'Up Next'}
-          </p>
-          <h2 className="text-lg font-serif font-semibold text-[#f5f0e8] mt-1">
-            {activeEvent.name}
-          </h2>
-          <p className="text-sm text-[#a0998c] mt-0.5">
-            {activeEvent.venueName} · {new Date(activeEvent.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-          </p>
-        </motion.div>
-      )}
-
-      {/* Feature cards */}
-      <div className="grid grid-cols-1 gap-3">
-        {CARDS.map((card, i) => {
-          const Icon = card.icon;
-          return (
-            <motion.button
-              key={card.path}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 + i * 0.06 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate(card.path)}
-              className="flex items-center gap-4 bg-[#1a1a2e]/60 border border-white/5 rounded-2xl p-4 text-left hover:bg-[#1a1a2e] transition-colors group"
-            >
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: `${card.color}15` }}
-              >
-                <Icon size={22} style={{ color: card.color }} />
-              </div>
-              <div className="min-w-0">
-                <h3 className="font-sans font-semibold text-[#f5f0e8] text-base group-hover:text-white transition-colors">
-                  {card.title}
-                </h3>
-                <p className="text-sm text-[#a0998c] mt-0.5 truncate">
-                  {card.subtitle}
+          <div className="bg-white rounded-2xl p-4 shadow-[0_2px_12px_rgba(44,40,37,0.06)] border border-[#E8DDD3]/40">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Sparkles size={13} className="text-[#D4A853]" />
+                  <span className="text-[11px] font-semibold tracking-wide uppercase text-[#D4A853]">
+                    {currentEvent ? 'Happening Now' : 'Up Next'}
+                  </span>
+                </div>
+                <h2 className="text-[17px] font-serif font-semibold text-[#2C2825]">
+                  {activeEvent.name}
+                </h2>
+                <p className="text-[13px] text-[#8A8078] mt-0.5">
+                  {activeEvent.venueName} · {new Date(activeEvent.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </p>
               </div>
+              <div className="w-8 h-8 rounded-full bg-[#F7F3ED] flex items-center justify-center group-hover:bg-[#E8DDD3] transition-colors">
+                <CalendarDays size={16} className="text-[#C4704B]" strokeWidth={1.5} />
+              </div>
+            </div>
+          </div>
+        </motion.button>
+      )}
+
+      {/* Feature cards — 2 column grid */}
+      <div className="grid grid-cols-2 gap-3">
+        {FEATURES.map((feat, i) => {
+          const Icon = feat.icon;
+          return (
+            <motion.button
+              key={feat.path}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 + i * 0.05, duration: 0.35 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate(feat.path)}
+              className="bg-white rounded-2xl p-4 text-left shadow-[0_2px_12px_rgba(44,40,37,0.06)] border border-[#E8DDD3]/30 hover:shadow-[0_4px_16px_rgba(44,40,37,0.1)] transition-shadow duration-200"
+            >
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
+                style={{ backgroundColor: `${feat.iconColor}12` }}
+              >
+                <Icon size={22} style={{ color: feat.iconColor }} strokeWidth={1.5} />
+              </div>
+              <h3 className="font-serif font-semibold text-[15px] text-[#2C2825]">
+                {feat.title}
+              </h3>
+              <p className="text-[12px] text-[#8A8078] mt-0.5 leading-relaxed">
+                {feat.subtitle}
+              </p>
             </motion.button>
           );
         })}

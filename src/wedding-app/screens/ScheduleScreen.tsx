@@ -1,80 +1,82 @@
 // Schedule Screen — /app/schedule
-// Vertical timeline with event cards
+// Warm vertical timeline like a luxury wedding program
 
 import { motion } from 'framer-motion';
 import { EVENTS, getCurrentEvent } from '../constants';
 import { MapPin, Clock } from 'lucide-react';
 
-const EVENT_COLORS: Record<string, string> = {
-  haldi: '#d4a843',
-  sangeet: '#d4a0a0',
-  wedding_reception: '#c9a84c',
+const EVENT_STYLES: Record<string, { color: string; bg: string }> = {
+  haldi: { color: '#D4A853', bg: '#FDF6EE' },
+  sangeet: { color: '#E8865A', bg: '#FEF5F0' },
+  wedding_reception: { color: '#2B5F8A', bg: '#F0F5FA' },
 };
 
 export default function ScheduleScreen() {
   const currentEvent = getCurrentEvent();
 
   return (
-    <div className="min-h-full px-4 py-6">
-      <motion.h1
+    <div className="min-h-full px-5 py-6 bg-[#FEFCF9]">
+      <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="font-serif text-2xl font-semibold text-[#f5f0e8] mb-6"
+        className="mb-6"
       >
-        Wedding Weekend
-      </motion.h1>
+        <h1 className="font-serif text-[24px] font-semibold text-[#2C2825]">
+          Wedding Weekend
+        </h1>
+        <p className="text-[13px] text-[#8A8078] mt-1">September 2026 · Barcelona</p>
+      </motion.div>
 
       <div className="relative">
-        {/* Connecting line */}
-        <div className="absolute left-[17px] top-8 bottom-8 w-px bg-white/10" />
+        {/* Terracotta connecting line */}
+        <div className="absolute left-[15px] top-6 bottom-6 w-px bg-[#E8DDD3]" />
 
         <div className="space-y-4">
           {EVENTS.map((event, i) => {
             const isCurrent = currentEvent?.slug === event.slug;
-            const color = EVENT_COLORS[event.slug] || '#c9a84c';
+            const style = EVENT_STYLES[event.slug] || { color: '#C4704B', bg: '#FDF6EE' };
             const eventDate = new Date(event.date + 'T12:00:00');
 
             return (
               <motion.div
                 key={event.slug}
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: i * 0.1, duration: 0.35 }}
                 className="relative flex gap-4"
               >
                 {/* Timeline dot */}
-                <div className="relative z-10 mt-5">
+                <div className="relative z-10 mt-5 shrink-0">
                   <div
-                    className={`w-[9px] h-[9px] rounded-full ring-4 ring-[#0a0a0a] ${isCurrent ? 'ring-2 ring-offset-2 ring-offset-[#0a0a0a]' : ''}`}
+                    className="w-[10px] h-[10px] rounded-full border-2 border-white"
                     style={{
-                      backgroundColor: color,
-                      boxShadow: isCurrent ? `0 0 12px ${color}80` : 'none',
+                      backgroundColor: style.color,
+                      boxShadow: isCurrent ? `0 0 0 3px ${style.color}25, 0 0 8px ${style.color}30` : `0 0 0 3px white`,
                     }}
                   />
                 </div>
 
                 {/* Event card */}
                 <div
-                  className={`flex-1 rounded-2xl p-5 border transition-all ${
-                    isCurrent
-                      ? 'bg-[#1a1a2e] border-[#c9a84c]/30'
-                      : 'bg-[#1a1a2e]/40 border-white/5'
-                  }`}
-                  style={{ borderLeftWidth: 3, borderLeftColor: color }}
+                  className="flex-1 bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(44,40,37,0.06)] border border-[#E8DDD3]/30"
+                  style={{ borderLeftWidth: 3, borderLeftColor: style.color }}
                 >
                   {isCurrent && (
-                    <span className="inline-block text-[10px] uppercase tracking-wider font-sans font-semibold text-[#c9a84c] mb-2">
+                    <span
+                      className="inline-block text-[10px] uppercase tracking-wider font-semibold mb-2 px-2.5 py-0.5 rounded-full"
+                      style={{ color: style.color, backgroundColor: `${style.color}12` }}
+                    >
                       Happening Now
                     </span>
                   )}
 
-                  <h2 className="font-serif text-xl font-semibold text-[#f5f0e8]">
+                  <h2 className="font-serif text-[18px] font-semibold text-[#2C2825]">
                     {event.name}
                   </h2>
 
-                  <div className="flex items-center gap-4 mt-2 text-sm text-[#a0998c]">
-                    <span className="flex items-center gap-1.5">
-                      <Clock size={13} />
+                  <div className="flex items-center gap-1.5 mt-2.5 text-[#8A8078]">
+                    <Clock size={14} strokeWidth={1.5} />
+                    <span className="text-[13px]">
                       {eventDate.toLocaleDateString('en-US', {
                         weekday: 'long',
                         month: 'long',
@@ -83,13 +85,13 @@ export default function ScheduleScreen() {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 mt-1.5 text-sm text-[#a0998c]">
-                    <MapPin size={13} />
-                    <span>{event.venueName}</span>
+                  <div className="flex items-center gap-1.5 mt-1.5 text-[#8A8078]">
+                    <MapPin size={14} strokeWidth={1.5} />
+                    <span className="text-[13px]">{event.venueName}</span>
                   </div>
 
                   {event.description && (
-                    <p className="text-sm text-[#a0998c]/80 mt-3 font-serif italic leading-relaxed">
+                    <p className="text-[13px] text-[#B8AFA6] mt-3 leading-relaxed italic">
                       {event.description}
                     </p>
                   )}

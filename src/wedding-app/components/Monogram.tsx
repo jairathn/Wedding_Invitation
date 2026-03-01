@@ -1,7 +1,14 @@
-// Wedding Monogram — intertwined N & S
-// Warm gold on dark backgrounds
+// Wedding Monogram — N & S
+// Terracotta on light backgrounds, white on dark/camera backgrounds
 
-export default function Monogram({ size = 80, className = '' }: { size?: number; className?: string }) {
+export default function Monogram({ size = 80, variant = 'default', className = '' }: {
+  size?: number;
+  variant?: 'default' | 'light'; // 'light' = white version for dark backgrounds
+  className?: string;
+}) {
+  const mainColor = variant === 'light' ? '#FFFFFF' : '#C4704B';
+  const accentColor = variant === 'light' ? 'rgba(255,255,255,0.4)' : '#2B5F8A';
+
   return (
     <svg
       width={size}
@@ -10,21 +17,15 @@ export default function Monogram({ size = 80, className = '' }: { size?: number;
       className={className}
       aria-label="Neil & Shriya monogram"
     >
-      <defs>
-        <linearGradient id="mono-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#e5c47a" />
-          <stop offset="50%" stopColor="#c9a84c" />
-          <stop offset="100%" stopColor="#b8943f" />
-        </linearGradient>
-      </defs>
       {/* Outer circle */}
       <circle
         cx="100"
         cy="100"
         r="92"
         fill="none"
-        stroke="url(#mono-gold)"
+        stroke={mainColor}
         strokeWidth="1.5"
+        opacity="0.6"
       />
       {/* Inner decorative circle */}
       <circle
@@ -32,9 +33,10 @@ export default function Monogram({ size = 80, className = '' }: { size?: number;
         cy="100"
         r="85"
         fill="none"
-        stroke="url(#mono-gold)"
+        stroke={mainColor}
         strokeWidth="0.5"
         strokeDasharray="4 4"
+        opacity="0.3"
       />
       {/* N letter */}
       <text
@@ -43,7 +45,7 @@ export default function Monogram({ size = 80, className = '' }: { size?: number;
         fontFamily="'Playfair Display', Georgia, serif"
         fontSize="72"
         fontWeight="600"
-        fill="url(#mono-gold)"
+        fill={mainColor}
         textAnchor="middle"
       >
         N
@@ -52,11 +54,11 @@ export default function Monogram({ size = 80, className = '' }: { size?: number;
       <text
         x="100"
         y="108"
-        fontFamily="'Cormorant Garamond', Georgia, serif"
+        fontFamily="'Playfair Display', Georgia, serif"
         fontSize="22"
         fontWeight="400"
         fontStyle="italic"
-        fill="url(#mono-gold)"
+        fill={accentColor}
         textAnchor="middle"
       >
         &amp;
@@ -68,16 +70,16 @@ export default function Monogram({ size = 80, className = '' }: { size?: number;
         fontFamily="'Playfair Display', Georgia, serif"
         fontSize="72"
         fontWeight="600"
-        fill="url(#mono-gold)"
+        fill={mainColor}
         textAnchor="middle"
       >
         S
       </text>
       {/* Small decorative dots */}
-      <circle cx="50" cy="100" r="2" fill="url(#mono-gold)" opacity="0.6" />
-      <circle cx="150" cy="100" r="2" fill="url(#mono-gold)" opacity="0.6" />
-      <circle cx="100" cy="50" r="2" fill="url(#mono-gold)" opacity="0.6" />
-      <circle cx="100" cy="150" r="2" fill="url(#mono-gold)" opacity="0.6" />
+      <circle cx="50" cy="100" r="2" fill={mainColor} opacity="0.3" />
+      <circle cx="150" cy="100" r="2" fill={mainColor} opacity="0.3" />
+      <circle cx="100" cy="50" r="2" fill={mainColor} opacity="0.3" />
+      <circle cx="100" cy="150" r="2" fill={mainColor} opacity="0.3" />
     </svg>
   );
 }

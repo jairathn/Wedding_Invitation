@@ -1,10 +1,12 @@
 // Guest Directory — /app/directory
-// Alphabetical list with instant search
+// Clean Instagram-contacts-list energy, warm and spacious
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, User } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { getAllGuests, searchGuests, type GuestSuggestion } from '../lib/guest-search';
+
+const AVATAR_COLORS = ['#C4704B', '#2B5F8A', '#7A8B5C', '#D4A853', '#E8865A', '#E8C4B8'];
 
 export default function DirectoryScreen() {
   const [query, setQuery] = useState('');
@@ -15,7 +17,6 @@ export default function DirectoryScreen() {
     return searchGuests(query);
   }, [query, allGuests]);
 
-  // Group by first letter of last name
   const grouped = useMemo(() => {
     const groups: Record<string, GuestSuggestion[]> = {};
     const sorted = [...displayedGuests].sort((a, b) =>
@@ -30,66 +31,79 @@ export default function DirectoryScreen() {
   }, [displayedGuests]);
 
   return (
-    <div className="min-h-full px-4 py-6">
-      <motion.h1
+    <div className="min-h-full px-5 py-6 bg-[#FEFCF9]">
+      <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="font-serif text-2xl font-semibold text-[#f5f0e8] mb-4"
+        className="mb-5"
       >
-        Guest Directory
-      </motion.h1>
+        <h1 className="font-serif text-[24px] font-semibold text-[#2C2825]">
+          Guests
+        </h1>
+        <p className="text-[13px] text-[#8A8078] mt-1">
+          {allGuests.length} celebrating together
+        </p>
+      </motion.div>
 
       {/* Search */}
       <motion.div
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
-        className="relative mb-6"
+        className="relative mb-5"
       >
-        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#a0998c]" />
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#B8AFA6]" />
         <input
           type="text"
           placeholder="Search guests..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-[#f5f0e8] placeholder-[#a0998c]/50 font-sans text-sm focus:outline-none focus:border-[#c9a84c]/50 transition-all"
+          className="w-full bg-[#F7F3ED] border border-[#E8DDD3] rounded-xl pl-10 pr-4 py-3 text-[#2C2825] placeholder-[#B8AFA6] font-sans text-[14px] focus:outline-none focus:border-[#C4704B]/40 focus:ring-2 focus:ring-[#C4704B]/10 transition-all"
         />
       </motion.div>
 
-      {/* Guest count */}
-      <p className="text-xs text-[#a0998c] mb-4 font-sans">
-        {displayedGuests.length} guest{displayedGuests.length !== 1 ? 's' : ''}
-      </p>
-
       {/* Grouped list */}
       <div className="space-y-4">
-        {Object.entries(grouped).map(([letter, guests]) => (
-          <div key={letter}>
-            <h3 className="text-xs font-sans font-semibold text-[#c9a84c] uppercase tracking-wider mb-2 sticky top-0 bg-[#0a0a0a] py-1 z-10">
+        {Object.entries(grouped).map(([letter, guests], gi) => (
+          <motion.div
+            key={letter}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.05 + gi * 0.02 }}
+          >
+            <h3 className="text-[11px] font-semibold text-[#C4704B] tracking-wider uppercase mb-2 pl-1">
               {letter}
             </h3>
             <div className="space-y-0.5">
-              {guests.map((guest, i) => (
-                <div
-                  key={`${guest.fullName}-${i}`}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#1a1a2e] flex items-center justify-center shrink-0">
-                    <User size={14} className="text-[#a0998c]" />
+              {guests.map((guest, i) => {
+                const initials = `${guest.firstName.charAt(0)}${guest.lastName.charAt(0)}`;
+                const bgColor = AVATAR_COLORS[(guest.firstName.charCodeAt(0) + guest.lastName.charCodeAt(0)) % AVATAR_COLORS.length];
+                return (
+                  <div
+                    key={`${guest.fullName}-${i}`}
+                    className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-[#F7F3ED] transition-colors"
+                  >
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${bgColor}18` }}
+                    >
+                      <span className="text-[11px] font-semibold" style={{ color: bgColor }}>{initials}</span>
+                    </div>
+                    <span className="text-[14px] text-[#2C2825] font-sans">
+                      {guest.firstName}{' '}
+                      <span className="text-[#8A8078]">{guest.lastName}</span>
+                    </span>
                   </div>
-                  <span className="text-sm text-[#f5f0e8] font-sans">
-                    {guest.firstName} <span className="text-[#a0998c]">{guest.lastName}</span>
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
       {displayedGuests.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-[#a0998c] font-serif italic">No guests found</p>
+        <div className="text-center py-16">
+          <p className="text-[#B8AFA6] text-[14px]">No guests found</p>
         </div>
       )}
     </div>

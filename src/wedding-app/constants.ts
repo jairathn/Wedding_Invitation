@@ -247,15 +247,21 @@ export const PROMPTS_PER_SESSION = 3;
 
 // ─── Design Tokens ────────────────────────────────────────
 export const COLORS = {
-  bgPrimary: '#0a0a0a',
-  bgSecondary: '#1a1a2e',
-  accentGold: '#c9a84c',
-  accentBlush: '#d4a0a0',
-  textPrimary: '#f5f0e8',
-  textSecondary: '#a0998c',
-  success: '#7d9b76',
-  warning: '#d4a843',
-  error: '#c45c5c',
+  bgPrimary: '#FEFCF9',      // Warm white
+  bgSecondary: '#F7F3ED',    // Soft cream
+  cardSurface: '#FFFFFF',    // Pure white cards
+  terracotta: '#C4704B',     // Primary accent
+  medBlue: '#2B5F8A',        // Secondary accent
+  olive: '#7A8B5C',          // Success / nature
+  golden: '#D4A853',         // Highlights
+  blush: '#E8C4B8',          // Haldi accent
+  sunset: '#E8865A',         // Sangeet accent
+  textPrimary: '#2C2825',    // Warm charcoal
+  textSecondary: '#8A8078',  // Soft brown
+  textTertiary: '#B8AFA6',   // Light taupe
+  success: '#7A8B5C',        // Olive green
+  warning: '#D4A853',        // Golden hour
+  error: '#D4726A',          // Soft coral
 } as const;
 
 // ─── Kiosk ────────────────────────────────────────────────

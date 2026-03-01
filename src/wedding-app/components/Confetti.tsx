@@ -11,7 +11,8 @@ interface Particle {
   velocityY: number;
 }
 
-const COLORS = ['#c9a84c', '#d4a0a0', '#f5f0e8', '#7d9b76', '#e5c47a'];
+// Warm wedding confetti: gold, terracotta, blush
+const COLORS = ['#D4A853', '#C4704B', '#E8C4B8', '#E8865A', '#7A8B5C'];
 
 export default function Confetti({ active = false }: { active?: boolean }) {
   const [particles, setParticles] = useState<Particle[]>([]);
