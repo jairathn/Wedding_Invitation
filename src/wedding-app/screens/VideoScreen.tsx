@@ -3,7 +3,6 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { requestCamera, stopStream, getSupportedMimeType, checkCameraPermission } from '../lib/camera';
 import { getStoredSession } from '../lib/session';
 import { getRandomStructuredPrompts, MAX_PROMPTED_DURATION, MAX_FREEFORM_DURATION } from '../constants';
@@ -196,9 +195,9 @@ export default function VideoScreen() {
 
   return (
     <div style={{
-      height: '100vh', maxWidth: 430, margin: '0 auto',
+      height: '100vh', width: '100vw', maxWidth: 430, margin: '0 auto',
       background: '#0c0a08', position: 'relative', overflow: 'hidden',
-      fontFamily: "'DM Sans', sans-serif", display: 'flex', flexDirection: 'column',
+      fontFamily: "'DM Sans', sans-serif",
     }}>
       {/* Camera feed */}
       <video
@@ -385,93 +384,89 @@ export default function VideoScreen() {
       )}
 
       {/* ═══ PROMPT CARD (Guided Mode) ═══ */}
-      <AnimatePresence mode="wait">
-        {mode === 'prompted' && !isRecording && cameraReady && (
-          <motion.div
-            key={currentPromptIndex}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            style={{ position: 'absolute', top: '18%', left: 20, right: 20, zIndex: 15 }}
-          >
-            <div style={{
-              background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(24px)',
-              borderRadius: 24, padding: '28px 24px 24px',
-              border: '1px solid rgba(255,255,255,0.1)',
-              boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
+      {mode === 'prompted' && !isRecording && cameraReady && (
+        <div
+          key={currentPromptIndex}
+          style={{
+            position: 'absolute', top: '18%', left: 20, right: 20, zIndex: 15,
+            animation: 'promptFadeIn 0.35s ease-out',
+          }}
+        >
+          <div style={{
+            background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(24px)',
+            borderRadius: 24, padding: '28px 24px 24px',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
+          }}>
+            {/* Top row: count + category */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <span style={{
+                fontSize: 10, color: 'rgba(255,255,255,0.4)',
+                textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600,
+              }}>Prompt {currentPromptIndex + 1} of {prompts.length}</span>
+              <span style={{
+                padding: '3px 10px', borderRadius: 10,
+                background: prompts[currentPromptIndex].category === 'fun'
+                  ? 'rgba(232,134,90,0.2)' : 'rgba(196,141,160,0.2)',
+                fontSize: 10,
+                color: prompts[currentPromptIndex].category === 'fun' ? '#E8A87C' : '#D4A0B8',
+                fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>{prompts[currentPromptIndex].category}</span>
+            </div>
+
+            {/* Emoji + text */}
+            <div style={{ textAlign: 'center', margin: '8px 0' }}>
+              <span style={{ fontSize: 36, display: 'block', marginBottom: 16 }}>
+                {prompts[currentPromptIndex].emoji}
+              </span>
+              <p style={{
+                margin: 0, fontFamily: "'Playfair Display', serif",
+                fontSize: 24, fontWeight: 500, color: 'white',
+                lineHeight: 1.35, whiteSpace: 'pre-line',
+              }}>{prompts[currentPromptIndex].text}</p>
+            </div>
+
+            {/* Pagination dots */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 20 }}>
+              {prompts.map((_, i) => (
+                <button key={i} onClick={() => setCurrentPromptIndex(i)} style={{
+                  width: i === currentPromptIndex ? 28 : 8, height: 8, borderRadius: 4,
+                  background: i === currentPromptIndex ? '#C4704B' : 'rgba(255,255,255,0.2)',
+                  border: 'none', cursor: 'pointer', transition: 'all 0.3s ease',
+                  padding: 0,
+                }} />
+              ))}
+            </div>
+          </div>
+
+          {/* Shuffle / Skip */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 14 }}>
+            <button onClick={shufflePrompt} style={{
+              background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 500,
+              padding: '8px 20px', borderRadius: 20, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
             }}>
-              {/* Top row: count + category */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <span style={{
-                  fontSize: 10, color: 'rgba(255,255,255,0.4)',
-                  textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600,
-                }}>Prompt {currentPromptIndex + 1} of {prompts.length}</span>
-                <span style={{
-                  padding: '3px 10px', borderRadius: 10,
-                  background: prompts[currentPromptIndex].category === 'fun'
-                    ? 'rgba(232,134,90,0.2)' : 'rgba(196,141,160,0.2)',
-                  fontSize: 10,
-                  color: prompts[currentPromptIndex].category === 'fun' ? '#E8A87C' : '#D4A0B8',
-                  fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em',
-                }}>{prompts[currentPromptIndex].category}</span>
-              </div>
-
-              {/* Emoji + text */}
-              <div style={{ textAlign: 'center', margin: '8px 0' }}>
-                <span style={{ fontSize: 36, display: 'block', marginBottom: 16 }}>
-                  {prompts[currentPromptIndex].emoji}
-                </span>
-                <p style={{
-                  margin: 0, fontFamily: "'Playfair Display', serif",
-                  fontSize: 24, fontWeight: 500, color: 'white',
-                  lineHeight: 1.35, whiteSpace: 'pre-line',
-                }}>{prompts[currentPromptIndex].text}</p>
-              </div>
-
-              {/* Pagination dots */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 20 }}>
-                {prompts.map((_, i) => (
-                  <button key={i} onClick={() => setCurrentPromptIndex(i)} style={{
-                    width: i === currentPromptIndex ? 28 : 8, height: 8, borderRadius: 4,
-                    background: i === currentPromptIndex ? '#C4704B' : 'rgba(255,255,255,0.2)',
-                    border: 'none', cursor: 'pointer', transition: 'all 0.3s ease',
-                    padding: 0,
-                  }} />
-                ))}
-              </div>
-            </div>
-
-            {/* Shuffle / Skip */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 14 }}>
-              <button onClick={shufflePrompt} style={{
-                background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 500,
-                padding: '8px 20px', borderRadius: 20, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 6,
-              }}>
-                <span>🔀</span> Shuffle
-              </button>
-              <button onClick={skipPrompt} style={{
-                background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 500,
-                padding: '8px 20px', borderRadius: 20, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 6,
-              }}>
-                Skip <span>→</span>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <span>🔀</span> Shuffle
+            </button>
+            <button onClick={skipPrompt} style={{
+              background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 500,
+              padding: '8px 20px', borderRadius: 20, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              Skip <span>→</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Review button when all prompts done */}
       {mode === 'prompted' && !isRecording && recordedPrompts.length > 0 && currentPromptIndex >= prompts.length && (
         <div style={{ position: 'absolute', bottom: 140, left: 20, right: 20, zIndex: 15 }}>
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+          <button
             onClick={() => {
               (window as unknown as Record<string, unknown>).__capturedMedia = recordedPrompts;
               const mediaForReview = recordedPrompts.map(m => ({
@@ -491,10 +486,11 @@ export default function VideoScreen() {
               padding: '14px 0', border: 'none', cursor: 'pointer',
               boxShadow: '0 4px 20px rgba(196,112,75,0.35)',
               fontFamily: "'DM Sans', sans-serif",
+              animation: 'promptFadeIn 0.3s ease-out',
             }}
           >
             Review Messages <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
-          </motion.button>
+          </button>
         </div>
       )}
 
@@ -560,6 +556,7 @@ export default function VideoScreen() {
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes recPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         @keyframes recRing { 0% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 0; } 100% { transform: scale(1); opacity: 0; } }
+        @keyframes promptFadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
     </div>
   );
