@@ -1,8 +1,10 @@
 // Wedding App Layout — Matching design spec exactly
 // Frosted glass bottom nav with elevated Photo button, inline SVG icons
 
+import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import UploadIndicator from './components/UploadIndicator';
+import { startQueueProcessor, stopQueueProcessor, cleanupStaleItems } from './lib/upload-queue';
 
 // Inline SVG icon renderers matching the design spec
 const NAV_ICONS = {
@@ -44,6 +46,13 @@ const NAV_ITEMS = [
 export default function WeddingAppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Start upload queue processor and clean up stale items
+  useEffect(() => {
+    startQueueProcessor();
+    cleanupStaleItems();
+    return () => stopQueueProcessor();
+  }, []);
 
   const pageTitle: Record<string, string> = {
     '/app/schedule': 'Events',

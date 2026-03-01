@@ -36,7 +36,19 @@ export async function getAllQueued(): Promise<QueuedUpload[]> {
 
 export async function getPendingCount(): Promise<number> {
   const all = await getAllQueued();
-  return all.filter(u => u.status !== 'uploading').length;
+  // Only count items that are actively queued or uploading — not stale failures
+  return all.filter(u => u.status === 'queued' || u.status === 'uploading').length;
+}
+
+/** Remove items that have been stuck/failed for over 1 hour */
+export async function cleanupStaleItems(): Promise<void> {
+  const all = await getAllQueued();
+  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+  for (const item of all) {
+    if (item.status === 'failed' && item.lastAttempt && new Date(item.lastAttempt).getTime() < oneHourAgo) {
+      await removeFromQueue(item.id);
+    }
+  }
 }
 
 export async function updateQueueItem(id: string, updates: Partial<QueuedUpload>): Promise<void> {
@@ -46,18 +58,38 @@ export async function updateQueueItem(id: string, updates: Partial<QueuedUpload>
   }
 }
 
+/** Convert a Blob to a base64 string (without data URL prefix) */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      resolve(dataUrl.split(',')[1]); // strip "data:...;base64,"
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 // Upload a single item from the queue
 async function processUpload(upload: QueuedUpload): Promise<boolean> {
   try {
     await updateQueueItem(upload.id, { status: 'uploading', lastAttempt: new Date().toISOString() });
 
-    const formData = new FormData();
-    formData.append('file', upload.blob, upload.metadata.filename);
-    formData.append('metadata', JSON.stringify(upload.metadata));
+    // Convert blob to base64 and send as JSON — the server's multipart
+    // parser is a stub, so JSON is the reliable path.
+    const base64 = await blobToBase64(upload.blob);
+    const contentType = upload.blob.type || (upload.metadata.mediaType === 'video' ? 'video/webm' : 'image/jpeg');
 
     const res = await fetch('/api/upload/initiate', {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        file: base64,
+        metadata: upload.metadata,
+        filename: upload.metadata.filename,
+        contentType,
+      }),
     });
 
     if (!res.ok) {
