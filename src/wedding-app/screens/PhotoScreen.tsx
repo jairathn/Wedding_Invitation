@@ -52,6 +52,7 @@ export default function PhotoScreen() {
   const [confettiParticles, setConfettiParticles] = useState<Array<{
     x: number; y: number; vx: number; vy: number; color: string; size: number;
   }>>([]);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedTo, setSavedTo] = useState<SaveTarget | null>(null);
@@ -203,6 +204,7 @@ export default function PhotoScreen() {
     setSelectedStyle(style);
     setAiStep('generating');
     setAiProgress(0);
+    setAiError(null);
 
     try {
       const result = await generateAIPortrait(
@@ -214,8 +216,10 @@ export default function PhotoScreen() {
       setAiResult(result);
       triggerConfetti();
       setAiStep('reveal');
-    } catch {
-      // On failure, go back to pick
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Generation failed';
+      console.error('AI Portrait generation failed:', msg);
+      setAiError(msg);
       setAiStep('pick');
     }
   };
@@ -240,6 +244,7 @@ export default function PhotoScreen() {
     setSelectedStyle(null);
     setAiResult(null);
     setAiProgress(0);
+    setAiError(null);
     setShowCompare(false);
     setSaving(false);
     setSaveError(null);
@@ -472,6 +477,28 @@ export default function PhotoScreen() {
 
         {/* Scrollable styles */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px 100px' }} className="scrollbar-hide">
+          {/* Error banner */}
+          {aiError && (
+            <div style={{
+              background: 'rgba(212,114,106,0.08)', borderRadius: 14,
+              padding: '12px 16px', marginBottom: 12,
+              border: '1px solid rgba(212,114,106,0.15)',
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+            }}>
+              <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.2 }}>&#x26A0;&#xFE0F;</span>
+              <div>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#D4726A' }}>Generation failed</p>
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#8A8078', lineHeight: 1.4 }}>{aiError}</p>
+              </div>
+              <button
+                onClick={() => setAiError(null)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  color: '#B8AFA6', fontSize: 18, lineHeight: 1, marginLeft: 'auto', flexShrink: 0,
+                }}
+              >&times;</button>
+            </div>
+          )}
           {/* Most Popular */}
           <p style={{
             margin: '8px 0 10px', fontSize: 13, fontWeight: 600, color: '#8A8078',
