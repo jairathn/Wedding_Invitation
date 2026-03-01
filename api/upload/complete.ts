@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const dbUrl = process.env.DATABASE_URL;
     if (!dbUrl) {
-      // No database configured — that's fine, upload still succeeded
+      console.log('[upload/complete] No DATABASE_URL — skipping DB record');
       return res.status(200).json({ success: true, recorded: false });
     }
 
@@ -24,6 +24,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const meta = (metadata || {}) as Record<string, unknown>;
     const eventSlug = (meta.eventSlug as string) || 'general';
     const safeName = (filename as string) || 'upload';
+
+    console.log(`[upload/complete] Recording: file="${safeName}" driveId=${driveFileId} folder=${folderId} event="${eventSlug}"`);
 
     const { neon } = await import('@neondatabase/serverless');
     const sql = neon(dbUrl);
@@ -46,10 +48,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       )
     `;
 
+    console.log(`[upload/complete] DB record created: ${uploadId}`);
     return res.status(200).json({ success: true, recorded: true });
-  } catch (error) {
-    console.error('Complete error:', error);
-    // Don't fail the whole upload just because DB recording failed
-    return res.status(200).json({ success: true, recorded: false, error: 'DB record failed' });
+  } catch (error: any) {
+    const detail = error?.message || String(error);
+    console.error('[upload/complete] DB record failed:', detail);
+    return res.status(200).json({ success: true, recorded: false, error: detail });
   }
 }

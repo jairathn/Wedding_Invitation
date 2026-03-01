@@ -70,7 +70,9 @@ export async function updateQueueItem(id: string, updates: Partial<QueuedUpload>
 // 3. POST to /api/upload/initiate (same origin — server uploads to Drive)
 //
 async function processUpload(upload: QueuedUpload): Promise<boolean> {
+  const label = `[upload-queue] ${upload.id} "${upload.metadata.filename}"`;
   try {
+    console.log(`${label} — starting (attempt ${upload.retryCount + 1}, blob ${(upload.blob.size / 1024).toFixed(1)} KB, type=${upload.blob.type})`);
     await updateQueueItem(upload.id, { status: 'uploading', lastAttempt: new Date().toISOString() });
 
     // Use the original blob as-is (no compression — keep full quality)
@@ -78,9 +80,12 @@ async function processUpload(upload: QueuedUpload): Promise<boolean> {
     const contentType = blob.type || 'application/octet-stream';
 
     // Convert blob to base64 for JSON transport
+    console.log(`${label} — encoding to base64...`);
     const base64 = await blobToBase64(blob);
+    console.log(`${label} — base64 length: ${(base64.length / 1024).toFixed(1)} KB`);
 
     // Single same-origin POST — server handles folders + Drive upload + DB
+    console.log(`${label} — POSTing to /api/upload/initiate...`);
     const res = await fetch('/api/upload/initiate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -94,15 +99,19 @@ async function processUpload(upload: QueuedUpload): Promise<boolean> {
 
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`Upload failed: ${res.status} — ${body}`);
+      throw new Error(`Server responded ${res.status}: ${body}`);
     }
+
+    const result = await res.json();
+    console.log(`${label} — success! driveFileId=${result.driveFileId}`);
 
     // Success — remove from queue
     await removeFromQueue(upload.id);
     return true;
-  } catch (err) {
-    console.error('Upload error for', upload.id, err);
+  } catch (err: any) {
     const newRetryCount = upload.retryCount + 1;
+    const maxRetries = RETRY_DELAYS.length;
+    console.error(`${label} — FAILED (attempt ${newRetryCount}/${maxRetries}):`, err?.message || err);
     await updateQueueItem(upload.id, {
       status: 'failed',
       retryCount: newRetryCount,
@@ -145,7 +154,14 @@ export async function processQueue(): Promise<void> {
       return true;
     });
 
+    if (allUploads.length > 0) {
+      console.log(`[upload-queue] Queue: ${allUploads.length} total, ${pending.length} ready to process`);
+    }
+
     const batch = pending.slice(0, MAX_CONCURRENT_UPLOADS);
+    if (batch.length > 0) {
+      console.log(`[upload-queue] Processing batch of ${batch.length}...`);
+    }
     await Promise.all(batch.map(processUpload));
   } finally {
     isProcessing = false;
