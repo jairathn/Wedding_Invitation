@@ -21,12 +21,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
     const rootFolderId = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
+    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+    const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
     const dbUrl = process.env.DATABASE_URL;
 
-    if (!serviceAccountKey || !rootFolderId) {
-      console.error('Missing GOOGLE_SERVICE_ACCOUNT_KEY or GOOGLE_DRIVE_ROOT_FOLDER_ID');
+    if (!rootFolderId || !clientId || !clientSecret || !refreshToken) {
+      console.error('Missing Google Drive OAuth config');
       return res.status(503).json({
         error: 'Google Drive not configured',
         message: 'Upload could not be saved — the wedding album storage is not set up yet.',
@@ -40,8 +42,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const safeName = (filename as string) || 'upload';
     const safeContentType = (contentType as string) || 'application/octet-stream';
 
-    // ── Authenticate with Google Drive ──────────────────────────────
-    const { drive, auth } = await getDriveClient(serviceAccountKey);
+    // ── Authenticate with Google Drive via OAuth2 ────────────────────
+    const { drive, oauth2Client } = await getDriveClient(clientId, clientSecret, refreshToken);
 
     // ── Create folder structure ─────────────────────────────────────
     const byGuestFolder = await findOrCreateFolder(drive, 'By Guest', rootFolderId);
@@ -52,8 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // MODE 1: VIDEO — initiate resumable upload, return session URI
     // ════════════════════════════════════════════════════════════════
     if (!file && totalSize) {
-      const authClient = await auth.getClient();
-      const { token } = await authClient.getAccessToken();
+      const { token } = await oauth2Client.getAccessToken();
 
       const driveRes = await fetch(
         'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true',
@@ -152,34 +153,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 // ── Shared helpers ────────────────────────────────────────────────────
 
-async function getDriveClient(serviceAccountKey: string) {
+async function getDriveClient(clientId: string, clientSecret: string, refreshToken: string) {
   const { google } = await import('googleapis');
 
-  const trimmed = serviceAccountKey.trim();
-  const credentialsJson = trimmed.startsWith('{')
-    ? trimmed
-    : Buffer.from(trimmed, 'base64').toString('utf-8');
+  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
+  oauth2Client.setCredentials({ refresh_token: refreshToken });
 
-  let credentials: Record<string, unknown>;
-  try {
-    credentials = JSON.parse(credentialsJson);
-  } catch {
-    const fixed = credentialsJson.replace(
-      /("private_key"\s*:\s*")([^"]*)/,
-      (_m, pre, val) => pre + val.replace(/\n/g, '\\n').replace(/\r/g, ''),
-    );
-    credentials = JSON.parse(fixed);
-  }
-  if (typeof credentials.private_key === 'string') {
-    credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
-  }
-
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/drive.file'],
-  });
-  const drive = google.drive({ version: 'v3', auth });
-  return { drive, auth };
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+  return { drive, oauth2Client };
 }
 
 async function findOrCreateFolder(drive: any, name: string, parentId: string): Promise<string> {
