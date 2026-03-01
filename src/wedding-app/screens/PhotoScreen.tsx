@@ -824,9 +824,23 @@ export default function PhotoScreen() {
         }}>
           Portrait Saved!
         </p>
-        <p style={{ margin: '8px 0 32px', fontSize: 15, color: '#8A8078', lineHeight: 1.5 }}>
+        <p style={{ margin: '8px 0 20px', fontSize: 15, color: '#8A8078', lineHeight: 1.5 }}>
           {savedMessage}
         </p>
+
+        {/* Personalized video note */}
+        <div style={{
+          background: 'rgba(232,134,90,0.06)', borderRadius: 14,
+          padding: '12px 18px', marginBottom: 24, maxWidth: 320,
+          border: '1px solid rgba(196,112,75,0.1)',
+          display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
+        }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>&#x1F3AC;</span>
+          <p style={{ margin: 0, fontSize: 12, color: '#8A8078', lineHeight: 1.5 }}>
+            This will be woven into a personalized wedding video just for you!
+          </p>
+        </div>
+
         <button
           onClick={resetAIPortrait}
           style={{

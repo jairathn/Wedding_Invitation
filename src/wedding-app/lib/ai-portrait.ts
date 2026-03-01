@@ -263,23 +263,37 @@ export async function generateAIPortrait(
 
 /**
  * Upload an AI portrait image to Google Drive via the existing upload endpoint.
+ * The imageDataUrl should be a base64 data URL (returned by the generate endpoint).
  * Returns the drive file ID on success.
  */
 export async function savePortraitToDrive(
-  imageUrl: string,
+  imageDataUrl: string,
   styleId: string,
   guestId: number,
   guestName: string,
 ): Promise<{ success: boolean; driveFileId?: string }> {
-  // Fetch the image and convert to base64
-  const imageRes = await fetch(imageUrl);
-  const blob = await imageRes.blob();
+  // Extract base64 content from the data URL
+  let base64Content: string;
+  let mimeType = 'image/jpeg';
 
-  const reader = new FileReader();
-  const base64 = await new Promise<string>((resolve) => {
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.readAsDataURL(blob);
-  });
+  if (imageDataUrl.startsWith('data:')) {
+    // Already a data URL — extract base64 part directly
+    const [header, data] = imageDataUrl.split(',');
+    base64Content = data;
+    const mimeMatch = header.match(/data:([^;]+)/);
+    if (mimeMatch) mimeType = mimeMatch[1];
+  } else {
+    // External URL fallback — fetch and convert (may fail due to CORS)
+    const imageRes = await fetch(imageDataUrl);
+    const blob = await imageRes.blob();
+    mimeType = blob.type || 'image/jpeg';
+    const reader = new FileReader();
+    const dataUrl = await new Promise<string>((resolve) => {
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+    base64Content = dataUrl.split(',')[1];
+  }
 
   const filename = `ai-portrait_${styleId}_${guestName.toLowerCase().replace(/\s+/g, '-')}_${new Date().toISOString().replace(/[:.]/g, '-')}.jpg`;
 
@@ -287,7 +301,7 @@ export async function savePortraitToDrive(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      file: base64.split(',')[1], // strip data URL prefix
+      file: base64Content,
       metadata: {
         guestId,
         guestName,
@@ -296,12 +310,13 @@ export async function savePortraitToDrive(
         filterApplied: `ai-portrait-${styleId}`,
       },
       filename,
-      contentType: 'image/jpeg',
+      contentType: mimeType,
     }),
   });
 
   if (!res.ok) {
-    throw new Error('Failed to save to Google Drive');
+    const errorBody = await res.text().catch(() => '');
+    throw new Error(`Failed to save to Google Drive: ${res.status} ${errorBody}`);
   }
 
   return res.json();

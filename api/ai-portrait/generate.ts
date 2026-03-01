@@ -1,6 +1,6 @@
 // POST /api/ai-portrait/generate — Generate an AI portrait via Replicate SDXL
 // Expects JSON body: { image: string (base64 data URL), styleId: string, prompt: string, negativePrompt: string }
-// Returns: { id: string, status: string, output?: string }
+// Returns: { status: string, output: string (base64 data URL) }
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -25,7 +25,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const replicate = new Replicate({ auth: apiToken });
 
     // Use SDXL img2img for style transfer with the user's photo as input
-    // The model takes the photo and re-renders it in the requested style
     const output = await replicate.run(
       'stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc',
       {
@@ -33,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           image,
           prompt,
           negative_prompt: negativePrompt || 'deformed, ugly, blurry, low quality, watermark, text',
-          prompt_strength: 0.65,       // Balance between original photo and style
+          prompt_strength: 0.65,
           num_inference_steps: 30,
           guidance_scale: 7.5,
           width: 1024,
@@ -47,6 +46,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Replicate returns an array of output URLs for image models
     const outputUrl = Array.isArray(output) ? output[0] : output;
+
+    if (!outputUrl) {
+      return res.status(500).json({ error: 'No output from model' });
+    }
+
+    // Fetch the generated image server-side and return as base64 data URL.
+    // This avoids CORS issues when the frontend tries to save/upload the image.
+    const imageRes = await fetch(String(outputUrl));
+    if (!imageRes.ok) {
+      return res.status(500).json({ error: 'Failed to fetch generated image from Replicate' });
+    }
+    const imageBuffer = Buffer.from(await imageRes.arrayBuffer());
+    const contentType = imageRes.headers.get('content-type') || 'image/png';
+    const base64DataUrl = `data:${contentType};base64,${imageBuffer.toString('base64')}`;
 
     // Record in database if available
     const dbUrl = process.env.DATABASE_URL;
@@ -65,7 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       status: 'complete',
-      output: String(outputUrl),
+      output: base64DataUrl,
     });
   } catch (error: unknown) {
     console.error('AI Portrait generation error:', error);
