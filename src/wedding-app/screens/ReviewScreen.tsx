@@ -91,11 +91,9 @@ export default function ReviewScreen() {
     document.body.removeChild(link);
   };
 
-  // ── Save to wedding album (upload queue → Google Drive) ──
-  const saveToAlbum = async () => {
+  // ── Queue all captured media for upload to Google Drive ──
+  const queueForAlbum = async () => {
     if (!capturedBlobs.length) return;
-    setSaving(true);
-
     for (const media of capturedBlobs) {
       const filename = generateFilename(media.type, eventSlug, guestName);
       await addToQueue({
@@ -115,16 +113,29 @@ export default function ReviewScreen() {
         retryCount: 0,
       });
     }
+  };
 
-    setSaving(false);
-    triggerSuccess();
+  // ── Save to wedding album (upload queue → Google Drive) ──
+  const saveToAlbum = async () => {
+    setSaving(true);
+    try {
+      await queueForAlbum();
+      triggerSuccess();
+    } finally {
+      setSaving(false);
+    }
   };
 
   // ── Save to both (device + album) ──
   const saveToBoth = async () => {
     setSaving(true);
-    await saveToDevice();
-    await saveToAlbum();
+    try {
+      // Run independently so a device-save failure doesn't block the album upload
+      await Promise.allSettled([saveToDevice(), queueForAlbum()]);
+      triggerSuccess();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const triggerSuccess = () => {
