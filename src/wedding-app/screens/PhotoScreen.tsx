@@ -13,9 +13,12 @@ import {
   incrementPortraitCount,
   generateAIPortrait,
   preparePhotoForAI,
+  savePortraitToDrive,
 } from '../lib/ai-portrait';
 import type { AIPortraitStyle, AIPortraitStep } from '../lib/ai-portrait';
 import type { CapturedMedia } from '../types';
+
+type SaveTarget = 'device' | 'drive' | 'both';
 
 type TabMode = 'filters' | 'ai-portrait';
 
@@ -49,6 +52,9 @@ export default function PhotoScreen() {
   const [confettiParticles, setConfettiParticles] = useState<Array<{
     x: number; y: number; vx: number; vy: number; color: string; size: number;
   }>>([]);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedTo, setSavedTo] = useState<SaveTarget | null>(null);
 
   const guestName = session?.guest
     ? `${session.guest.firstName} ${session.guest.lastName}`
@@ -235,18 +241,45 @@ export default function PhotoScreen() {
     setAiResult(null);
     setAiProgress(0);
     setShowCompare(false);
+    setSaving(false);
+    setSaveError(null);
+    setSavedTo(null);
   };
 
-  const saveAIPortrait = () => {
-    if (!aiResult) return;
-
-    // Download the image
+  const downloadToDevice = (url: string) => {
     const link = document.createElement('a');
-    link.href = aiResult;
+    link.href = url;
     link.download = `ai-portrait-${selectedStyle?.id || 'photo'}-${Date.now()}.jpg`;
     link.click();
+  };
 
-    setAiStep('saved');
+  const saveAIPortrait = async (target: SaveTarget) => {
+    if (!aiResult) return;
+
+    setSaving(true);
+    setSaveError(null);
+
+    try {
+      if (target === 'device' || target === 'both') {
+        downloadToDevice(aiResult);
+      }
+
+      if (target === 'drive' || target === 'both') {
+        await savePortraitToDrive(
+          aiResult,
+          selectedStyle?.id || 'unknown',
+          session?.guestId || 0,
+          guestName,
+        );
+      }
+
+      setSavedTo(target);
+      setAiStep('saved');
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // ── Switch tabs ──
@@ -624,31 +657,131 @@ export default function PhotoScreen() {
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div style={{ padding: '0 20px 32px', display: 'flex', gap: 10 }}>
+        {/* Save options */}
+        <div style={{ padding: '0 20px 32px' }}>
+          {saveError && (
+            <div style={{
+              background: 'rgba(212,114,106,0.08)', borderRadius: 12,
+              padding: '10px 16px', marginBottom: 12, textAlign: 'center',
+            }}>
+              <p style={{ margin: 0, fontSize: 13, color: '#D4726A' }}>{saveError}</p>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Save to Device */}
+            <button
+              onClick={() => saveAIPortrait('device')}
+              disabled={saving}
+              style={{
+                padding: '14px 20px', borderRadius: 16,
+                background: 'rgba(44,40,37,0.06)', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 12,
+                opacity: saving ? 0.6 : 1,
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: 'linear-gradient(135deg, #2C2825 0%, #4A4540 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#2C2825' }}>Save to Device</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A8078' }}>Download to your photos</p>
+              </div>
+            </button>
+
+            {/* Save to Google Drive */}
+            <button
+              onClick={() => saveAIPortrait('drive')}
+              disabled={saving}
+              style={{
+                padding: '14px 20px', borderRadius: 16,
+                background: 'rgba(44,40,37,0.06)', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 12,
+                opacity: saving ? 0.6 : 1,
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: 'linear-gradient(135deg, #2B5F8A 0%, #4A8BC4 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L2 19.5h20L12 2z"/>
+                  <path d="M2 19.5l10-5.5"/>
+                  <path d="M22 19.5l-10-5.5"/>
+                </svg>
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#2C2825' }}>Save to Wedding Album</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A8078' }}>Upload to the shared Google Drive</p>
+              </div>
+            </button>
+
+            {/* Save to Both */}
+            <button
+              onClick={() => saveAIPortrait('both')}
+              disabled={saving}
+              style={{
+                padding: '14px 20px', borderRadius: 16,
+                background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
+                border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 12,
+                opacity: saving ? 0.6 : 1,
+                fontFamily: "'DM Sans', sans-serif",
+                boxShadow: '0 4px 20px rgba(196,112,75,0.2)',
+              }}
+            >
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'white' }}>Save to Both</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>Device + Wedding Album</p>
+              </div>
+            </button>
+          </div>
+
+          {/* Try Another link */}
           <button
             onClick={resetAIPortrait}
+            disabled={saving}
             style={{
-              flex: 1, padding: '14px 0', borderRadius: 24,
-              background: 'rgba(44,40,37,0.06)', border: 'none', cursor: 'pointer',
-              color: '#2C2825', fontWeight: 600, fontSize: 15,
-              fontFamily: "'DM Sans', sans-serif",
+              width: '100%', marginTop: 10, padding: '10px 0',
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: '#A09890', fontSize: 14, fontWeight: 500,
             }}
           >
-            Try Another
+            Try Another Style
           </button>
-          <button
-            onClick={saveAIPortrait}
-            style={{
-              flex: 1, padding: '14px 0', borderRadius: 24,
-              background: 'linear-gradient(135deg, #C4704B 0%, #E8865A 100%)',
-              border: 'none', cursor: 'pointer', color: 'white',
-              fontWeight: 600, fontSize: 15, fontFamily: "'DM Sans', sans-serif",
-              boxShadow: '0 4px 20px rgba(196,112,75,0.3)',
-            }}
-          >
-            Save Portrait
-          </button>
+
+          {saving && (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8,
+            }}>
+              <div style={{
+                width: 16, height: 16, border: '2px solid rgba(196,112,75,0.2)',
+                borderTopColor: '#C4704B', borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+              }} />
+              <span style={{ fontSize: 13, color: '#8A8078' }}>Saving...</span>
+            </div>
+          )}
         </div>
 
         <style>{`
@@ -664,6 +797,12 @@ export default function PhotoScreen() {
   // ── AI Portrait: Saved confirmation ──
   const renderSaved = () => {
     if (!selectedStyle) return null;
+
+    const savedMessage = savedTo === 'both'
+      ? 'Your portrait has been saved to your device and uploaded to the wedding album.'
+      : savedTo === 'drive'
+        ? 'Your portrait has been uploaded to the wedding album on Google Drive.'
+        : 'Your portrait has been saved to your device.';
 
     return (
       <div style={{
@@ -686,7 +825,7 @@ export default function PhotoScreen() {
           Portrait Saved!
         </p>
         <p style={{ margin: '8px 0 32px', fontSize: 15, color: '#8A8078', lineHeight: 1.5 }}>
-          Your {selectedStyle.name} portrait has been saved to your device.
+          {savedMessage}
         </p>
         <button
           onClick={resetAIPortrait}
