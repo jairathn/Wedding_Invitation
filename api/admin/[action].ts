@@ -1,4 +1,5 @@
-// GET /api/admin/stats — Upload counts, storage used, queue status
+// GET /api/admin/:action — Unified admin endpoint
+// Handles both /api/admin/health and /api/admin/stats
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -12,6 +13,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  const { action } = req.query;
+
+  if (action === 'health') {
+    return handleHealth(req, res);
+  }
+  if (action === 'stats') {
+    return handleStats(req, res);
+  }
+
+  return res.status(404).json({ error: 'Unknown admin action' });
+}
+
+async function handleHealth(_req: VercelRequest, res: VercelResponse) {
+  const checks: Record<string, string> = {
+    server: 'ok',
+    database: 'not configured',
+    googleDrive: 'not configured',
+  };
+
+  const dbUrl = process.env.DATABASE_URL;
+  if (dbUrl) {
+    try {
+      const { neon } = await import('@neondatabase/serverless');
+      const sql = neon(dbUrl);
+      await sql`SELECT 1`;
+      checks.database = 'ok';
+    } catch {
+      checks.database = 'error';
+    }
+  }
+
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY && process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID) {
+    checks.googleDrive = 'configured';
+  }
+
+  const allOk = Object.values(checks).every(v => v === 'ok' || v === 'configured' || v === 'not configured');
+
+  return res.status(allOk ? 200 : 503).json({
+    status: allOk ? 'healthy' : 'degraded',
+    checks,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+async function handleStats(_req: VercelRequest, res: VercelResponse) {
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) {
     return res.status(200).json({
