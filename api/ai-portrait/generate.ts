@@ -64,7 +64,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const Replicate = (await import('replicate')).default;
     const replicate = new Replicate({ auth: apiToken });
 
-    // Use FLUX Kontext Pro for text-guided style transfer with the user's photo
+    // Use FLUX Kontext Pro for text-guided style transfer with the user's photo.
+    // safety_tolerance: 6 (max, default) — wedding guests in formal attire don't
+    // need aggressive safety filtering.  Lower values (1-3) can degrade output
+    // quality or refuse perfectly normal portraits.
     const output = await runWithRetry(
       replicate,
       'black-forest-labs/flux-kontext-pro',
@@ -73,7 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         prompt,
         aspect_ratio: '1:1',
         output_format: 'jpg',
-        safety_tolerance: 2,
+        safety_tolerance: 6,
       },
     );
 

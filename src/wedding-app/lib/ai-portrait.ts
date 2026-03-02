@@ -10,8 +10,7 @@ export interface AIPortraitStyle {
   popular: boolean;
   timeEstimate: string;     // e.g. "~30s"
   funFact: string;          // Shown during generation
-  prompt: string;           // Replicate SDXL prompt
-  negativePrompt: string;
+  prompt: string;           // FLUX Kontext Pro style-transfer prompt
 }
 
 export type AIPortraitStep = 'capture' | 'pick' | 'generating' | 'reveal' | 'saved';
@@ -39,8 +38,8 @@ export const AI_PORTRAIT_STYLES: AIPortraitStyle[] = [
     popular: true,
     timeEstimate: '~30s',
     funFact: 'Barcelona has over 20 castles and palaces, including the stunning Castell de Montjuïc overlooking the sea.',
-    prompt: 'Transform this photo into a grand royal wedding portrait set inside a magnificent Spanish castle. The person is wearing opulent royal wedding attire with a jeweled crown, standing in a grand stone hall with soaring arched ceilings, ornate golden chandeliers, rich velvet drapery in deep crimson and gold, tall stained glass windows casting warm light across marble floors. The atmosphere is regal and cinematic, like a royal wedding ceremony at a castle in Spain. Oil painting style with warm golden tones, masterpiece quality.',
-    negativePrompt: '',
+    prompt: 'Restyle this portrait of the person into a grand royal wedding scene inside a magnificent Spanish castle. Keep the person\'s face, features, and identity exactly the same — do not change their appearance, only change the setting and attire. Dress them in opulent royal wedding attire with a jeweled crown. Place them in a grand stone hall with soaring arched ceilings, ornate golden chandeliers, rich velvet drapery in deep crimson and gold, tall stained glass windows casting warm light across marble floors. The atmosphere is regal and cinematic, like a royal wedding ceremony at a castle in Spain. Oil painting style with warm golden tones, masterpiece quality.',
+
   },
   {
     id: 'mughal-royalty',
@@ -51,8 +50,8 @@ export const AI_PORTRAIT_STYLES: AIPortraitStyle[] = [
     popular: true,
     timeEstimate: '~30s',
     funFact: 'The Mughal Empire produced some of the most exquisite miniature paintings in history, blending Persian and Indian art traditions.',
-    prompt: 'Transform this photo into a majestic Mughal-era royal portrait in the style of the movie Jodhaa Akbar. The person is dressed in lavish Mughal royal attire — rich brocade fabrics, heavy ornate gold and emerald jewelry, an elaborate turban or jeweled headpiece. They are standing in the grand courtyard of a Mughal palace with intricate marble jali screens, pietra dura inlay work, lush Mughal gardens with fountains visible in the background, and Persian-style archways. The lighting is warm and golden, the mood is powerful and regal. Painted in the style of a Mughal miniature painting with rich jewel tones — deep reds, emerald greens, sapphire blues, and abundant gold leaf details.',
-    negativePrompt: '',
+    prompt: 'Restyle this portrait of the person into a majestic Mughal-era royal scene in the style of the movie Jodhaa Akbar. Keep the person\'s face, features, and identity exactly the same — do not change their appearance, only change the setting and attire. Dress them in lavish Mughal royal attire — rich brocade fabrics, heavy ornate gold and emerald jewelry, an elaborate turban or jeweled headpiece. Place them in the grand courtyard of a Mughal palace with intricate marble jali screens, pietra dura inlay work, lush Mughal gardens with fountains visible in the background, and Persian-style archways. The lighting is warm and golden, the mood is powerful and regal. Painted in the style of a Mughal miniature painting with rich jewel tones — deep reds, emerald greens, sapphire blues, and abundant gold leaf details.',
+
   },
   {
     id: 'bollywood-poster',
@@ -63,8 +62,8 @@ export const AI_PORTRAIT_STYLES: AIPortraitStyle[] = [
     popular: true,
     timeEstimate: '~25s',
     funFact: 'Bollywood produces over 1,500 films per year — more than Hollywood! The term comes from combining "Bombay" and "Hollywood".',
-    prompt: 'Transform this photo into a classic hand-painted Bollywood movie poster from the golden era of Hindi cinema. The person is the glamorous star of the film, styled with dramatic Bollywood fashion — flowing designer outfit, statement jewelry, wind-swept hair. The composition is a dramatic movie poster layout with vibrant saturated colors, dramatic spotlight lighting, golden sparkles and cinematic lens flares. The background features the skyline of Mumbai with the Gateway of India. The mood is larger-than-life filmi glamour, like a premiere poster for a blockbuster starring Shah Rukh Khan, Hrithik Roshan, Deepika Padukone, or Aishwarya Rai. Bold, colorful, hand-painted Indian movie poster art style.',
-    negativePrompt: '',
+    prompt: 'Restyle this portrait of the person into a classic hand-painted Bollywood movie poster from the golden era of Hindi cinema. Keep the person\'s face, features, and identity exactly the same — do not change their appearance, only change the styling and composition. Make them the glamorous star of the film, styled with dramatic Bollywood fashion — flowing designer outfit, statement jewelry, wind-swept hair. The composition is a dramatic movie poster layout with vibrant saturated colors, dramatic spotlight lighting, golden sparkles and cinematic lens flares. The background features the skyline of Mumbai with the Gateway of India. The mood is larger-than-life filmi glamour. Bold, colorful, hand-painted Indian movie poster art style.',
+
   },
   {
     id: 'barcelona-mosaic',
@@ -75,8 +74,8 @@ export const AI_PORTRAIT_STYLES: AIPortraitStyle[] = [
     popular: true,
     timeEstimate: '~35s',
     funFact: 'Antoni Gaud\u00ed\'s trencad\u00eds mosaic technique uses broken ceramic pieces. Park G\u00fcell alone contains over 15 million tile fragments.',
-    prompt: 'Transform this photo into a vibrant Barcelona-inspired artistic portrait. The person is set against the iconic backdrop of Antoni Gaud\u00ed\'s Sagrada Familia basilica and the colorful trencad\u00eds mosaics of Park G\u00fcell. The scene blends Barcelona\'s most iconic elements: the organic flowing architecture of Casa Batll\u00f3, warm Mediterranean sunlight, terracotta rooftops, and hints of flamenco culture with dramatic red and orange tones. The portrait is rendered in a colorful mosaic style inspired by Gaud\u00ed\'s ceramic tile work — broken tile fragments forming the image in Mediterranean blues, sun-baked oranges, olive greens, and terracotta reds. Warm golden hour lighting, artistic and celebratory.',
-    negativePrompt: '',
+    prompt: 'Restyle this portrait of the person into a vibrant Barcelona-inspired artistic scene. Keep the person\'s face, features, and identity exactly the same — do not change their appearance, only change the setting and artistic style. Place them against the iconic backdrop of Antoni Gaud\u00ed\'s Sagrada Familia basilica and the colorful trencad\u00eds mosaics of Park G\u00fcell. The scene blends Barcelona\'s most iconic elements: the organic flowing architecture of Casa Batll\u00f3, warm Mediterranean sunlight, terracotta rooftops, and hints of flamenco culture with dramatic red and orange tones. The portrait is rendered in a colorful mosaic style inspired by Gaud\u00ed\'s ceramic tile work — Mediterranean blues, sun-baked oranges, olive greens, and terracotta reds. Warm golden hour lighting, artistic and celebratory.',
+
   },
   {
     id: 'watercolor',
@@ -87,8 +86,8 @@ export const AI_PORTRAIT_STYLES: AIPortraitStyle[] = [
     popular: false,
     timeEstimate: '~25s',
     funFact: 'Watercolor painting dates back 40,000 years to cave paintings. The technique became an art form in 18th century England.',
-    prompt: 'Transform this photo into a beautiful romantic watercolor painting. The person is painted with soft, delicate brushstrokes in a wet-on-wet watercolor technique. Colors bleed and flow organically together — soft pinks, lavenders, and sky blues create a dreamy atmosphere. Surrounding the portrait are loose watercolor florals — peonies, roses, and wisteria dripping with pigment. The background dissolves into abstract washes of pastel color. The style is elegant fine art watercolor, like a wedding portrait painted by hand on textured watercolor paper. Ethereal, romantic, and luminous.',
-    negativePrompt: '',
+    prompt: 'Restyle this portrait of the person as a beautiful romantic watercolor painting. Keep the person\'s face, features, and identity exactly the same — do not change their appearance, only change the artistic medium. Paint them with soft, delicate brushstrokes in a wet-on-wet watercolor technique. Colors bleed and flow organically together — soft pinks, lavenders, and sky blues create a dreamy atmosphere. Surround the portrait with loose watercolor florals — peonies, roses, and wisteria dripping with pigment. The background dissolves into abstract washes of pastel color. The style is elegant fine art watercolor, like a wedding portrait painted by hand on textured watercolor paper. Ethereal, romantic, and luminous.',
+
   },
   {
     id: 'pop-art',
@@ -99,8 +98,8 @@ export const AI_PORTRAIT_STYLES: AIPortraitStyle[] = [
     popular: false,
     timeEstimate: '~20s',
     funFact: 'Andy Warhol\'s "Shot Marilyns" sold for $195 million in 2022, making it the most expensive American artwork ever sold.',
-    prompt: 'Transform this photo into a bold Andy Warhol-style pop art portrait. The image uses flat, graphic blocks of vivid color — hot pink, electric blue, bright yellow, and lime green. The style combines Warhol\'s screen-print aesthetic with Roy Lichtenstein\'s Ben-Day halftone dots and thick black outlines. High contrast, simplified forms, bold graphic shapes. The background is a single flat bright color. The overall feel is iconic, bold, and gallery-worthy — like a famous Warhol silkscreen print hanging in MoMA.',
-    negativePrompt: '',
+    prompt: 'Restyle this portrait of the person as a bold Andy Warhol-style pop art print. Keep the person\'s face, features, and identity exactly the same — do not change their appearance, only change the artistic style. Render them with flat, graphic blocks of vivid color — hot pink, electric blue, bright yellow, and lime green. The style combines Warhol\'s screen-print aesthetic with Roy Lichtenstein\'s Ben-Day halftone dots and thick black outlines. High contrast, simplified forms, bold graphic shapes. The background is a single flat bright color. The overall feel is iconic, bold, and gallery-worthy — like a famous Warhol silkscreen print.',
+
   },
   {
     id: 'renaissance',
@@ -111,8 +110,8 @@ export const AI_PORTRAIT_STYLES: AIPortraitStyle[] = [
     popular: false,
     timeEstimate: '~35s',
     funFact: 'Leonardo da Vinci spent 4 years painting the Mona Lisa\'s lips. Renaissance portraits often contained hidden symbols and meanings.',
-    prompt: 'Transform this photo into a Renaissance oil painting portrait in the style of Leonardo da Vinci, Raphael, and Caravaggio. The person is dressed in elegant 15th-century Italian noble attire — rich velvets, fine lace collars, subtle gold embroidery. The technique uses Leonardo\'s sfumato for soft, smoky transitions and Caravaggio\'s dramatic chiaroscuro lighting — a single warm light source from the left illuminating the face against a deep, dark umber background. The brushwork shows visible oil paint texture. Museum-quality masterpiece, as if discovered in the Uffizi Gallery in Florence.',
-    negativePrompt: '',
+    prompt: 'Restyle this portrait of the person as a Renaissance oil painting in the style of Leonardo da Vinci, Raphael, and Caravaggio. Keep the person\'s face, features, and identity exactly the same — do not change their appearance, only change the attire and artistic style. Dress them in elegant 15th-century Italian noble attire — rich velvets, fine lace collars, subtle gold embroidery. The technique uses Leonardo\'s sfumato for soft, smoky transitions and Caravaggio\'s dramatic chiaroscuro lighting — a single warm light source from the left illuminating the face against a deep, dark umber background. The brushwork shows visible oil paint texture. Museum-quality masterpiece.',
+
   },
   {
     id: 'anime-ghibli',
@@ -123,8 +122,8 @@ export const AI_PORTRAIT_STYLES: AIPortraitStyle[] = [
     popular: false,
     timeEstimate: '~25s',
     funFact: 'Studio Ghibli\'s "Spirited Away" won the Academy Award for Best Animated Feature in 2003 — the only hand-drawn anime to ever win.',
-    prompt: 'Transform this photo into a beautiful Studio Ghibli anime character illustration in the style of Hayao Miyazaki. The person is drawn as a hand-animated Ghibli character with large expressive eyes, soft rounded features, and a gentle warm expression. They are standing in a lush, magical Ghibli landscape — rolling green hills, towering cumulus clouds in a vivid blue sky, wildflowers swaying in the breeze, and perhaps a whimsical European-style cottage in the distance. The color palette is warm and inviting with soft natural lighting. The art style is hand-drawn cel animation with watercolor-like backgrounds, exactly like a frame from Spirited Away, Howl\'s Moving Castle, or Kiki\'s Delivery Service.',
-    negativePrompt: '',
+    prompt: 'Restyle this portrait of the person as a beautiful Studio Ghibli anime character illustration in the style of Hayao Miyazaki. Keep the person\'s face, features, and identity recognizable — only change them into an anime art style. Draw them as a hand-animated Ghibli character with expressive eyes and a gentle warm expression. Place them in a lush, magical Ghibli landscape — rolling green hills, towering cumulus clouds in a vivid blue sky, wildflowers swaying in the breeze, and a whimsical European-style cottage in the distance. The color palette is warm and inviting with soft natural lighting. The art style is hand-drawn cel animation with watercolor-like backgrounds, like a frame from Spirited Away or Howl\'s Moving Castle.',
+
   },
   {
     id: 'art-nouveau',
@@ -135,8 +134,8 @@ export const AI_PORTRAIT_STYLES: AIPortraitStyle[] = [
     popular: false,
     timeEstimate: '~30s',
     funFact: 'Barcelona is home to some of the world\'s finest Art Nouveau architecture. The style was called "Modernisme" in Catalonia.',
-    prompt: 'Transform this photo into an elegant Art Nouveau poster portrait in the style of Alphonse Mucha and Catalan Modernisme. The person is framed within an ornate circular halo border decorated with flowing botanical elements — sinuous vines, lilies, and irises. The composition uses Mucha\'s signature flowing organic lines and decorative patterns. The color palette is muted earth tones with rich gold leaf accents, sage greens, dusty roses, and warm amber. Intricate geometric and floral borders frame the entire image like a vintage Parisian theatre poster. The typography-ready design evokes Barcelona\'s Palau de la M\u00fasica Catalana.',
-    negativePrompt: '',
+    prompt: 'Restyle this portrait of the person as an elegant Art Nouveau poster in the style of Alphonse Mucha and Catalan Modernisme. Keep the person\'s face, features, and identity exactly the same — do not change their appearance, only change the artistic style. Frame them within an ornate circular halo border decorated with flowing botanical elements — sinuous vines, lilies, and irises. The composition uses Mucha\'s signature flowing organic lines and decorative patterns. The color palette is muted earth tones with rich gold leaf accents, sage greens, dusty roses, and warm amber. Intricate geometric and floral borders frame the entire image like a vintage Parisian theatre poster.',
+
   },
   {
     id: 'impressionist',
@@ -147,8 +146,8 @@ export const AI_PORTRAIT_STYLES: AIPortraitStyle[] = [
     popular: false,
     timeEstimate: '~30s',
     funFact: 'Claude Monet painted his famous water lilies series over 30 years, producing about 250 paintings of his garden at Giverny.',
-    prompt: 'Transform this photo into a luminous French Impressionist oil painting in the style of Claude Monet, Pierre-Auguste Renoir, and Berthe Morisot. The person is painted with loose, visible brushstrokes and dappled natural sunlight filtering through the leaves. They are in a beautiful garden setting reminiscent of Monet\'s Giverny — surrounded by water lilies, wisteria, iris flowers, and a Japanese-style bridge in soft focus behind them. The light is warm afternoon golden hour with dancing shadows. The paint application is thick impasto with a soft, luminous color palette of lavender, soft gold, sage green, and sky blue. Oil on canvas texture is visible throughout.',
-    negativePrompt: '',
+    prompt: 'Restyle this portrait of the person as a luminous French Impressionist oil painting in the style of Claude Monet, Pierre-Auguste Renoir, and Berthe Morisot. Keep the person\'s face, features, and identity exactly the same — do not change their appearance, only change the artistic style and setting. Paint them with loose, visible brushstrokes and dappled natural sunlight filtering through the leaves. Place them in a beautiful garden setting reminiscent of Monet\'s Giverny — surrounded by water lilies, wisteria, iris flowers, and a Japanese-style bridge in soft focus behind them. The light is warm afternoon golden hour with dancing shadows. The paint application is thick impasto with a soft, luminous color palette of lavender, soft gold, sage green, and sky blue. Oil on canvas texture.',
+
   },
 ];
 
