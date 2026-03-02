@@ -13,8 +13,8 @@ import {
   incrementPortraitCount,
   generateAIPortrait,
   preparePhotoForAI,
-  savePortraitToDrive,
 } from '../lib/ai-portrait';
+import { addToQueue, processQueue } from '../lib/upload-queue';
 import type { AIPortraitStyle, AIPortraitStep } from '../lib/ai-portrait';
 import type { CapturedMedia } from '../types';
 
@@ -251,11 +251,40 @@ export default function PhotoScreen() {
     setSavedTo(null);
   };
 
-  const downloadToDevice = (url: string) => {
+  /** Save AI portrait to device using Web Share API (Camera Roll) on mobile,
+   *  falling back to download on desktop. Matches the non-AI photo behavior. */
+  const saveToDevice = async (dataUrl: string) => {
+    const filename = `ai-portrait-${selectedStyle?.id || 'photo'}-${Date.now()}.png`;
+
+    // Convert data URL to blob for Web Share API
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+
+    // Mobile: use Web Share API → opens native share sheet → Save to Photos
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && navigator.share && navigator.canShare) {
+      try {
+        const file = new File([blob], filename, { type: blob.type || 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: "Neil & Shriya's Wedding",
+          });
+          return;
+        }
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return;
+        // Fallback to download
+      }
+    }
+
+    // Desktop fallback: trigger download
     const link = document.createElement('a');
-    link.href = url;
-    link.download = `ai-portrait-${selectedStyle?.id || 'photo'}-${Date.now()}.jpg`;
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
   };
 
   const saveAIPortrait = async (target: SaveTarget) => {
@@ -266,17 +295,34 @@ export default function PhotoScreen() {
 
     try {
       if (target === 'device' || target === 'both') {
-        downloadToDevice(aiResult);
+        await saveToDevice(aiResult);
       }
 
-      if (target === 'drive' || target === 'both') {
-        await savePortraitToDrive(
-          aiResult,
-          selectedStyle?.id || 'unknown',
-          session?.guestId || 0,
+      // Always add to IndexedDB queue so the portrait appears in the gallery.
+      // Also upload to Google Drive (via the queue) for the wedding album.
+      const portraitRes = await fetch(aiResult);
+      const portraitBlob = await portraitRes.blob();
+      const styleId = selectedStyle?.id || 'unknown';
+      const filename = `ai-portrait_${styleId}_${guestName.toLowerCase().replace(/\s+/g, '-')}_${Date.now()}.png`;
+
+      await addToQueue({
+        id: crypto.randomUUID(),
+        blob: portraitBlob,
+        metadata: {
+          guestId: session?.guestId || 0,
           guestName,
-        );
-      }
+          eventSlug: 'wedding_reception',
+          mediaType: 'photo',
+          filename,
+          filterApplied: `ai-portrait-${styleId}`,
+          capturedAt: new Date().toISOString(),
+        },
+        status: 'queued',
+        retryCount: 0,
+      });
+
+      // Upload immediately (don't wait for 30s interval)
+      processQueue();
 
       setSavedTo(target);
       setAiStep('saved');
@@ -696,65 +742,7 @@ export default function PhotoScreen() {
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {/* Save to Device */}
-            <button
-              onClick={() => saveAIPortrait('device')}
-              disabled={saving}
-              style={{
-                padding: '14px 20px', borderRadius: 16,
-                background: 'rgba(44,40,37,0.06)', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 12,
-                opacity: saving ? 0.6 : 1,
-                fontFamily: "'DM Sans', sans-serif",
-              }}
-            >
-              <div style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: 'linear-gradient(135deg, #2C2825 0%, #4A4540 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-              </div>
-              <div style={{ textAlign: 'left' }}>
-                <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#2C2825' }}>Save to Device</p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A8078' }}>Download to your photos</p>
-              </div>
-            </button>
-
-            {/* Save to Google Drive */}
-            <button
-              onClick={() => saveAIPortrait('drive')}
-              disabled={saving}
-              style={{
-                padding: '14px 20px', borderRadius: 16,
-                background: 'rgba(44,40,37,0.06)', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 12,
-                opacity: saving ? 0.6 : 1,
-                fontFamily: "'DM Sans', sans-serif",
-              }}
-            >
-              <div style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: 'linear-gradient(135deg, #2B5F8A 0%, #4A8BC4 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2L2 19.5h20L12 2z"/>
-                  <path d="M2 19.5l10-5.5"/>
-                  <path d="M22 19.5l-10-5.5"/>
-                </svg>
-              </div>
-              <div style={{ textAlign: 'left' }}>
-                <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#2C2825' }}>Save to Wedding Album</p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A8078' }}>Upload to the shared Google Drive</p>
-              </div>
-            </button>
-
-            {/* Save to Both */}
+            {/* Save to Photos (device + wedding album) — primary CTA */}
             <button
               onClick={() => saveAIPortrait('both')}
               disabled={saving}
@@ -778,8 +766,37 @@ export default function PhotoScreen() {
                 </svg>
               </div>
               <div style={{ textAlign: 'left' }}>
-                <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'white' }}>Save to Both</p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>Device + Wedding Album</p>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'white' }}>Save to Photos</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>Camera roll + wedding album</p>
+              </div>
+            </button>
+
+            {/* Wedding album only (no Camera Roll save) */}
+            <button
+              onClick={() => saveAIPortrait('drive')}
+              disabled={saving}
+              style={{
+                padding: '14px 20px', borderRadius: 16,
+                background: 'rgba(44,40,37,0.06)', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 12,
+                opacity: saving ? 0.6 : 1,
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: 'linear-gradient(135deg, #2B5F8A 0%, #4A8BC4 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L2 19.5h20L12 2z"/>
+                  <path d="M2 19.5l10-5.5"/>
+                  <path d="M22 19.5l-10-5.5"/>
+                </svg>
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#2C2825' }}>Wedding Album Only</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8A8078' }}>Upload to Google Drive only</p>
               </div>
             </button>
           </div>
