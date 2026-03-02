@@ -115,7 +115,13 @@ async function processPhotoUpload(upload: QueuedUpload): Promise<boolean> {
     const result = await res.json();
     console.log(`${label} — success! driveFileId=${result.driveFileId}`);
 
-    await removeFromQueue(upload.id);
+    // Mark as complete but keep in IndexedDB so the gallery can still show it.
+    // Removing here was causing media to vanish from the gallery immediately
+    // after a successful upload.
+    await updateQueueItem(upload.id, {
+      status: 'complete',
+      driveFileId: result.driveFileId,
+    });
     return true;
   } catch (err: any) {
     const newRetryCount = upload.retryCount + 1;
@@ -239,7 +245,11 @@ async function processVideoUpload(upload: QueuedUpload): Promise<boolean> {
     }
 
     console.log(`${label} — VIDEO upload success!`);
-    await removeFromQueue(upload.id);
+    // Mark as complete but keep in IndexedDB for gallery visibility.
+    await updateQueueItem(upload.id, {
+      status: 'complete',
+      driveFileId,
+    });
     return true;
   } catch (err: any) {
     const newRetryCount = upload.retryCount + 1;

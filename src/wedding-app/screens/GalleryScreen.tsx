@@ -16,6 +16,10 @@ interface MediaItem {
   filter?: string;
   uploadStatus: 'queued' | 'uploading' | 'failed' | 'complete';
   duration?: number;
+  /** Google Drive file ID — present for items that have been uploaded */
+  driveFileId?: string;
+  /** Whether this item came from the database (no local blob) */
+  remoteOnly?: boolean;
 }
 
 const EVENT_LABELS: Record<string, { label: string; color: string }> = {
@@ -41,10 +45,12 @@ export default function GalleryScreen() {
   const loadMedia = async () => {
     setLoading(true);
     try {
-      const queued = await getAllQueued();
       const guestName = session?.guest ? `${session.guest.firstName} ${session.guest.lastName}` : '';
+      const guestId = session?.guest?.id;
 
-      const mediaItems: MediaItem[] = queued
+      // 1. Load local items from IndexedDB (includes both pending and completed)
+      const queued = await getAllQueued();
+      const localItems: MediaItem[] = queued
         .filter(q => q.metadata.guestName === guestName)
         .map((q: QueuedUpload) => ({
           id: q.id,
@@ -54,9 +60,48 @@ export default function GalleryScreen() {
           timestamp: q.metadata.capturedAt,
           filter: q.metadata.filterApplied,
           uploadStatus: q.status,
+          driveFileId: q.driveFileId,
         }));
 
-      setItems(mediaItems);
+      // 2. Fetch completed uploads from the database (cross-device/session media)
+      let dbItems: MediaItem[] = [];
+      if (guestId) {
+        try {
+          const res = await fetch(`/api/media/${guestId}`);
+          if (res.ok) {
+            const rows = await res.json() as Array<{
+              id: string;
+              event: string;
+              media_type: 'video' | 'photo';
+              drive_file_id: string;
+              upload_status: string;
+              filter_applied?: string;
+              created_at: string;
+            }>;
+
+            // Collect Drive file IDs already in local items to avoid duplicates
+            const localDriveIds = new Set(localItems.map(i => i.driveFileId).filter(Boolean));
+
+            dbItems = rows
+              .filter(r => r.drive_file_id && !localDriveIds.has(r.drive_file_id))
+              .map(r => ({
+                id: r.id,
+                type: r.media_type,
+                blobUrl: `/api/media/thumbnail?id=${r.drive_file_id}`,
+                event: r.event,
+                timestamp: r.created_at,
+                filter: r.filter_applied,
+                uploadStatus: 'complete' as const,
+                driveFileId: r.drive_file_id,
+                remoteOnly: true,
+              }));
+          }
+        } catch {
+          // Database not available — that's fine, we still have local items
+        }
+      }
+
+      setItems([...localItems, ...dbItems]);
     } catch (err) {
       console.error('Failed to load media:', err);
     } finally {
@@ -64,13 +109,31 @@ export default function GalleryScreen() {
     }
   };
 
-  const downloadItem = (item: MediaItem) => {
+  const downloadItem = async (item: MediaItem) => {
+    const ext = item.type === 'photo' ? 'jpg' : 'webm';
+    const filename = `${item.type}_${item.event}_${new Date(item.timestamp).getTime()}.${ext}`;
+
+    // For remote-only items, fetch through our proxy
+    let href = item.blobUrl;
+    if (item.remoteOnly && item.driveFileId) {
+      try {
+        const res = await fetch(`/api/media/thumbnail?id=${item.driveFileId}`);
+        const blob = await res.blob();
+        href = URL.createObjectURL(blob);
+      } catch {
+        return; // download failed silently
+      }
+    }
+
     const link = document.createElement('a');
-    link.href = item.blobUrl;
-    link.download = `${item.type}_${item.event}_${new Date(item.timestamp).getTime()}.${item.type === 'photo' ? 'jpg' : 'webm'}`;
+    link.href = href;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // Clean up temporary object URL
+    if (href !== item.blobUrl) URL.revokeObjectURL(href);
   };
 
   const photoCount = items.filter(i => i.type === 'photo').length;
