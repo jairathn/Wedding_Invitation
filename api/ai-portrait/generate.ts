@@ -64,6 +64,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const Replicate = (await import('replicate')).default;
     const replicate = new Replicate({ auth: apiToken });
 
+    // Wrap the style prompt with strong identity-preservation instructions.
+    // Kontext Pro weights early tokens heavily, so we front-load the identity
+    // directive and reinforce it at the end (bookend strategy).
+    const identityPrefix =
+      'This is a photo of a REAL PERSON. You MUST preserve their EXACT facial identity throughout the transformation. ' +
+      'Keep the same face shape, bone structure, nose shape, eye shape, eye color, eyebrow shape, lip shape, ' +
+      'skin tone, skin texture, hair color, hair length, hair style, facial hair, and all distinguishing features ' +
+      'such as moles, dimples, wrinkles, freckles, and scars. ' +
+      'Do NOT idealize, beautify, slim, age, de-age, or alter their face in any way. ' +
+      'The person in the output must be INSTANTLY recognizable as the exact same individual.\n\n';
+    const identitySuffix =
+      '\n\nIMPORTANT: The face in the output MUST be a precise match to the input photo. ' +
+      'If you cannot apply the style without changing the face, prioritize facial accuracy over style. ' +
+      'This is a real person — they must recognize themselves.';
+    const fullPrompt = identityPrefix + prompt + identitySuffix;
+
     // Use FLUX Kontext Pro for text-guided style transfer with the user's photo.
     // safety_tolerance: 6 (max, default) — wedding guests in formal attire don't
     // need aggressive safety filtering.  Lower values (1-3) can degrade output
@@ -73,7 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       'black-forest-labs/flux-kontext-pro',
       {
         input_image: image,
-        prompt,
+        prompt: fullPrompt,
         aspect_ratio: '1:1',
         output_format: 'jpg',
         safety_tolerance: 6,
