@@ -1,5 +1,5 @@
 // AI Portrait system — style definitions, API helpers, and rate limiting
-// Uses Replicate FLUX Kontext Pro for text-guided style transfer
+// Uses OpenAI gpt-image-1.5 for identity-preserving style transfer
 
 export interface AIPortraitStyle {
   id: string;
@@ -204,9 +204,9 @@ export function preparePhotoForAI(canvas: HTMLCanvasElement): string {
 }
 
 /**
- * Call the backend /api/ai-portrait/generate endpoint which uses FLUX Kontext Pro.
- * Progress is simulated on the client since Replicate's run() is synchronous
- * (blocks until done). The real generation takes ~15-40s.
+ * Call the backend /api/ai-portrait/generate endpoint (OpenAI gpt-image-1.5).
+ * Progress is simulated on the client since the API call is synchronous.
+ * Real generation takes ~15-40s.
  */
 export async function generateAIPortrait(
   photoDataUrl: string,
@@ -259,63 +259,3 @@ export async function generateAIPortrait(
   }
 }
 
-/**
- * Upload an AI portrait image to Google Drive via the existing upload endpoint.
- * The imageDataUrl should be a base64 data URL (returned by the generate endpoint).
- * Returns the drive file ID on success.
- */
-export async function savePortraitToDrive(
-  imageDataUrl: string,
-  styleId: string,
-  guestId: number,
-  guestName: string,
-): Promise<{ success: boolean; driveFileId?: string }> {
-  // Extract base64 content from the data URL
-  let base64Content: string;
-  let mimeType = 'image/jpeg';
-
-  if (imageDataUrl.startsWith('data:')) {
-    // Already a data URL — extract base64 part directly
-    const [header, data] = imageDataUrl.split(',');
-    base64Content = data;
-    const mimeMatch = header.match(/data:([^;]+)/);
-    if (mimeMatch) mimeType = mimeMatch[1];
-  } else {
-    // External URL fallback — fetch and convert (may fail due to CORS)
-    const imageRes = await fetch(imageDataUrl);
-    const blob = await imageRes.blob();
-    mimeType = blob.type || 'image/jpeg';
-    const reader = new FileReader();
-    const dataUrl = await new Promise<string>((resolve) => {
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
-    base64Content = dataUrl.split(',')[1];
-  }
-
-  const filename = `ai-portrait_${styleId}_${guestName.toLowerCase().replace(/\s+/g, '-')}_${new Date().toISOString().replace(/[:.]/g, '-')}.jpg`;
-
-  const res = await fetch('/api/upload/initiate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      file: base64Content,
-      metadata: {
-        guestId,
-        guestName,
-        eventSlug: 'wedding_reception',
-        mediaType: 'photo',
-        filterApplied: `ai-portrait-${styleId}`,
-      },
-      filename,
-      contentType: mimeType,
-    }),
-  });
-
-  if (!res.ok) {
-    const errorBody = await res.text().catch(() => '');
-    throw new Error(`Failed to save to Google Drive: ${res.status} ${errorBody}`);
-  }
-
-  return res.json();
-}
