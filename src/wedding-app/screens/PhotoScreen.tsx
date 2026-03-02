@@ -1148,16 +1148,8 @@ export default function PhotoScreen() {
             }} />
           </button>
 
-          {/* Flash toggle */}
-          <button style={{
-            width: 44, height: 44, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-            </svg>
-          </button>
+          {/* Spacer to balance the layout (camera toggle is on the left) */}
+          <div style={{ width: 44, height: 44 }} />
         </div>
       </div>
 

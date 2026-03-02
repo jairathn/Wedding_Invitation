@@ -6,19 +6,22 @@ const CAMERA_PERM_KEY = 'camera_permission_granted';
 
 /** Check camera permission state without triggering a prompt */
 export async function checkCameraPermission(): Promise<CameraPermission> {
+  // First check our localStorage cache.  If the user previously granted
+  // access on this device, treat it as 'granted' so we skip the custom
+  // permission overlay and go straight to getUserMedia.  The browser will
+  // remember the real grant and allow it silently (on HTTPS origins), so
+  // this avoids re-showing our custom "Allow Access" screen on every visit.
+  try {
+    if (localStorage.getItem(CAMERA_PERM_KEY) === 'true') {
+      return 'granted';
+    }
+  } catch { /* localStorage unavailable */ }
+
   try {
     const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
     return result.state as CameraPermission;
   } catch {
     // Firefox / older browsers don't support permissions.query for camera.
-    // Check our localStorage cache — if the user previously granted access,
-    // treat it as 'granted' so we skip the custom permission screen and go
-    // straight to getUserMedia (the browser will allow it silently).
-    try {
-      if (localStorage.getItem(CAMERA_PERM_KEY) === 'true') {
-        return 'granted';
-      }
-    } catch { /* localStorage unavailable */ }
     return 'prompt';
   }
 }
