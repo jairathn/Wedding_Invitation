@@ -51,9 +51,10 @@ export interface QueuedUpload {
     promptAnswered?: string;
     capturedAt: string;
   };
-  status: 'queued' | 'uploading' | 'failed';
+  status: 'queued' | 'uploading' | 'failed' | 'complete';
   retryCount: number;
   lastAttempt?: string;
+  driveFileId?: string;
 }
 
 export interface WeddingEvent {
