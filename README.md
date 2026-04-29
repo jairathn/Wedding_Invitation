@@ -1,18 +1,33 @@
-# React + Vite
+# Shriya & Neil — Wedding Invitation
 
-Wedding Planner
+An interactive wedding invitation web app built with React + Vite, featuring an animated envelope opening experience, guest list verification, and a full guest portal with photo/video uploads, schedule, and directory.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Features
 
-Currently, two official plugins are available:
+- Animated envelope opening with personalized greeting
+- Guest list verification with fuzzy name matching
+- Photo and video uploads to a shared gallery
+- Event schedule and guest directory
+- Personalized messages for invited guests
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Development
 
-## React Compiler
+```bash
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Build
 
-## Expanding the ESLint configuration
+```bash
+npm run build
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Project Structure
+
+- `src/` — React app source
+- `src/wedding-app/` — Guest portal app (post-invitation)
+- `src/components/` — Invitation envelope and shared components
+- `src/data/guests.json` — Master guest list (used at build time)
+- `public/data/guests.json` — Public guest list (fetched at runtime by the envelope)
+- `api/` — Vercel serverless API routes
