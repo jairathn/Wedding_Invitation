@@ -82,11 +82,12 @@ export default function TextUpdates() {
           {status === 'done' ? (
             <div className="py-6 text-center">
               <h3 className="font-serif text-2xl italic text-charcoal">
-                You&apos;re on the list
+                Almost there!
               </h3>
               <Divider />
-              <p className="font-sans text-sm text-charcoal/60">
-                We&apos;ll text you the day-of details. See you in Barcelona! 🥂
+              <p className="mx-auto max-w-xs font-sans text-sm leading-relaxed text-charcoal/60">
+                Enter your name in the envelope after clicking the seal, and you&apos;ll be opted
+                in if you&apos;re invited to our wedding! 🥂
               </p>
             </div>
           ) : (
@@ -128,7 +129,8 @@ export default function TextUpdates() {
                     By checking this box and providing my number, I agree to receive recurring SMS
                     texts from Shriya &amp; Neil&apos;s Wedding (shuttle times, venue details,
                     day-of logistics) at the number above. Approx. 5 messages through Sept 2026.
-                    Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. See our{' '}
+                    Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. I have
+                    read and agree to the{' '}
                     <Link to="/privacy" className="text-terracotta underline decoration-golden/40 underline-offset-2 hover:text-terracotta-dark">
                       Privacy Policy
                     </Link>{' '}
