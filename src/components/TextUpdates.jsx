@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
-// Formspree form ID — set VITE_FORMSPREE_FORM_ID in your env, or replace the
-// fallback below with your real form ID from https://formspree.io
-const FORM_ID = import.meta.env.VITE_FORMSPREE_FORM_ID || 'YOUR_FORM_ID';
+// Formspree form ID — overridable via VITE_FORMSPREE_FORM_ID, defaults to the
+// live form at https://formspree.io/f/xnjykgzg
+const FORM_ID = import.meta.env.VITE_FORMSPREE_FORM_ID || 'xnjykgzg';
 
 export default function TextUpdates() {
   const [status, setStatus] = useState('idle'); // idle | sending | done | error
