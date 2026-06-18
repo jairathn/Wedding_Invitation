@@ -4,6 +4,9 @@ import { Background } from './components/Background';
 import { WeddingInvitation } from './components/WeddingInvitation';
 import { BackgroundMusic } from './components/BackgroundMusic';
 import { PhotoCarousel } from './components/PhotoCarousel';
+import TextUpdates from './components/TextUpdates';
+import Privacy from './components/Privacy';
+import SmsTerms from './components/SmsTerms';
 
 // Lazy-load the wedding app and admin (code-split)
 const WeddingApp = lazy(() => import('./wedding-app/WeddingApp'));
@@ -19,6 +22,7 @@ function InvitationPage() {
       <BackgroundMusic />
       <main className="relative z-10">
         <WeddingInvitation onEnvelopeOpen={() => setShowCarousel(true)} />
+        {showCarousel && <TextUpdates />}
       </main>
     </div>
   );
@@ -29,6 +33,10 @@ function App() {
     <Routes>
       {/* Existing wedding invitation site */}
       <Route path="/" element={<InvitationPage />} />
+
+      {/* SMS / privacy policy pages (linked from the text-updates opt-in) */}
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/sms-terms" element={<SmsTerms />} />
 
       {/* Admin dashboard — hidden at /admin, completely separate from /app */}
       <Route
