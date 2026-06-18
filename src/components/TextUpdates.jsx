@@ -70,7 +70,7 @@ export default function TextUpdates() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
-        className="relative w-full max-w-md overflow-hidden rounded-sm"
+        className="relative w-full max-w-[26rem] overflow-hidden rounded-sm"
         style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.06), 0 12px 48px rgba(0,0,0,0.1)' }}
       >
         <PaperTexture />
@@ -78,46 +78,58 @@ export default function TextUpdates() {
         {/* Top gold accent line */}
         <div className="relative h-[3px]" style={goldLine} />
 
-        <div className="relative px-8 py-9 sm:px-10">
+        <div className="relative px-9 py-11">
           {status === 'done' ? (
-            <div className="py-6 text-center">
-              <h3 className="font-serif text-2xl italic text-charcoal">
+            <div className="text-center">
+              <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-charcoal/45">
+                You&apos;re in
+              </p>
+              <h3 className="mt-2.5 font-serif text-[28px] italic leading-tight text-charcoal">
                 Almost there!
               </h3>
               <Divider />
-              <p className="mx-auto max-w-xs font-sans text-sm leading-relaxed text-charcoal/60">
+              <p className="mx-auto max-w-[18rem] font-sans text-[13.5px] leading-relaxed text-charcoal/60">
                 Enter your name in the envelope after clicking the seal, and you&apos;ll be opted
                 in if you&apos;re invited to our wedding! 🥂
               </p>
             </div>
           ) : (
             <>
-              <p className="text-center font-sans text-[10px] uppercase tracking-[0.3em] text-charcoal/50">
-                Stay in the loop
-              </p>
-              <h3 className="mt-2 text-center font-serif text-3xl italic text-charcoal">
-                Day-of Text Updates
-              </h3>
+              {/* Heading block */}
+              <div className="text-center">
+                <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-charcoal/45">
+                  Stay in the loop
+                </p>
+                <h3 className="mt-2.5 font-serif text-[28px] italic leading-tight text-charcoal">
+                  Day-of Text Updates
+                </h3>
+                <Divider />
+                <p className="mx-auto max-w-[19rem] font-sans text-[13.5px] leading-relaxed text-charcoal/60">
+                  Shuttle times, venue details, and day-of logistics — sent straight to your phone.
+                </p>
+              </div>
 
-              <Divider />
+              <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                {/* Phone field */}
+                <div>
+                  <label
+                    htmlFor="tu-phone"
+                    className="mb-2 block font-sans text-[10px] uppercase tracking-[0.2em] text-charcoal/50"
+                  >
+                    Mobile number
+                  </label>
+                  <input
+                    id="tu-phone"
+                    type="tel"
+                    name="phone"
+                    required
+                    placeholder="+1 812 555 0123"
+                    className="w-full rounded-sm border border-cream-dark bg-white/80 px-4 py-3 font-sans text-[15px] text-charcoal placeholder:text-taupe transition-all focus:border-golden focus:bg-white focus:outline-none focus:ring-2 focus:ring-golden/20"
+                  />
+                </div>
 
-              <p className="mx-auto -mt-1 mb-7 max-w-xs text-center font-sans text-sm leading-relaxed text-charcoal/60">
-                Shuttle times, venue details, and day-of logistics — sent straight to your phone.
-              </p>
-
-              <form onSubmit={handleSubmit}>
-                <label className="mb-1.5 block font-sans text-[10px] uppercase tracking-[0.2em] text-charcoal/50">
-                  Mobile number
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  required
-                  placeholder="+1 812 555 0123"
-                  className="mb-5 w-full rounded-sm border border-cream-dark/80 bg-white/50 px-4 py-3 font-sans text-charcoal placeholder:text-taupe transition-all focus:border-golden/50 focus:bg-white/70 focus:outline-none focus:ring-1 focus:ring-golden/20"
-                />
-
-                <label className="flex items-start gap-2.5 font-sans text-xs leading-relaxed text-charcoal/70">
+                {/* Consent block — set apart in a soft, bordered panel */}
+                <label className="flex items-start gap-3 rounded-sm border border-cream-dark/70 bg-cream/40 p-4 font-sans text-[11.5px] leading-relaxed text-charcoal/70">
                   <input
                     type="checkbox"
                     name="sms_consent"
@@ -131,30 +143,31 @@ export default function TextUpdates() {
                     day-of logistics) at the number above. Approx. 5 messages through Sept 2026.
                     Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. I have
                     read and agree to the{' '}
-                    <Link to="/privacy" className="text-terracotta underline decoration-golden/40 underline-offset-2 hover:text-terracotta-dark">
+                    <Link to="/privacy" className="text-terracotta underline decoration-golden/50 underline-offset-2 hover:text-terracotta-dark">
                       Privacy Policy
                     </Link>{' '}
                     and{' '}
-                    <Link to="/sms-terms" className="text-terracotta underline decoration-golden/40 underline-offset-2 hover:text-terracotta-dark">
+                    <Link to="/sms-terms" className="text-terracotta underline decoration-golden/50 underline-offset-2 hover:text-terracotta-dark">
                       SMS Terms
                     </Link>
                     .
                   </span>
                 </label>
 
+                {/* Submit */}
                 <motion.button
                   type="submit"
                   disabled={status === 'sending'}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="mt-6 w-full rounded-sm bg-terracotta py-3 font-serif text-lg font-bold italic tracking-wide text-warm-white transition-colors duration-300 hover:bg-terracotta/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-sm bg-terracotta py-3.5 font-serif text-lg font-bold italic tracking-wide text-warm-white transition-colors duration-300 hover:bg-terracotta/90 disabled:cursor-not-allowed disabled:opacity-50"
                   style={{ boxShadow: '0 6px 24px rgba(196,114,94,0.35), 0 2px 6px rgba(0,0,0,0.12)' }}
                 >
                   {status === 'sending' ? 'Signing up…' : 'Sign Me Up'}
                 </motion.button>
 
                 {status === 'error' && (
-                  <p className="mt-3 text-center font-sans text-xs text-coral">
+                  <p className="text-center font-sans text-xs text-coral">
                     Something went wrong — please try again or text us directly.
                   </p>
                 )}
