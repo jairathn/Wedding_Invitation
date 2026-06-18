@@ -2,41 +2,30 @@ import { Link } from 'react-router-dom';
 
 export default function SmsTerms() {
   return (
-    <main style={{ maxWidth: 640, margin: '3rem auto', padding: '0 1.25rem', lineHeight: 1.6 }}>
-      <h1>SMS Terms &amp; Conditions</h1>
-      <p>
-        By providing your mobile number and checking the consent box on Shriya &amp; Neil&apos;s
-        Wedding site, you agree to receive recurring SMS text messages about the wedding —
-        shuttle times, venue details, and day-of logistics.
-      </p>
-      <ul>
-        <li>
-          <strong>Message frequency:</strong> recurring; approximately 5 messages through
-          September 2026.
-        </li>
-        <li>
-          <strong>Cost:</strong> message and data rates may apply, depending on your carrier
-          plan.
-        </li>
-        <li>
-          <strong>Opt out:</strong> reply STOP at any time to stop receiving messages.
-        </li>
-        <li>
-          <strong>Help:</strong> reply HELP for assistance, or email
-          hello@jaywalkingtojairath.wedding.
-        </li>
-        <li>
-          Carriers are not liable for delayed or undelivered messages.
-        </li>
-      </ul>
-      <p>
-        We do not sell, rent, or share your phone number with third parties for marketing
-        purposes. See our <Link to="/privacy">Privacy Policy</Link> for details on how your
-        information is handled.
-      </p>
-      <p style={{ marginTop: '2rem' }}>
-        <Link to="/">← Back to invitation</Link>
-      </p>
+    <main className="min-h-screen bg-cream px-5 py-16">
+      <div className="mx-auto max-w-2xl">
+        <h1 className="font-serif text-4xl italic text-charcoal">SMS Terms</h1>
+        <div
+          className="mt-4 mb-8 h-[3px] w-24"
+          style={{
+            background:
+              'linear-gradient(90deg, rgba(212,168,83,0.6) 0%, rgba(212,168,83,0.2) 100%)',
+          }}
+        />
+        <p className="font-sans text-[15px] leading-relaxed text-charcoal/80">
+          By opting in, you agree to receive recurring SMS messages from Shriya &amp; Neil&apos;s
+          Wedding about wedding logistics (shuttle times, venue details, schedule changes). Message
+          frequency varies — approximately 5 messages through September 2026. Message and data rates
+          may apply. Reply STOP at any time to unsubscribe; reply HELP for help or email
+          hello@jaywalkingtojairath.wedding. Carriers are not liable for delayed or undelivered
+          messages.
+        </p>
+        <p className="mt-10 font-sans text-sm">
+          <Link to="/" className="text-terracotta underline hover:text-terracotta-dark">
+            ← Back to invitation
+          </Link>
+        </p>
+      </div>
     </main>
   );
 }

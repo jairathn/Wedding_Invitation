@@ -22,7 +22,10 @@ function InvitationPage() {
       <BackgroundMusic />
       <main className="relative z-10">
         <WeddingInvitation onEnvelopeOpen={() => setShowCarousel(true)} />
-        {showCarousel && <TextUpdates />}
+        {/* Rendered unconditionally so the SMS opt-in is reachable without
+            passing the envelope intro — the Twilio reviewer opens
+            /#text-updates directly and must see the form. */}
+        <TextUpdates />
       </main>
     </div>
   );
