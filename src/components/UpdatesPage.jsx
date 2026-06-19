@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import TextUpdates from './TextUpdates';
 
 // Dedicated, fully public page used as the Twilio proof-of-consent URL
-// (https://jaywalkingtojairath.wedding/updates). No envelope/name gate — the
+// (https://jaywalkingtojairath.wedding/public). No envelope/name gate — the
 // reviewer immediately sees business identity, the event, the messaging
 // program, the opt-in form with consent, and links to the policies.
 export default function UpdatesPage() {
