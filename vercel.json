@@ -4,6 +4,7 @@
     { "source": "/app/(.*)", "destination": "/index.html" },
     { "source": "/app", "destination": "/index.html" },
     { "source": "/admin", "destination": "/index.html" },
+    { "source": "/public", "destination": "/index.html" },
     { "source": "/privacy", "destination": "/index.html" },
     { "source": "/sms-terms", "destination": "/index.html" }
   ]
