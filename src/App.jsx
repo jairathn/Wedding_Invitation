@@ -4,7 +4,7 @@ import { Background } from './components/Background';
 import { WeddingInvitation } from './components/WeddingInvitation';
 import { BackgroundMusic } from './components/BackgroundMusic';
 import { PhotoCarousel } from './components/PhotoCarousel';
-import TextUpdates from './components/TextUpdates';
+import UpdatesPage from './components/UpdatesPage';
 import Privacy from './components/Privacy';
 import SmsTerms from './components/SmsTerms';
 
@@ -22,10 +22,6 @@ function InvitationPage() {
       <BackgroundMusic />
       <main className="relative z-10">
         <WeddingInvitation onEnvelopeOpen={() => setShowCarousel(true)} />
-        {/* Rendered unconditionally so the SMS opt-in is reachable without
-            passing the envelope intro — the Twilio reviewer opens
-            /#text-updates directly and must see the form. */}
-        <TextUpdates />
       </main>
     </div>
   );
@@ -37,7 +33,8 @@ function App() {
       {/* Existing wedding invitation site */}
       <Route path="/" element={<InvitationPage />} />
 
-      {/* SMS / privacy policy pages (linked from the text-updates opt-in) */}
+      {/* Public SMS opt-in page (Twilio proof-of-consent URL) + policy pages */}
+      <Route path="/updates" element={<UpdatesPage />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/sms-terms" element={<SmsTerms />} />
 
