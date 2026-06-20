@@ -85,12 +85,12 @@ export default function TextUpdates() {
                 You&apos;re in
               </p>
               <h3 className="mt-2.5 font-serif text-[28px] italic leading-tight text-charcoal">
-                Almost there!
+                You&apos;re opted in
               </h3>
               <Divider />
               <p className="mx-auto max-w-[18rem] font-sans text-[13.5px] leading-relaxed text-charcoal/60">
-                Enter your name in the envelope after clicking the seal, and you&apos;ll be opted
-                in if you&apos;re invited to our wedding! 🥂
+                Thanks for signing up! We&apos;ll text you informational updates about wedding-day
+                logistics. Reply STOP anytime to opt out, or HELP for help. 🥂
               </p>
             </div>
           ) : (
