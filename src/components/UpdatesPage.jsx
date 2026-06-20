@@ -39,10 +39,12 @@ export default function UpdatesPage() {
           </div>
 
           <p className="mx-auto max-w-md font-sans text-[15px] leading-relaxed text-charcoal/70">
-            Welcome to Shriya &amp; Neil&apos;s wedding page for invited guests. Sign up below to
-            receive informational text messages about wedding-day logistics — shuttle times, venue
-            details, and schedule changes. Approximately 5 messages through September 2026; reply
-            STOP anytime to opt out, HELP for help.
+            Welcome to Shriya &amp; Neil&apos;s wedding information page. To receive informational
+            text updates about our wedding-day logistics — shuttle times, venue details, and
+            schedule changes — enter your mobile number and check the consent box below. Sign-up is
+            voluntary, you provide your own number, and we only message the number you submit here.
+            Approximately 5 messages through September 2026. Reply STOP anytime to opt out, HELP for
+            help.
           </p>
         </motion.header>
 
