@@ -44,7 +44,7 @@ export default function UpdatesPage() {
             schedule changes — enter your mobile number and check the consent box below. Sign-up is
             voluntary, you provide your own number, and we only message the number you submit here.
             Approximately 5 messages through September 2026. Reply STOP anytime to opt out, HELP for
-            help.
+            help. This wedding text program is operated by Bedside Bike, LLC.
           </p>
         </motion.header>
 
@@ -57,6 +57,9 @@ export default function UpdatesPage() {
         <footer className="-mt-6 text-center">
           <p className="font-serif text-base italic text-charcoal/80">
             Shriya &amp; Neil&apos;s Wedding
+          </p>
+          <p className="mt-1 font-sans text-[11px] text-charcoal/45">
+            Wedding text program operated by Bedside Bike, LLC
           </p>
           <nav className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 font-sans text-xs text-charcoal/60">
             <Link to="/privacy" className="transition-colors hover:text-terracotta">
