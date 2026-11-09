@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "photos": "node scripts/process-photos.mjs gallery source-media/photos",
+    "photos:hero": "node scripts/process-photos.mjs hero"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

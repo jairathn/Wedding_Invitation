@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Background } from '../components/Background';
 import { WeddingInvitation } from '../components/WeddingInvitation';
@@ -8,6 +8,16 @@ import { PhotoCarousel } from '../components/PhotoCarousel';
 /** The original invitation, preserved at /invitation. */
 export default function InvitationPage() {
   const [showCarousel, setShowCarousel] = useState(false);
+
+  // Browser chrome colour: the invitation's terracotta, not the night theme
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const prev = meta?.getAttribute('content');
+    meta?.setAttribute('content', '#C4725E');
+    return () => {
+      if (meta && prev) meta.setAttribute('content', prev);
+    };
+  }, []);
 
   return (
     <div className="relative min-h-screen">

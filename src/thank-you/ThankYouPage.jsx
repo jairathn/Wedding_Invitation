@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { MotionConfig, motion } from 'framer-motion';
 import { NightBackground } from './components/NightBackground';
 import { SkyEffects } from './components/SkyEffects';
 import { skyBurst } from './sky';
@@ -115,6 +115,7 @@ export default function ThankYouPage() {
   const closeGallery = useCallback(() => setGallery({ open: false, start: null }), []);
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="ty-page relative min-h-[100svh] overflow-hidden text-ivory">
       <GoldDefs />
       <NightBackground dim={showCard} />
@@ -171,5 +172,6 @@ export default function ThankYouPage() {
 
       <PhotoGallery open={gallery.open} photos={photos} startIndex={gallery.start} onClose={closeGallery} />
     </div>
+    </MotionConfig>
   );
 }
