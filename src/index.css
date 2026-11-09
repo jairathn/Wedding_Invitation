@@ -340,19 +340,28 @@ html.night #root {
   min-height: 0;
 }
 
-/* sizes in container units, with a fixed fallback for browsers without them (iOS 15) */
+/* Sizes in container units, with a fixed size for browsers without them
+   (iOS 15). The fallback lives in its own @supports block because the CSS
+   minifier drops a plain "width: 84px" written before the cqw value. */
 .ty-seal {
-  width: 84px;
-  height: 84px;
   width: clamp(74px, 23cqw, 92px);
   height: clamp(74px, 23cqw, 92px);
 }
 
 .ty-roundel {
-  width: 64px;
-  height: 64px;
   width: clamp(58px, 18.5cqw, 70px);
   height: clamp(58px, 18.5cqw, 70px);
+}
+
+@supports not (width: 1cqw) {
+  .ty-seal {
+    width: 84px;
+    height: 84px;
+  }
+  .ty-roundel {
+    width: 64px;
+    height: 64px;
+  }
 }
 
 .ty-strip {

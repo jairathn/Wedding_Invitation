@@ -92,8 +92,8 @@ export function matchGuest(input) {
     return { status: 'exact', person: hit.person, displayName: hit.display };
   }
 
-  // A single name ("Pinky", "Hanona"): offer the few guests it fits. Capped so
-  // the list can't be browsed one name at a time.
+  // A single name ("Pinky", "Hanona"): offer the few guests it fits. A common
+  // surname that fits more than three asks for the full name instead.
   const tokens = n.split(' ');
   if (tokens.length === 1) {
     const hits = new Map();
