@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PaperTexture } from './PaperTexture';
 import { WaxSeal } from './WaxSeal';
+import { matchGuest, recallGuest, rememberGuest } from '../lib/guests';
 
 export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
-  const [name, setName] = useState('');
+  const [name, setName] = useState(recallGuest);
   const [error, setError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [nameEntered, setNameEntered] = useState(false);
@@ -26,29 +27,18 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
     }
   }, [isOpen]);
 
-  // Levenshtein distance for fuzzy matching
-  const levenshteinDistance = (str1, str2) => {
-    const matrix = [];
-    for (let i = 0; i <= str2.length; i++) {
-      matrix[i] = [i];
-    }
-    for (let j = 0; j <= str1.length; j++) {
-      matrix[0][j] = j;
-    }
-    for (let i = 1; i <= str2.length; i++) {
-      for (let j = 1; j <= str1.length; j++) {
-        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1,
-            matrix[i][j - 1] + 1,
-            matrix[i - 1][j] + 1
-          );
-        }
-      }
-    }
-    return matrix[str2.length][str1.length];
+  // Attendee lookup (shared with the thank-you card): exact names, aliases and
+  // maiden names open the envelope; near-misses get suggestions.
+  const openFor = (displayName) => {
+    rememberGuest(displayName);
+    setSuggestions([]);
+    setError('');
+    onNameSubmit(displayName);
+    setNameEntered(true);
+    // Auto-trigger opening after name is submitted
+    setTimeout(() => {
+      onOpen();
+    }, 300);
   };
 
   const handleSubmit = async (e) => {
@@ -61,90 +51,26 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
     setIsValidating(true);
     setError('');
     setSuggestions([]);
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-    try {
-      const response = await fetch('/data/guests.json');
-      const guests = await response.json();
-
-      // Helper function to clean and normalize names (remove titles, extra spaces)
-      const cleanName = (str) => {
-        return str
-          .replace(/^(Dr\.?|Mr\.?|Mrs\.?|Ms\.?|Miss\.?)\s+/i, '') // Remove titles
-          .replace(/\s+/g, ' ') // Normalize spaces
-          .trim()
-          .toLowerCase();
-      };
-
-      const normalizedInput = cleanName(name);
-      const inputParts = normalizedInput.split(' ');
-
-      // EXACT MATCH ONLY - no partial matches allowed
-      const found = guests.some(guest => {
-        const normalizedGuest = cleanName(guest);
-
-        // Only allow exact full name match (case-insensitive)
-        return normalizedInput === normalizedGuest;
-      });
-
-      if (!found) {
-        // Try fuzzy matching (max 2 letter difference)
-        const fuzzyMatches = guests
-          .map(guest => ({
-            original: guest,
-            cleaned: cleanName(guest),
-            distance: levenshteinDistance(normalizedInput, cleanName(guest))
-          }))
-          .filter(match => match.distance > 0 && match.distance <= 2)
-          .sort((a, b) => a.distance - b.distance)
-          .slice(0, 5) // Top 5 suggestions
-          .map(match => match.original);
-
-        if (fuzzyMatches.length > 0) {
-          setSuggestions(fuzzyMatches);
-          setError("We couldn't find an exact match. Did you mean one of these?");
-          setIsValidating(false);
-          return;
-        }
-
-        setError("If you received this link directly, but your name isn't working, please text us!");
-        setIsValidating(false);
-        return;
-      }
-
-      // Only proceed if found
-      const properName = name.trim().split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-
-      onNameSubmit(properName);
-      setNameEntered(true);
-      // Auto-trigger opening after name is submitted
-      setTimeout(() => {
-        onOpen();
-      }, 300);
-
-    } catch (err) {
-      // If guest list fails to load, deny access with error message
-      setError("Unable to verify guest list. Please text Shriya or Neil for assistance.");
-      setIsValidating(false);
+    const result = matchGuest(name);
+    if (result.status === 'exact') {
+      openFor(result.displayName);
+      return;
     }
+    if (result.status === 'fuzzy') {
+      setSuggestions(result.suggestions);
+      setError("We couldn't find an exact match. Did you mean one of these?");
+      setIsValidating(false);
+      return;
+    }
+    setError("If you received this link directly, but your name isn't working, please text us!");
+    setIsValidating(false);
   };
 
   const handleSuggestionClick = (suggestedName) => {
-    const properName = suggestedName
-      .replace(/^(Dr\.?|Mr\.?|Mrs\.?|Ms\.?|Miss\.?)\s+/i, '') // Remove title for display
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-
-    setSuggestions([]);
-    setError('');
-    onNameSubmit(properName);
-    setNameEntered(true);
-    // Auto-trigger opening after name is selected
-    setTimeout(() => {
-      onOpen();
-    }, 300);
+    const result = matchGuest(suggestedName);
+    openFor(result.status === 'exact' ? result.displayName : suggestedName);
   };
 
   return (

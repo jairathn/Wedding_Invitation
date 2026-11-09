@@ -1,9 +1,9 @@
 import { useRef, useEffect, useState } from 'react';
 import Player from '@vimeo/player';
 
-export function VideoPlayer({ isFlipped = false }) {
-  // Vimeo video ID from https://vimeo.com/1149072071
-  const VIMEO_VIDEO_ID = '1149072071';
+// Engagement film (https://vimeo.com/1149072071) unless a caller passes another id
+export function VideoPlayer({ isFlipped = false, videoId = '1149072071' }) {
+  const VIMEO_VIDEO_ID = videoId;
 
   const iframeRef = useRef(null);
   const playerRef = useRef(null);

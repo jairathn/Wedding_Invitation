@@ -1,45 +1,40 @@
-import { useState, lazy, Suspense } from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
-import { Background } from './components/Background';
-import { WeddingInvitation } from './components/WeddingInvitation';
-import { BackgroundMusic } from './components/BackgroundMusic';
-import { PhotoCarousel } from './components/PhotoCarousel';
+import { lazy, Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import UpdatesPage from './components/UpdatesPage';
 import Privacy from './components/Privacy';
 import SmsTerms from './components/SmsTerms';
 
-// Lazy-load the wedding app and admin (code-split)
+// Code-split each experience so guests only download the page they open
+const ThankYouPage = lazy(() => import('./thank-you/ThankYouPage'));
+const InvitationPage = lazy(() => import('./pages/InvitationPage'));
 const WeddingApp = lazy(() => import('./wedding-app/WeddingApp'));
 const AdminScreen = lazy(() => import('./wedding-app/screens/AdminScreen'));
 
-function InvitationPage() {
-  const [showCarousel, setShowCarousel] = useState(false);
-
-  return (
-    <div className="relative min-h-screen">
-      <Background />
-      <PhotoCarousel show={showCarousel} />
-      <BackgroundMusic />
-      <main className="relative z-10">
-        <WeddingInvitation onEnvelopeOpen={() => setShowCarousel(true)} />
-      </main>
-
-      {/* Subtle, always-visible public link (Twilio web presence) */}
-      <Link
-        to="/public"
-        className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap font-sans text-[10px] uppercase tracking-[0.25em] text-charcoal/40 transition-colors hover:text-terracotta"
-      >
-        Wedding Text Updates
-      </Link>
-    </div>
-  );
-}
+const NightFallback = () => <div className="min-h-screen bg-[#0B0509]" />;
+const CreamFallback = () => <div className="min-h-screen bg-[#F7F3ED]" />;
 
 function App() {
   return (
     <Routes>
-      {/* Existing wedding invitation site */}
-      <Route path="/" element={<InvitationPage />} />
+      {/* Thank-you card (home) */}
+      <Route
+        path="/"
+        element={
+          <Suspense fallback={<NightFallback />}>
+            <ThankYouPage />
+          </Suspense>
+        }
+      />
+
+      {/* The original invitation, for guests who want to see it again */}
+      <Route
+        path="/invitation"
+        element={
+          <Suspense fallback={<CreamFallback />}>
+            <InvitationPage />
+          </Suspense>
+        }
+      />
 
       {/* Public SMS opt-in page (Twilio proof-of-consent URL) + policy pages */}
       <Route path="/public" element={<UpdatesPage />} />

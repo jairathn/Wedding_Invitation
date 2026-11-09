@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export function BackgroundMusic() {
+export function BackgroundMusic({ src = '/audio/background-music.mp3', startAt = 0, variant = 'light' }) {
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPausedForVideo, setIsPausedForVideo] = useState(false);
@@ -14,6 +14,9 @@ export function BackgroundMusic() {
       if (audioRef.current && !isPlaying) {
         // Start at 0 volume
         audioRef.current.volume = 0;
+        if (startAt && audioRef.current.currentTime < startAt) {
+          audioRef.current.currentTime = startAt;
+        }
 
         audioRef.current.play().then(() => {
           setIsPlaying(true);
@@ -48,7 +51,7 @@ export function BackgroundMusic() {
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
-  }, [isPlaying]);
+  }, [isPlaying, startAt]);
 
   // Listen for video play/pause events
   useEffect(() => {
@@ -92,15 +95,20 @@ export function BackgroundMusic() {
         loop
         preload="auto"
       >
-        <source src="/audio/background-music.mp3" type="audio/mpeg" />
+        <source src={src} type="audio/mpeg" />
       </audio>
 
       {/* Mute/Unmute button - bottom left */}
       <AnimatePresence>
         {isPlaying && (
           <motion.button
-            className="fixed bottom-6 left-6 z-[9998] w-12 h-12 rounded-full bg-warm-white/90 hover:bg-warm-white backdrop-blur-md flex items-center justify-center transition-colors shadow-lg"
+            className={
+              variant === 'night'
+                ? 'fixed top-3 left-3 md:top-4 md:left-6 z-[10002] w-10 h-10 rounded-full bg-night-900/70 hover:bg-night-800/90 border border-gold-400/40 text-gold-300 backdrop-blur-md flex items-center justify-center transition-colors shadow-[0_0_18px_rgba(232,194,122,0.18)]'
+                : 'fixed bottom-6 left-6 z-[9998] w-12 h-12 rounded-full bg-warm-white/90 hover:bg-warm-white backdrop-blur-md flex items-center justify-center transition-colors shadow-lg'
+            }
             onClick={toggleMute}
+            aria-label={isMuted ? 'Unmute music' : 'Mute music'}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
@@ -109,13 +117,13 @@ export function BackgroundMusic() {
           >
             {isMuted ? (
               // Muted icon
-              <svg className="w-6 h-6 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-6 h-6 ${variant === 'night' ? '' : 'text-charcoal'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clipRule="evenodd" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
               </svg>
             ) : (
               // Unmuted icon
-              <svg className="w-6 h-6 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-6 h-6 ${variant === 'night' ? '' : 'text-charcoal'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
               </svg>
             )}

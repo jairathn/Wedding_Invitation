@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Pinyon+Script&family=Cormorant+SC:wght@500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -25,12 +25,254 @@
   /* Invitation site keeps its own fonts */
   --font-serif-invite: 'Cormorant Garamond', Georgia, serif;
   --font-sans-invite: 'Montserrat', system-ui, sans-serif;
+
+  /* Thank-you site — "fireworks night" palette sampled from the reception
+     photo (shriyaneil_wedding0594): wine-black sky, plum, bougainvillea
+     orchid, dance-floor fuchsia, blush petals, ember gold. */
+  --color-night-950: #0B0509;
+  --color-night-900: #130810;
+  --color-night-800: #1D0C19;
+  --color-night-700: #2A1126;
+  --color-plum-700: #381647;
+  --color-plum-600: #4F1F55;
+  --color-orchid-500: #BB559A;
+  --color-orchid-400: #D873B8;
+  --color-fuchsia-glow: #EB58D1;
+  --color-blush-200: #F3DDD6;
+  --color-blush-300: #EACCC5;
+  --color-champagne: #F5E6C8;
+  --color-gold-300: #F3D9A4;
+  --color-gold-400: #E8C27A;
+  --color-gold-500: #D4A853;
+  --color-gold-600: #B8893A;
+  --color-ember: #F2A65A;
+  --color-ivory: #FBF3EA;
+
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-script: 'Pinyon Script', 'Snell Roundhand', cursive;
+  --font-caps: 'Cormorant SC', 'Cormorant Garamond', Georgia, serif;
+
+  /* black-tie stationery */
+  --color-ink-950: #0A0807;
+  --color-ink-900: #0E0A0B;
+  --color-ink-800: #151012;
+  --color-foil: #C9A961;
+  --color-foil-light: #F1DFB0;
+  --color-foil-dark: #8C6A2F;
+}
+
+/* ─── Thank-you site (night theme) ─── */
+
+html.night body {
+  background-color: var(--color-night-950);
+  color: var(--color-ivory);
+  color-scheme: dark;
+}
+
+html.night ::-webkit-scrollbar-track {
+  background: var(--color-night-900);
+}
+
+html.night ::-webkit-scrollbar-thumb {
+  background: var(--color-plum-600);
+}
+
+html.night ::selection {
+  background-color: var(--color-orchid-500);
+  color: var(--color-ivory);
+}
+
+/* Animated gold-foil text */
+.foil-text {
+  background: linear-gradient(100deg, #8C6A2F 0%, #C9A961 20%, #F1DFB0 36%, #FFF8E6 44%, #E2C788 54%, #A9823F 72%, #D9BD7E 88%, #8C6A2F 100%);
+  background-size: 260% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: foil-sweep 9s linear infinite;
+}
+
+@keyframes foil-sweep {
+  from { background-position: 0% 50%; }
+  to { background-position: 250% 50%; }
+}
+
+@keyframes ken-burns {
+  from { transform: scale(1.0) translate3d(0, 0, 0); }
+  to { transform: scale(1.07) translate3d(-0.6%, -0.8%, 0); }
+}
+
+.ken-burns {
+  animation: ken-burns 38s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes strip-left {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes strip-right {
+  from { transform: translate3d(-50%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+.film-track {
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.film-strip:hover .film-track,
+.film-strip:focus-within .film-track {
+  animation-play-state: paused;
+}
+
+@keyframes slow-glow {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.scroll-fade {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 28px), transparent 100%);
+}
+
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 168, 83, 0.35) transparent;
+}
+
+.thin-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: rgba(212, 168, 83, 0.35);
+  border-radius: 4px;
+}
+
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foil-text,
+  .ken-burns,
+  .film-track {
+    animation: none !important;
+  }
+}
+
+/* Engraved stationery controls */
+.ty-cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  font-family: var(--font-caps);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--color-foil-light);
+  background: linear-gradient(180deg, rgba(201, 169, 97, 0.16), rgba(201, 169, 97, 0.05));
+  border: 1px solid rgba(201, 169, 97, 0.78);
+  box-shadow: inset 0 0 0 3px rgba(14, 10, 11, 0.9), inset 0 0 0 4px rgba(201, 169, 97, 0.32);
+  transition: background 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+  animation: cta-breathe 3.6s ease-in-out infinite;
+}
+
+.ty-cta:hover,
+.ty-cta:focus-visible {
+  color: #FFF8E6;
+  background: linear-gradient(180deg, rgba(201, 169, 97, 0.3), rgba(201, 169, 97, 0.12));
+  outline: none;
+}
+
+@keyframes cta-breathe {
+  0%, 100% { box-shadow: inset 0 0 0 3px rgba(14, 10, 11, 0.9), inset 0 0 0 4px rgba(201, 169, 97, 0.32), 0 0 0 rgba(201, 169, 97, 0); }
+  50% { box-shadow: inset 0 0 0 3px rgba(14, 10, 11, 0.9), inset 0 0 0 4px rgba(201, 169, 97, 0.32), 0 0 26px rgba(201, 169, 97, 0.28); }
+}
+
+.ty-link {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: rgba(244, 237, 227, 0.78);
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: color 0.3s ease, background-size 0.45s ease;
+  padding-bottom: 2px;
+}
+
+.ty-link:hover,
+.ty-link:focus-visible {
+  color: var(--color-foil-light);
+  background-size: 100% 1px;
+  outline: none;
+}
+
+.ty-caps {
+  font-family: var(--font-caps);
+  font-weight: 500;
+  letter-spacing: 0.2em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ty-cta {
+    animation: none;
+  }
+}
+
+/* Thank-you layout: film strips top + bottom, card centred between them */
+.ty-page {
+  --strip-h: clamp(92px, 12vh, 128px);
+  --strip-h: clamp(92px, 12svh, 128px);
+  --band: 14px;
+  --strip-top: 60px;
+  --strip-bottom: 16px;
+  --overlap: 16px; /* the card slightly overlaps each strip's inner edge */
+  --top-strip: 1;
+}
+
+@media (max-width: 640px), (max-height: 800px) {
+  .ty-page {
+    --top-strip: 0;
+    --strip-h: clamp(72px, 10.5vh, 92px);
+    --strip-h: clamp(72px, 10.5svh, 92px);
+    --band: 12px;
+  }
+  .ty-strip-top {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .film-edge-print {
+    display: none;
+  }
+}
+
+.ty-stage {
+  padding-top: calc(var(--strip-top) + (var(--strip-h) - var(--overlap)) * var(--top-strip));
+  padding-bottom: calc(var(--strip-bottom) + var(--strip-h) - var(--overlap));
+}
+
+.ty-card {
+  aspect-ratio: 0.68;
+  width: min(440px, 92vw, calc((100vh - var(--strip-top) - var(--strip-bottom) - (var(--strip-h) - var(--overlap)) * (1 + var(--top-strip))) * 0.68));
+  width: min(440px, 92vw, calc((100svh - var(--strip-top) - var(--strip-bottom) - (var(--strip-h) - var(--overlap)) * (1 + var(--top-strip))) * 0.68));
 }
 
 * {
+  box-sizing: border-box;
+}
+
+/* This reset is unlayered, so it outranks every Tailwind utility (utilities
+   live in @layer utilities). The invitation and wedding app were built
+   around that; the thank-you page (.ty-page) relies on Tailwind's own
+   preflight reset instead so its spacing utilities work. */
+:where(*:not(.ty-page, .ty-page *)) {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
 html {
@@ -145,4 +387,24 @@ body {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Gallery columns: fewer, larger photos while the collection is small */
+[data-cols='few'] {
+  column-count: 2;
+}
+
+@media (min-width: 768px) {
+  [data-cols='few'] {
+    column-count: 3;
+  }
+  [data-cols='many'] {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1280px) {
+  [data-cols='many'] {
+    column-count: 4;
+  }
 }
