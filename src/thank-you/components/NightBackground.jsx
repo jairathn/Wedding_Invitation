@@ -12,7 +12,7 @@ const LQIP_PORTRAIT = 'data:image/jpeg;base64,/9j/2wBDABALDA4MChAODQ4SERATGCgaGB
  * Landscape screens get the bottom half of the photo (the dip, the fountain
  * fireworks, the guests); portrait phones get the whole frame.
  */
-export function NightBackground({ dim = false }) {
+export function NightBackground({ dim = 0.12, soft = false }) {
   const [loaded, setLoaded] = useState(false);
 
   return (
@@ -35,6 +35,20 @@ export function NightBackground({ dim = false }) {
         />
       </picture>
 
+      {/* Once the flap opens, a defocused, quieter copy takes over: the party
+          falls out of focus so the clip, then the card, is the lit subject */}
+      <picture>
+        <source media="(orientation: portrait)" type="image/webp" srcSet={`${H}/hero-portrait-750.webp`} />
+        <source type="image/webp" srcSet={`${H}/hero-landscape-1280.webp`} />
+        <img
+          src={`${H}/hero-landscape-1280.jpg`}
+          alt=""
+          decoding="async"
+          className="hero-photo absolute inset-0 h-full w-full object-cover"
+          style={{ filter: 'blur(18px) saturate(0.75) brightness(0.8)', transform: 'scale(1.08)', opacity: soft ? 1 : 0, transition: 'opacity 1.6s ease' }}
+        />
+      </picture>
+
       {/* Edge vignette so the envelope and card glow in the centre */}
       <div
         className="absolute inset-0"
@@ -51,15 +65,12 @@ export function NightBackground({ dim = false }) {
             'linear-gradient(to bottom, rgba(11,5,9,0.72) 0%, rgba(11,5,9,0) 22%, rgba(11,5,9,0) 74%, rgba(11,5,9,0.7) 100%)',
         }}
       />
-      {/* Deepens once the card is open so the letter reads beautifully */}
-      <div
-        className="absolute inset-0 bg-night-950 transition-opacity duration-[1800ms] ease-in-out"
-        style={{ opacity: dim ? 0.42 : 0.12 }}
-      />
+      {/* Deepens as the story moves from the seal to the card */}
+      <div className="absolute inset-0 bg-night-950 transition-opacity duration-[1600ms] ease-in-out" style={{ opacity: dim }} />
 
       <style>{`
         .hero-lqip { background-image: url(${LQIP_LANDSCAPE}); background-position: center 70%; }
-        .hero-photo { object-position: 50% 72%; transform-origin: 32% 78%; }
+        .hero-photo { object-position: 50% 72%; transform-origin: 32% 78%; filter: saturate(0.88); }
         @media (orientation: portrait) {
           .hero-lqip { background-image: url(${LQIP_PORTRAIT}); background-position: 30% 50%; }
           .hero-photo { object-position: 30% 50%; transform-origin: 30% 80%; }

@@ -82,7 +82,7 @@ html.night ::selection {
   color: var(--color-ivory);
 }
 
-/* Animated gold-foil text */
+/* Gold-foil text: one slow sweep of light, then it rests */
 .foil-text {
   background: linear-gradient(100deg, #8C6A2F 0%, #C9A961 20%, #F1DFB0 36%, #FFF8E6 44%, #E2C788 54%, #A9823F 72%, #D9BD7E 88%, #8C6A2F 100%);
   background-size: 260% auto;
@@ -90,7 +90,16 @@ html.night ::selection {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  animation: foil-sweep 9s linear infinite;
+  animation: foil-once 3.4s cubic-bezier(0.4, 0, 0.2, 1) 0.5s 1 both;
+}
+
+.foil-once {
+  animation: foil-once 3.4s cubic-bezier(0.4, 0, 0.2, 1) 0.5s 1 both;
+}
+
+@keyframes foil-once {
+  from { background-position: 100% 50%; }
+  to { background-position: 8% 50%; }
 }
 
 @keyframes foil-sweep {
@@ -134,8 +143,14 @@ html.night ::selection {
 }
 
 .scroll-fade {
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 28px), transparent 100%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 28px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 calc(100% - 32px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 calc(100% - 32px), transparent 100%);
+}
+
+/* until the guest scrolls, only the bottom edge fades */
+.scroll-fade:not([data-scrolled='true']) {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent 100%);
 }
 
 .thin-scroll {
@@ -158,10 +173,21 @@ html.night ::selection {
 
 @media (prefers-reduced-motion: reduce) {
   .foil-text,
+  .foil-once,
   .ken-burns,
   .film-track {
     animation: none !important;
   }
+}
+
+/* Film-strip frames sit back, graded like old prints, until touched */
+.film-frame {
+  filter: sepia(0.2) saturate(0.65) brightness(0.75);
+}
+
+.film-strip button:hover .film-frame,
+.film-strip button:focus-visible .film-frame {
+  filter: none;
 }
 
 /* Engraved stationery controls */
@@ -179,7 +205,6 @@ html.night ::selection {
   border: 1px solid rgba(201, 169, 97, 0.78);
   box-shadow: inset 0 0 0 3px rgba(14, 10, 11, 0.9), inset 0 0 0 4px rgba(201, 169, 97, 0.32);
   transition: background 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
-  animation: cta-breathe 3.6s ease-in-out infinite;
 }
 
 .ty-cta:hover,
@@ -187,11 +212,6 @@ html.night ::selection {
   color: #FFF8E6;
   background: linear-gradient(180deg, rgba(201, 169, 97, 0.3), rgba(201, 169, 97, 0.12));
   outline: none;
-}
-
-@keyframes cta-breathe {
-  0%, 100% { box-shadow: inset 0 0 0 3px rgba(14, 10, 11, 0.9), inset 0 0 0 4px rgba(201, 169, 97, 0.32), 0 0 0 rgba(201, 169, 97, 0); }
-  50% { box-shadow: inset 0 0 0 3px rgba(14, 10, 11, 0.9), inset 0 0 0 4px rgba(201, 169, 97, 0.32), 0 0 26px rgba(201, 169, 97, 0.28); }
 }
 
 .ty-link {
@@ -213,32 +233,50 @@ html.night ::selection {
 .ty-caps {
   font-family: var(--font-caps);
   font-weight: 500;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
+  text-indent: 0.22em; /* cancels the trailing tracking on centred lines */
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ty-cta {
-    animation: none;
+/* Thank-you layout. The card is sized once (--card-w); the film strips are
+   placed from the card's own edges so it always lies across them by
+   --overlap, on every screen. --chrome keeps the corner links clear. */
+.ty-page {
+  --vh: 1vh;
+  --strip-h: clamp(92px, calc(12 * var(--vh)), 128px);
+  --band: 14px;
+  --overlap: 40px;
+  --chrome: 72px;
+  --mid: calc(50 * var(--vh));
+  --card-w: min(480px, 86vw, calc((100 * var(--vh) - 2 * var(--strip-h) + 2 * var(--overlap) - 2 * var(--chrome)) * 0.68));
+  --card-h: calc(var(--card-w) / 0.68);
+}
+
+/* Use the phone's visible height (toolbars shown) where supported */
+@supports (height: 1svh) {
+  .ty-page {
+    --vh: 1svh;
   }
 }
 
-/* Thank-you layout: film strips top + bottom, card centred between them */
-.ty-page {
-  --strip-h: clamp(92px, 12vh, 128px);
-  --strip-h: clamp(92px, 12svh, 128px);
-  --band: 14px;
-  --strip-top: 60px;
-  --strip-bottom: 16px;
-  --overlap: 16px; /* the card slightly overlaps each strip's inner edge */
-  --top-strip: 1;
+@media (min-height: 1100px) and (min-width: 700px) {
+  .ty-page {
+    --card-w: min(560px, 86vw, calc((100 * var(--vh) - 2 * var(--strip-h) + 2 * var(--overlap) - 2 * var(--chrome)) * 0.68));
+  }
 }
 
+/* Phones and short laptops: one strip, below the card. The card is lifted
+   by half the strip's visible height so card + film sit centred together. */
 @media (max-width: 640px), (max-height: 800px) {
   .ty-page {
-    --top-strip: 0;
-    --strip-h: clamp(72px, 10.5vh, 92px);
-    --strip-h: clamp(72px, 10.5svh, 92px);
+    --strip-h: clamp(72px, calc(10.5 * var(--vh)), 92px);
     --band: 12px;
+    --overlap: 22px;
+    --lift: calc((var(--strip-h) - var(--overlap)) / 2);
+    --mid: calc(50 * var(--vh) - var(--lift));
+    --card-w: min(480px, 86vw, calc((100 * var(--vh) - var(--strip-h) + var(--overlap) - 2 * var(--chrome)) * 0.68));
+  }
+  .ty-stage {
+    padding-bottom: calc(2 * var(--lift));
   }
   .ty-strip-top {
     display: none;
@@ -251,15 +289,22 @@ html.night ::selection {
   }
 }
 
-.ty-stage {
-  padding-top: calc(var(--strip-top) + (var(--strip-h) - var(--overlap)) * var(--top-strip));
-  padding-bottom: calc(var(--strip-bottom) + var(--strip-h) - var(--overlap));
+.ty-card {
+  width: var(--card-w);
+  aspect-ratio: 0.68;
 }
 
-.ty-card {
-  aspect-ratio: 0.68;
-  width: min(440px, 92vw, calc((100vh - var(--strip-top) - var(--strip-bottom) - (var(--strip-h) - var(--overlap)) * (1 + var(--top-strip))) * 0.68));
-  width: min(440px, 92vw, calc((100svh - var(--strip-top) - var(--strip-bottom) - (var(--strip-h) - var(--overlap)) * (1 + var(--top-strip))) * 0.68));
+.ty-strip {
+  left: -3vw;
+  right: -3vw;
+}
+
+.ty-strip-top {
+  top: calc(var(--mid) - var(--card-h) / 2 - var(--strip-h) + var(--overlap));
+}
+
+.ty-strip-bottom {
+  top: calc(var(--mid) + var(--card-h) / 2 - var(--overlap));
 }
 
 * {
@@ -387,24 +432,4 @@ body {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-/* Gallery columns: fewer, larger photos while the collection is small */
-[data-cols='few'] {
-  column-count: 2;
-}
-
-@media (min-width: 768px) {
-  [data-cols='few'] {
-    column-count: 3;
-  }
-  [data-cols='many'] {
-    column-count: 3;
-  }
-}
-
-@media (min-width: 1280px) {
-  [data-cols='many'] {
-    column-count: 4;
-  }
 }

@@ -2,11 +2,11 @@ import { motion } from 'framer-motion';
 
 // 35mm perforations: rounded holes every 17px, drawn once and tiled
 const PERFS =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='6'%3E%3Crect x='4' y='0' width='9' height='6' rx='1.7' fill='%23F4EDE3' fill-opacity='0.2'/%3E%3C/svg%3E\")";
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='6'%3E%3Crect x='4.25' y='0.25' width='8.5' height='5.5' rx='1.6' fill='%230B0509' fill-opacity='0.9' stroke='%23F4EDE3' stroke-opacity='0.16' stroke-width='0.5'/%3E%3C/svg%3E\")";
 const FADE = 'linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%)';
 const MIN_FRAMES = 48; // enough to cover a 2560px screen before the loop repeats
 
-function Strip({ items, direction, secondsPerFrame, onOpen, label, numberFrom }) {
+function Strip({ items, direction, secondsPerFrame, onOpen, label, numberFrom, quiet }) {
   const reps = Math.max(1, Math.ceil(MIN_FRAMES / items.length));
   const set = Array.from({ length: reps }, () => items).flat();
   const loop = [...set, ...set];
@@ -23,6 +23,7 @@ function Strip({ items, direction, secondsPerFrame, onOpen, label, numberFrom })
         style={{
           animationName: direction === 'left' ? 'strip-left' : 'strip-right',
           animationDuration: `${set.length * secondsPerFrame}s`,
+          animationPlayState: quiet ? 'paused' : undefined,
           background: 'linear-gradient(180deg, rgba(20,13,10,0.92) 0%, rgba(14,9,8,0.9) 50%, rgba(20,13,10,0.92) 100%)',
           paddingBlock: 'var(--band)',
         }}
@@ -49,7 +50,7 @@ function Strip({ items, direction, secondsPerFrame, onOpen, label, numberFrom })
                   alt=""
                   loading="lazy"
                   decoding="async"
-                  className="h-full w-full object-cover opacity-[0.82] transition duration-700 ease-out group-hover:scale-[1.05] group-hover:opacity-100 group-focus-visible:opacity-100"
+                  className="film-frame h-full w-full object-cover opacity-[0.72] transition duration-700 ease-out group-hover:scale-[1.04] group-hover:opacity-100 group-focus-visible:opacity-100"
                 />
                 <span className="pointer-events-none absolute inset-0 shadow-[inset_0_0_12px_rgba(0,0,0,0.6)] group-focus-visible:shadow-[inset_0_0_0_2px_rgba(241,223,176,0.9)]" aria-hidden="true" />
               </span>
@@ -69,8 +70,8 @@ function Strip({ items, direction, secondsPerFrame, onOpen, label, numberFrom })
   );
 }
 
-/** Film strips of wedding photos above and below the card. */
-export function FilmStrips({ show, photos, onOpen }) {
+/** Film strips of wedding photos laid under the card, above and below it. */
+export function FilmStrips({ show, quiet = false, photos, onOpen }) {
   if (!show || !photos.length) return null; // mount (and load thumbnails) only once the card is open
   const indexed = photos.map((p, index) => ({ ...p, index }));
   // alternate photos between the strips so neighbours differ
@@ -81,14 +82,14 @@ export function FilmStrips({ show, photos, onOpen }) {
     <motion.div
       className="pointer-events-none fixed inset-0 z-[2]"
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 2, ease: 'easeInOut' }}
+      animate={{ opacity: quiet ? 0.45 : 1 }}
+      transition={{ duration: quiet ? 0.8 : 2, ease: 'easeInOut' }}
     >
-      <div className="ty-strip-top pointer-events-auto absolute inset-x-0" style={{ top: 'var(--strip-top)' }}>
-        <Strip items={top.length ? top : indexed} direction="left" secondsPerFrame={6.5} onOpen={onOpen} label="Wedding photos" numberFrom={12} />
+      <div className="ty-strip ty-strip-top pointer-events-auto absolute" style={{ transform: 'rotate(-0.8deg)' }}>
+        <Strip items={top.length ? top : indexed} direction="left" secondsPerFrame={11} onOpen={onOpen} label="Wedding photos" numberFrom={12} quiet={quiet} />
       </div>
-      <div className="pointer-events-auto absolute inset-x-0" style={{ bottom: 'var(--strip-bottom)' }}>
-        <Strip items={bottom.length ? bottom : indexed} direction="right" secondsPerFrame={7} onOpen={onOpen} label="More wedding photos" numberFrom={1} />
+      <div className="ty-strip ty-strip-bottom pointer-events-auto absolute" style={{ transform: 'rotate(0.6deg)' }}>
+        <Strip items={bottom.length ? bottom : indexed} direction="right" secondsPerFrame={12} onOpen={onOpen} label="More wedding photos" numberFrom={1} quiet={quiet} />
       </div>
     </motion.div>
   );

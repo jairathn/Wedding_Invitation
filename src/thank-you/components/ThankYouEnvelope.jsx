@@ -3,15 +3,27 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { matchGuest, firstName } from '../../lib/guests';
 import { ENVELOPE_CLIP, THANK_YOU } from '../config';
 
-const FLAP = 0.4; // flap depth as a fraction of the envelope's height
+export const FLAP = 0.3; // flap depth as a fraction of the envelope's height
+export const ENVELOPE_WIDTH = 'min(372px, 76vw, calc(45 * var(--vh)))';
 const EASE = [0.4, 0, 0.2, 1];
 const touch = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
 
+// A poured-wax rim: alternating radii with a little irregularity
+const RIM = Array.from({ length: 44 }, (_, i) => {
+  const a = (i / 44) * Math.PI * 2;
+  const r = 50 * (i % 2 ? 0.925 : 1) * (1 + 0.03 * Math.sin(i * 2.7) + 0.015 * Math.cos(i * 5.1));
+  return `${(50 + r * Math.cos(a)).toFixed(2)}% ${(50 + r * Math.sin(a)).toFixed(2)}%`;
+}).join(', ');
+// The seal cracks along this line when it is broken
+const LEFT_HALF = 'polygon(0 0, 53% 0, 46% 36%, 56% 61%, 48% 100%, 0 100%)';
+const RIGHT_HALF = 'polygon(53% 0, 100% 0, 100% 100%, 48% 100%, 56% 61%, 46% 36%)';
+
 /** Gold-foil Ganesha drawn through an alpha mask of the original artwork. */
-function GoldGanesha({ size }) {
+export function GoldGanesha({ size }) {
   return (
     <div
       aria-hidden="true"
+      className="foil-once"
       style={{
         width: size,
         height: size,
@@ -25,73 +37,143 @@ function GoldGanesha({ size }) {
         maskPosition: 'center',
         background: 'linear-gradient(115deg, #8C6A2F 8%, #C9A961 30%, #F1DFB0 46%, #FFF8E6 52%, #D9BD7E 64%, #8C6A2F 92%)',
         backgroundSize: '240% 100%',
-        animation: 'foil-sweep 7s linear infinite',
-        filter: 'drop-shadow(0 0 8px rgba(201,169,97,0.3))',
       }}
     />
   );
 }
 
+function SealFace() {
+  return (
+    <>
+      <span
+        className="absolute inset-0"
+        style={{
+          clipPath: `polygon(${RIM})`,
+          background: 'radial-gradient(circle at 36% 30%, #A2457C 0%, #74215D 34%, #4E1343 70%, #320B2C 100%)',
+        }}
+      />
+      {/* pressed centre */}
+      <span
+        className="absolute inset-[17%] rounded-full"
+        style={{
+          background: 'radial-gradient(circle at 40% 35%, #7E2A63 0%, #5A1749 60%, #45103A 100%)',
+          boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.6), inset 0 -1px 2px rgba(255,205,235,0.2), 0 1px 0 rgba(255,205,235,0.12)',
+        }}
+      />
+      {/* specular highlight on the wax */}
+      <span className="absolute inset-0" style={{ clipPath: `polygon(${RIM})`, background: 'radial-gradient(ellipse 46% 26% at 34% 20%, rgba(255,232,246,0.32), transparent 70%)' }} />
+      <span
+        className="absolute inset-0 flex items-center justify-center font-display font-semibold italic leading-none"
+        style={{
+          fontSize: 'clamp(26px, 8.6cqw, 33px)',
+          color: '#D8BC7C',
+          opacity: 0.92,
+          letterSpacing: '0.01em',
+          textShadow: '0 -1px 0 rgba(28,0,20,0.8), 0 1px 0 rgba(255,214,240,0.22)',
+        }}
+      >
+        S&amp;N
+      </span>
+    </>
+  );
+}
+
 function WaxSeal({ onClick }) {
+  const size = 'clamp(74px, 23cqw, 92px)';
   return (
     <motion.button
       type="button"
       onClick={onClick}
       aria-label="Open your thank-you card"
-      className="relative block cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-foil-light/80 focus-visible:ring-offset-4 focus-visible:ring-offset-ink-950"
-      style={{ width: 'clamp(76px, 24cqw, 96px)', height: 'clamp(76px, 24cqw, 96px)' }}
-      initial={{ opacity: 0, scale: 0.7 }}
+      className="relative block cursor-pointer rounded-full focus:outline-none focus-visible:ring-1 focus-visible:ring-foil-light/80 focus-visible:ring-offset-4 focus-visible:ring-offset-ink-950"
+      style={{ width: size, height: size, filter: 'drop-shadow(0 6px 10px rgba(0,0,0,0.55))' }}
+      initial={{ opacity: 0, scale: 0.85 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 1.25, filter: 'blur(6px)', transition: { duration: 0.55, ease: EASE } }}
-      transition={{ duration: 0.7, delay: 0.5, ease: EASE }}
-      whileHover={{ scale: 1.04 }}
-      whileTap={{ scale: 0.96 }}
+      exit={{ opacity: 1, transition: { duration: 0.7 } }}
+      transition={{ duration: 0.8, delay: 0.4, ease: EASE }}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
     >
+      {/* two halves that crack apart when the seal is broken */}
       <motion.span
-        aria-hidden="true"
-        className="absolute -inset-4 rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(235,88,209,0.32) 0%, rgba(235,88,209,0) 68%)' }}
-        animate={{ opacity: [0.4, 0.95, 0.4], scale: [0.94, 1.06, 0.94] }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      {/* wax body with an irregular poured edge */}
-      <span
-        aria-hidden="true"
         className="absolute inset-0"
-        style={{
-          background: 'radial-gradient(circle at 36% 30%, #C24C93 0%, #8E2A6E 36%, #611651 74%, #4A103E 100%)',
-          boxShadow: 'inset 0 3px 10px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(255,210,240,0.14), 0 6px 18px rgba(0,0,0,0.6)',
-          clipPath:
-            'polygon(50% 0%, 61% 2%, 71% 1%, 80% 5%, 88% 9%, 95% 17%, 98% 26%, 100% 37%, 99% 48%, 100% 59%, 97% 69%, 94% 79%, 88% 87%, 80% 93%, 70% 97%, 60% 99%, 50% 100%, 39% 98%, 29% 99%, 20% 94%, 12% 89%, 6% 81%, 2% 71%, 1% 60%, 0% 49%, 1% 38%, 3% 27%, 7% 17%, 13% 9%, 21% 4%, 30% 1%, 40% 2%)',
-          borderRadius: '50%',
-        }}
-      />
-      {/* pressed ring */}
-      <span aria-hidden="true" className="absolute inset-[13%] rounded-full" style={{ boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.55), 0 1px 0 rgba(255,210,240,0.16)' }} />
-      <span className="relative flex h-full w-full flex-col items-center justify-center pb-[2px]">
-        <span
-          className="font-display font-semibold italic leading-none"
-          style={{
-            fontSize: 'clamp(25px, 8cqw, 31px)',
-            color: '#F1DFB0',
-            letterSpacing: '0.02em',
-            textShadow: '0 1px 0 rgba(60,8,40,0.95), 0 -1px 0 rgba(255,236,250,0.22), 0 0 14px rgba(241,223,176,0.3)',
-          }}
-        >
-          S&amp;N
-        </span>
-        <span className="ty-caps mt-[5px] text-[10px] leading-none" style={{ letterSpacing: '0.14em', color: 'rgba(253,232,244,0.95)', textShadow: '0 1px 2px rgba(40,4,28,0.9)' }}>
-          {touch ? 'tap to open' : 'click to open'}
-        </span>
-      </span>
+        style={{ clipPath: LEFT_HALF }}
+        exit={{ x: -12, y: 4, rotate: -16, opacity: 0, transition: { duration: 0.65, ease: EASE } }}
+      >
+        <SealFace />
+      </motion.span>
+      <motion.span
+        className="absolute inset-0"
+        style={{ clipPath: RIGHT_HALF }}
+        exit={{ x: 12, y: 6, rotate: 13, opacity: 0, transition: { duration: 0.65, ease: EASE } }}
+      >
+        <SealFace />
+      </motion.span>
     </motion.button>
   );
 }
 
+/** Velvet back panel with the folded-flap seams of a real envelope. */
+function Velvet({ seams = true }) {
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 opacity-[0.045] mix-blend-screen"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+        }}
+      />
+      <div aria-hidden="true" className="absolute inset-0" style={{ background: 'radial-gradient(80% 55% at 28% 16%, rgba(255,236,226,0.07), transparent 70%)' }} />
+      <motion.div aria-hidden="true" className="absolute inset-0" initial={false} animate={{ opacity: seams ? 1 : 0 }} transition={{ duration: 0.8 }}>
+        {/* bottom flap, a shade lighter */}
+        <div className="absolute inset-0" style={{ clipPath: 'polygon(0 100%, 50% 58%, 100% 100%)', background: 'linear-gradient(0deg, #17120F, #120E0F)' }} />
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polyline points="0,100 50,58 100,100" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
+          <polyline points="0,100.6 50,58.7 100,100.6" fill="none" stroke="rgba(255,240,230,0.06)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          {/* side flaps meet the bottom flap */}
+          <polyline points="0,0 38,62" fill="none" stroke="rgba(0,0,0,0.45)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <polyline points="100,0 62,62" fill="none" stroke="rgba(0,0,0,0.45)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+        </svg>
+      </motion.div>
+    </>
+  );
+}
+
+const bodyStyle = {
+  background: `radial-gradient(120% 75% at 50% 8%, #1B1517 0%, #110D0E 45%, ${ENVELOPE_CLIP.velvet} 100%)`,
+  boxShadow: '0 28px 70px rgba(0,0,0,0.6), 0 0 0 0.75px rgba(201,169,97,0.3)',
+};
+
 /**
- * Black-velvet portrait envelope. The guest taps the wax seal, enters their
- * name, the flap opens on a gold-foil "Dear …," and the first-dance clip
- * plays inside the envelope.
+ * The envelope's back panel, drawn above the card while it slides out so the
+ * card visibly comes from inside the envelope (rendered by the page during
+ * the reveal, in the same place and with the same motion as the envelope).
+ */
+export function EnvelopePocket() {
+  return (
+    <div style={{ containerType: 'inline-size', width: ENVELOPE_WIDTH }}>
+      <div
+        className="relative overflow-hidden rounded-b-[4px]"
+        style={{
+          aspectRatio: '0.72',
+          ...bodyStyle,
+          // thumb-cut at the opening
+          WebkitMaskImage: 'radial-gradient(circle 9cqw at 50% 0, transparent 98%, #000 100%)',
+          maskImage: 'radial-gradient(circle 9cqw at 50% 0, transparent 98%, #000 100%)',
+        }}
+      >
+        <Velvet />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Black-velvet portrait envelope. The guest touches the wax seal, writes
+ * their name, the flap opens on a gold-foil "Dear …," and the first-dance
+ * clip plays inside.
  */
 export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealClick, onGuestMatched, onClipNearEnd }) {
   const [name, setName] = useState(prefillName);
@@ -104,6 +186,7 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
 
   const sealed = stage === 'sealed';
   const naming = stage === 'naming';
+  const playing = stage === 'opening';
   const open = stage === 'opening' || stage === 'revealing' || stage === 'card';
 
   // Play the clip once the flap is open; tell the page when it is nearly done
@@ -121,7 +204,7 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
     }, 650);
     const fallback = window.setTimeout(fire, clipFailed ? 4200 : 10500); // never leave a guest waiting
     const onTime = () => {
-      if (video.duration && video.currentTime >= video.duration - 1.1) fire();
+      if (video.duration && video.currentTime >= video.duration - 0.9) fire();
     };
     video?.addEventListener('timeupdate', onTime);
     video?.addEventListener('ended', fire);
@@ -141,11 +224,12 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (checking) return;
     setError('');
     setSuggestions([]);
     const result = matchGuest(name);
     if (result.status === 'empty') {
-      setError('Please enter your first and last name.');
+      setError('Please write your first and last name.');
       return;
     }
     setChecking(true);
@@ -162,54 +246,31 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
   };
 
   const greetingName = firstName(guestName);
-  const greetingSize =
-    greetingName.length > 9 ? 'clamp(22px, 7.4cqw, 30px)' : greetingName.length > 6 ? 'clamp(26px, 8.8cqw, 36px)' : 'clamp(30px, 10.4cqw, 42px)';
+  // sized by name length so "Dear …," always sits inside the widest part of the liner
+  const n = greetingName.length;
+  const greetingSize = n >= 10 ? 'clamp(19px, 6.2cqw, 25px)' : n >= 8 ? 'clamp(21px, 7cqw, 28px)' : n >= 6 ? 'clamp(24px, 8cqw, 32px)' : 'clamp(27px, 9cqw, 36px)';
 
   return (
-    <div className="relative" style={{ containerType: 'inline-size', width: 'min(340px, 76vw, 44svh)' }}>
-      {/* halo + contact shadow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -inset-12 transition-opacity duration-1000"
-        style={{
-          background: 'radial-gradient(closest-side, rgba(201,169,97,0.13), rgba(235,88,209,0.07) 55%, transparent 100%)',
-          opacity: open ? 1 : 0.8,
-        }}
-      />
+    <div className="relative" style={{ containerType: 'inline-size', width: ENVELOPE_WIDTH }}>
+      {/* soft scrim + contact shadow (no coloured halo: the seal is the only jewel) */}
+      <div aria-hidden="true" className="pointer-events-none absolute -inset-14" style={{ background: 'radial-gradient(closest-side, rgba(11,5,9,0.5), transparent)' }} />
       <div aria-hidden="true" className="pointer-events-none absolute -bottom-6 left-1/2 h-10 w-[86%] -translate-x-1/2 rounded-[50%] bg-black/75 blur-2xl" />
 
       <div className="relative" style={{ aspectRatio: '0.72', perspective: '1400px' }}>
-        {/* Envelope body */}
-        <div
-          className="absolute inset-0 overflow-hidden rounded-[4px]"
-          style={{
-            background: `radial-gradient(120% 75% at 50% 8%, #1B1517 0%, #110D0E 45%, ${ENVELOPE_CLIP.velvet} 100%)`,
-            boxShadow: '0 28px 70px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,169,97,0.24)',
-          }}
-        >
-          {/* velvet nap */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 opacity-[0.08] mix-blend-screen"
-            style={{
-              backgroundImage:
-                "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-            }}
-          />
-          {/* gold foil keylines */}
-          <div aria-hidden="true" className="absolute inset-[3.4cqw] rounded-[2px]" style={{ boxShadow: 'inset 0 0 0 1px rgba(201,169,97,0.5)' }} />
-          <div aria-hidden="true" className="absolute inset-[4.6cqw] rounded-[1px]" style={{ boxShadow: 'inset 0 0 0 0.5px rgba(201,169,97,0.22)' }} />
+        {/* Envelope back panel */}
+        <div className="absolute inset-0 overflow-hidden rounded-[4px]" style={bodyStyle}>
+          <Velvet seams={!playing} />
 
-          {/* First-dance clip, feathered into the velvet */}
+          {/* First-dance clip in a window, feathered into the velvet */}
           <motion.div
             aria-hidden="true"
-            className="absolute inset-[3.4cqw] overflow-hidden"
+            className="absolute inset-x-[3.4cqw] top-[3.4cqw] bottom-[17%] overflow-hidden"
             initial={false}
-            animate={{ opacity: open ? 1 : 0 }}
-            transition={{ duration: 1.4, delay: open ? 0.45 : 0, ease: 'easeOut' }}
+            animate={{ opacity: playing ? 1 : 0 }}
+            transition={{ duration: playing ? 1.4 : 0.6, delay: playing ? 0.45 : 0, ease: 'easeOut' }}
             style={{
-              WebkitMaskImage: 'radial-gradient(ellipse 96% 92% at 50% 50%, #000 66%, transparent 100%)',
-              maskImage: 'radial-gradient(ellipse 96% 92% at 50% 50%, #000 66%, transparent 100%)',
+              WebkitMaskImage: 'radial-gradient(ellipse 98% 94% at 50% 50%, #000 66%, transparent 100%)',
+              maskImage: 'radial-gradient(ellipse 98% 94% at 50% 50%, #000 66%, transparent 100%)',
             }}
           >
             {(naming || open) && (
@@ -221,65 +282,62 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
                 poster={ENVELOPE_CLIP.poster}
                 onError={() => setClipFailed(true)}
                 className="h-full w-full object-cover"
-                style={{ objectPosition: '50% 58%' }}
+                style={{ objectPosition: '50% 60%' }}
               >
                 <source src={ENVELOPE_CLIP.src} type="video/mp4" />
               </video>
             )}
-            <div className="absolute inset-x-0 bottom-0 h-[24%] bg-gradient-to-t from-black/80 to-transparent" />
           </motion.div>
 
-          {/* Hashtag, letter by letter, over the bottom of the clip */}
-          {open && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-[7.5%] flex justify-center" aria-hidden="true">
-              {THANK_YOU.hashtag.split('').map((ch, i) => (
-                <motion.span
-                  key={i}
-                  className="foil-text font-display italic"
-                  style={{ fontSize: 'clamp(15px, 5.4cqw, 21px)', letterSpacing: '0.02em' }}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.8 + i * 0.08, duration: 0.5, ease: EASE }}
-                >
-                  {ch}
-                </motion.span>
-              ))}
-            </div>
-          )}
+          {/* Hashtag set on the velvet beneath the window */}
+          <AnimatePresence>
+            {playing && (
+              <motion.p
+                key="hashtag"
+                className="pointer-events-none absolute inset-x-0 bottom-[6%] text-center font-display italic text-foil-light/85"
+                style={{ fontSize: 'clamp(15px, 5.2cqw, 20px)', letterSpacing: '0.02em' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.4 } }}
+                transition={{ delay: 2.2, duration: 1.2 }}
+                aria-hidden="true"
+              >
+                {THANK_YOU.hashtag}
+              </motion.p>
+            )}
+          </AnimatePresence>
 
-          {/* Sender line + name entry, always below the flap point */}
+          {/* Sender line, then the name, always below the flap point */}
           <AnimatePresence>
             {(sealed || naming) && (
               <motion.div
                 key="front"
-                className="absolute inset-x-[11%] bottom-[9%] z-30 flex flex-col items-center text-center"
-                style={{ top: `calc(${FLAP * 100}% + clamp(52px, 17cqw, 64px))` }}
+                className="absolute inset-x-[11%] bottom-[10%] z-30 flex flex-col items-center justify-center text-center"
+                style={{ top: `calc(${FLAP * 100}% + clamp(46px, 15cqw, 58px))` }}
                 exit={{ opacity: 0, transition: { duration: 0.3 } }}
               >
-                <motion.div layout transition={{ duration: 0.6, ease: EASE }} className={naming ? '' : 'my-auto'}>
-                  <p className="font-display italic text-ivory/95" style={{ fontSize: 'clamp(23px, 8cqw, 30px)', lineHeight: 1.1 }}>
-                    Shriya &amp; Neil
-                  </p>
-                  <div className="mx-auto my-[0.7em] h-px w-10 bg-gradient-to-r from-transparent via-foil/70 to-transparent" aria-hidden="true" />
-                  <p className="ty-caps text-foil/85" style={{ fontSize: 'clamp(10.5px, 3.3cqw, 12.5px)' }}>
-                    A note of thanks
-                  </p>
-                </motion.div>
-
-                <AnimatePresence>
-                  {naming && (
+                <AnimatePresence mode="wait" initial={false}>
+                  {sealed ? (
+                    <motion.div key="sender" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.3 } }} transition={{ duration: 0.8 }}>
+                      <p className="font-display italic text-ivory/90" style={{ fontSize: 'clamp(22px, 7.6cqw, 29px)', lineHeight: 1.1 }}>
+                        Shriya &amp; Neil
+                      </p>
+                      <p className="ty-caps mt-[0.7em] text-foil/80" style={{ fontSize: 'clamp(10.5px, 2.9cqw, 12.5px)' }}>
+                        Barcelona · MMXXVI
+                      </p>
+                    </motion.div>
+                  ) : (
                     <motion.form
                       key="form"
                       onSubmit={handleSubmit}
                       noValidate
-                      className="mt-auto w-full"
-                      initial={{ opacity: 0, y: 10 }}
+                      className="flex w-full flex-col items-center"
+                      initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.55, delay: 0.25, ease: EASE }}
+                      transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
                     >
-                      <label htmlFor="guest-name" className="sr-only">
-                        Your first and last name
+                      <label htmlFor="guest-name" className="ty-caps lowercase text-foil/80" style={{ fontSize: 'clamp(10.5px, 2.9cqw, 12.5px)' }}>
+                        Addressed to
                       </label>
                       <input
                         id="guest-name"
@@ -289,16 +347,25 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
                           setName(e.target.value);
                           if (error) setError('');
                         }}
-                        placeholder="Your first & last name"
+                        placeholder="your first & last name"
                         autoComplete="name"
                         autoCapitalize="words"
+                        enterKeyHint="go"
                         spellCheck={false}
                         autoFocus
-                        className="w-full rounded-none border-0 border-b border-foil/45 bg-transparent px-1 pb-2 pt-1 text-center font-display text-ivory placeholder:italic placeholder:text-ivory/35 focus:border-foil-light focus:outline-none"
-                        style={{ fontSize: 'clamp(17px, 5.6cqw, 20px)' }}
+                        className="mt-[3cqw] w-full rounded-none border-0 border-b border-foil/50 bg-transparent px-1 pb-[0.25em] text-center font-display italic text-foil-light placeholder:text-ivory/30 focus:border-foil-light focus:outline-none"
+                        style={{ fontSize: 'clamp(22px, 7.4cqw, 28px)', lineHeight: 1.25 }}
                       />
-                      <button type="submit" disabled={checking} className="ty-cta mt-[1.15em] w-full py-[0.85em] disabled:opacity-60" style={{ fontSize: 'clamp(11px, 3.6cqw, 13px)' }}>
-                        {checking ? 'Finding you…' : 'Open my card'}
+                      <button
+                        type="submit"
+                        disabled={checking}
+                        className="ty-caps mt-[6cqw] inline-flex min-h-[46px] items-center gap-3 border border-foil/55 bg-foil/[0.06] px-[1.6em] font-semibold lowercase text-foil-light transition hover:border-foil hover:bg-foil/[0.14] disabled:opacity-60"
+                        style={{ fontSize: 'clamp(11.5px, 3cqw, 13px)' }}
+                      >
+                        {checking ? 'One moment' : 'Open'}
+                        <svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true">
+                          <path d="M0 4h20M17 1l3 3-3 3" fill="none" stroke="#C9A961" strokeWidth="1" />
+                        </svg>
                       </button>
                     </motion.form>
                   )}
@@ -308,7 +375,7 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
           </AnimatePresence>
         </div>
 
-        {/* Flap: velvet outside, gold-foil liner inside */}
+        {/* Flap: velvet outside, banded gold-foil liner inside */}
         <motion.div
           className="pointer-events-none absolute inset-x-0 top-0 origin-top"
           style={{ height: `${FLAP * 100}%`, transformStyle: 'preserve-3d', zIndex: 20 }}
@@ -325,10 +392,9 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
               background: 'linear-gradient(180deg, #1E1719 0%, #141011 62%, #0F0B0C 100%)',
             }}
           />
-          {/* the flap's shadow on the envelope, and its foil edge */}
           <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-            <polyline points="0,0 50,100 100,0" fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth="5" vectorEffect="non-scaling-stroke" transform="translate(0 1.2)" />
-            <polyline points="0.4,0 50,99.3 99.6,0" fill="none" stroke="rgba(201,169,97,0.62)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+            <polyline points="0,0 50,100 100,0" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="5" vectorEffect="non-scaling-stroke" transform="translate(0 1.4)" />
+            <polyline points="0.4,0 50,99.2 99.6,0" fill="none" stroke="rgba(201,169,97,0.55)" strokeWidth="0.9" vectorEffect="non-scaling-stroke" />
           </svg>
           <div
             className="absolute inset-0"
@@ -337,25 +403,25 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
               WebkitBackfaceVisibility: 'hidden',
               transform: 'rotateX(180deg)',
               clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
-              background: 'linear-gradient(162deg, #F1DFB0 0%, #DCC184 26%, #C09A55 55%, #9B7536 82%, #8C6A2F 100%)',
+              background: 'linear-gradient(118deg, #6E4F1C 0%, #B8924A 16%, #F3E2B4 28%, #C49B52 40%, #8C6A2F 54%, #E2C88A 68%, #A27C3C 82%, #6E4F1C 100%)',
             }}
           >
-            {/* damask: tiny engraved florets */}
             <div
               aria-hidden="true"
-              className="absolute inset-0 opacity-[0.16]"
+              className="absolute inset-0 opacity-[0.22]"
               style={{
                 backgroundImage:
                   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'%3E%3Cg fill='none' stroke='%23432808' stroke-width='0.7'%3E%3Cpath d='M11 4c2 3 2 5 0 7-2-2-2-4 0-7z'/%3E%3Cpath d='M11 18c-2-3-2-5 0-7 2 2 2 4 0 7z'/%3E%3Cpath d='M4 11c3-2 5-2 7 0-2 2-4 2-7 0z'/%3E%3Cpath d='M18 11c-3 2-5 2-7 0 2-2 4-2 7 0z'/%3E%3C/g%3E%3C/svg%3E\")",
                 backgroundSize: '22px 22px',
               }}
             />
-            <div aria-hidden="true" className="absolute inset-0 opacity-30" style={{ background: 'linear-gradient(115deg, transparent 28%, rgba(255,255,255,0.7) 48%, transparent 66%)' }} />
+            {/* fold shadow along the hinge */}
+            <div aria-hidden="true" className="absolute inset-0" style={{ background: 'linear-gradient(0deg, rgba(0,0,0,0.35), transparent 18%)' }} />
             {open && greetingName && (
               <motion.p
                 className="absolute inset-x-0 text-center font-script"
                 style={{
-                  top: '50%',
+                  top: '54%',
                   fontSize: greetingSize,
                   lineHeight: 1.2,
                   color: '#4A2F0C',
@@ -371,7 +437,7 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
           </div>
         </motion.div>
 
-        {/* Seal → Ganesha emblem at the flap's point */}
+        {/* Seal → Ganesha roundel at the flap's point */}
         <div className="absolute left-1/2 z-30 -translate-x-1/2 -translate-y-1/2" style={{ top: `${FLAP * 100}%` }}>
           <AnimatePresence mode="wait">
             {sealed && <WaxSeal key="seal" onClick={onSealClick} />}
@@ -379,34 +445,51 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
               <motion.div
                 key="ganesha"
                 className="flex items-center justify-center rounded-full"
-                style={{ width: 'clamp(66px, 21cqw, 80px)', height: 'clamp(66px, 21cqw, 80px)', background: 'radial-gradient(circle, #141011 56%, rgba(20,16,17,0) 71%)' }}
-                initial={{ opacity: 0, scale: 0.6 }}
+                style={{
+                  width: 'clamp(58px, 18.5cqw, 70px)',
+                  height: 'clamp(58px, 18.5cqw, 70px)',
+                  background: '#100C0D',
+                  boxShadow: '0 0 0 0.75px rgba(201,169,97,0.55), 0 0 0 4px #100C0D, 0 0 0 4.75px rgba(201,169,97,0.2)',
+                }}
+                initial={{ opacity: 0, scale: 0.7 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, transition: { duration: 0.25 } }}
-                transition={{ duration: 0.7, ease: EASE }}
+                transition={{ duration: 0.7, delay: 0.25, ease: EASE }}
               >
-                <GoldGanesha size="clamp(46px, 14.5cqw, 56px)" />
+                <GoldGanesha size="clamp(38px, 12cqw, 46px)" />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </div>
 
-      {/* Hints and suggestions sit below the envelope, never over it */}
+      {/* Hint under the envelope while sealed; help and suggestions while naming */}
       <AnimatePresence>
+        {sealed && (
+          <motion.p
+            key="hint"
+            className="pointer-events-none absolute inset-x-0 top-full mt-7 text-center font-display text-[16px] italic text-ivory/55"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.3 } }}
+            transition={{ delay: 2.2, duration: 1.4 }}
+          >
+            {touch ? 'Tap the seal to open' : 'Click the seal to open'}
+          </motion.p>
+        )}
         {naming && (error || suggestions.length > 0) && (
           <motion.div
             key="help"
-            className="absolute inset-x-0 top-full z-30 mt-5 text-center"
+            className="absolute inset-x-0 top-full z-30 mt-6 text-center"
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: EASE }}
             role="alert"
           >
-            {error && <p className="font-display text-[15px] italic leading-snug text-blush-200/90">{error}</p>}
+            {error && <p className="font-display text-[16px] italic leading-snug text-blush-200/90">{error}</p>}
             {suggestions.length > 0 && (
-              <div className="mt-3 flex flex-col items-center gap-2">
+              <div className="mt-3 flex flex-col items-center gap-2.5">
                 {suggestions.map((s) => (
                   <button
                     key={s}
@@ -416,7 +499,7 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
                       const m = matchGuest(s);
                       if (m.status === 'exact') accept(m);
                     }}
-                    className="ty-link text-[17px]"
+                    className="ty-link text-[19px]"
                   >
                     {s}
                   </button>

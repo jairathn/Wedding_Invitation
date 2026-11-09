@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import Player from '@vimeo/player';
 
 // Engagement film (https://vimeo.com/1149072071) unless a caller passes another id
-export function VideoPlayer({ isFlipped = false, videoId = '1149072071' }) {
+export function VideoPlayer({ isFlipped = false, videoId = '1149072071', color = null, showFullscreenButton = true }) {
   const VIMEO_VIDEO_ID = videoId;
 
   const iframeRef = useRef(null);
@@ -82,7 +82,7 @@ export function VideoPlayer({ isFlipped = false, videoId = '1149072071' }) {
     <div className="relative aspect-video overflow-hidden group">
       <iframe
         ref={iframeRef}
-        src={`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?title=0&byline=0&portrait=0&controls=1&transparent=0`}
+        src={`https://player.vimeo.com/video/${VIMEO_VIDEO_ID}?title=0&byline=0&portrait=0&controls=1&transparent=0${color ? `&color=${color}&dnt=1` : ''}`}
         className="w-full h-full"
         allow="autoplay; fullscreen; picture-in-picture"
         allowFullScreen
@@ -90,7 +90,7 @@ export function VideoPlayer({ isFlipped = false, videoId = '1149072071' }) {
       />
 
       {/* Custom fullscreen button - always visible on mobile, shows on hover on desktop */}
-      {showButton && !isFlipped && (
+      {showFullscreenButton && showButton && !isFlipped && (
         <button
           onClick={handleFullscreen}
           className="absolute bottom-3 right-3 z-50 w-10 h-10 rounded-lg bg-black/70 hover:bg-black/90 backdrop-blur-sm flex items-center justify-center transition-all shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100"

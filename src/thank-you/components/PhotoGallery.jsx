@@ -4,19 +4,21 @@ import { THANK_YOU } from '../config';
 
 const EASE = [0.4, 0, 0.2, 1];
 const SLIDE_MS = 5200;
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 
 function Thumb({ photo, index, onOpen }) {
   const [loaded, setLoaded] = useState(false);
+  const landscape = photo.w > photo.h;
   return (
     <motion.button
       type="button"
       onClick={() => onOpen(index)}
-      className="group relative mb-3 block w-full break-inside-avoid overflow-hidden rounded-[3px] bg-night-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 md:mb-4"
-      style={{ aspectRatio: `${photo.w} / ${photo.h}` }}
-      initial={{ opacity: 0, y: 18 }}
+      className={`group relative block w-full self-start overflow-hidden bg-ink-800 focus:outline-none focus-visible:ring-1 focus-visible:ring-foil-light focus-visible:ring-offset-4 focus-visible:ring-offset-ink-950 ${landscape ? 'col-span-2' : ''}`}
+      style={{ aspectRatio: landscape ? '4 / 3' : '2 / 3' }}
+      initial={{ opacity: 0, y: 14 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '120px' }}
-      transition={{ duration: 0.7, ease: EASE, delay: (index % 4) * 0.06 }}
+      transition={{ duration: 0.8, ease: EASE, delay: (index % 4) * 0.05 }}
       aria-label={photo.alt ? `View photo: ${photo.alt}` : `View photo ${index + 1}`}
     >
       <img
@@ -25,11 +27,20 @@ function Thumb({ photo, index, onOpen }) {
         loading="lazy"
         decoding="async"
         onLoad={() => setLoaded(true)}
-        className="h-full w-full object-cover transition duration-[900ms] ease-out group-hover:scale-[1.03]"
-        style={{ opacity: loaded ? 1 : 0, filter: loaded ? 'blur(0)' : 'blur(12px)' }}
+        className="h-full w-full object-cover transition duration-[900ms] ease-out group-hover:brightness-[1.08]"
+        style={{ opacity: loaded ? 1 : 0 }}
       />
-      <span className="pointer-events-none absolute inset-0 rounded-[3px] shadow-[inset_0_0_0_1px_rgba(232,194,122,0.12)] transition group-hover:shadow-[inset_0_0_0_1px_rgba(232,194,122,0.5)]" aria-hidden="true" />
     </motion.button>
+  );
+}
+
+function Grid({ items, photos, onOpen }) {
+  return (
+    <div className="grid grid-cols-2 gap-x-3 gap-y-5 md:grid-cols-3 md:gap-x-8 md:gap-y-10 xl:grid-cols-4">
+      {items.map((p) => (
+        <Thumb key={p.id} photo={p} index={photos.indexOf(p)} onOpen={onOpen} />
+      ))}
+    </div>
   );
 }
 
@@ -90,6 +101,12 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying }) {
     else if (dy > 90 && Math.abs(dy) > Math.abs(dx) * 1.5) onClose();
   };
 
+  const chevron = (d) => (
+    <svg width="14" height="26" viewBox="0 0 14 26" aria-hidden="true">
+      <path d={d} fill="none" stroke="#C9A961" strokeWidth="1" />
+    </svg>
+  );
+
   return (
     <motion.div
       className="fixed inset-0 z-[10001] flex items-center justify-center bg-ink-950/[0.985]"
@@ -109,7 +126,7 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying }) {
           src={photo.lg}
           alt={photo.alt || ''}
           custom={dir}
-          className="max-h-[calc(100dvh-120px)] max-w-[calc(100vw-24px)] select-none rounded-[2px] object-contain shadow-[0_30px_90px_rgba(0,0,0,0.7)] md:max-w-[calc(100vw-180px)]"
+          className="max-h-[calc(100dvh-132px)] max-w-[calc(100vw-24px)] select-none object-contain shadow-[0_30px_90px_rgba(0,0,0,0.7)] md:max-w-[calc(100vw-200px)]"
           style={{ aspectRatio: `${photo.w} / ${photo.h}` }}
           draggable={false}
           variants={{
@@ -124,27 +141,20 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying }) {
         />
       </AnimatePresence>
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between py-3 pl-16 pr-4 md:pl-20 md:pr-6">
-        <p className="ty-caps text-[13px] text-ivory/60">
-          {index + 1} <span className="mx-1 text-foil/70">/</span> {count}
-        </p>
-        <div className="pointer-events-auto flex items-center gap-2">
-          {count > 1 && (
-            <button type="button" onClick={() => setPlaying((p) => !p)} className="ty-link text-[16px]">
-              {playing ? 'Pause' : 'Slideshow'}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close photo"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-ivory/20 text-ivory/80 transition hover:border-gold-300 hover:text-gold-300"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
+      <div className="absolute right-3 top-3 flex items-center gap-4 md:right-6 md:top-5">
+        {count > 1 && (
+          <button type="button" onClick={() => setPlaying((p) => !p)} className="ty-link min-h-[44px] text-[16px]">
+            {playing ? 'Pause' : 'Slideshow'}
           </button>
-        </div>
+        )}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close photo"
+          className="ty-caps flex min-h-[44px] items-center px-1 text-[12px] lowercase text-ivory/70 transition hover:text-foil-light"
+        >
+          Close
+        </button>
       </div>
 
       {count > 1 && (
@@ -153,33 +163,34 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying }) {
             type="button"
             onClick={() => go(-1)}
             aria-label="Previous photo"
-            className="absolute left-2 top-1/2 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-ivory/15 bg-night-900/40 text-ivory/80 backdrop-blur transition hover:border-gold-300 hover:text-gold-300 md:left-6 md:flex"
+            className="absolute left-1 top-1/2 hidden h-16 w-12 -translate-y-1/2 items-center justify-center opacity-70 transition hover:opacity-100 md:left-5 md:flex"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            {chevron('M13 1L1 13l12 12')}
           </button>
           <button
             type="button"
             onClick={() => go(1)}
             aria-label="Next photo"
-            className="absolute right-2 top-1/2 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-ivory/15 bg-night-900/40 text-ivory/80 backdrop-blur transition hover:border-gold-300 hover:text-gold-300 md:right-6 md:flex"
+            className="absolute right-1 top-1/2 hidden h-16 w-12 -translate-y-1/2 items-center justify-center opacity-70 transition hover:opacity-100 md:right-5 md:flex"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            {chevron('M1 1l12 12L1 25')}
           </button>
         </>
       )}
 
-      <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center font-display text-[13px] italic text-ivory/45 md:bottom-5">
-        {photo.alt || <>Photography by {THANK_YOU.photographer}</>}
-        <span className="ty-caps block text-[11px] not-italic text-ivory/30 md:hidden">swipe to browse</span>
+      <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center font-display text-[14px] italic text-ivory/50 md:bottom-5">
+        {photo.alt ? `${photo.alt} · ` : ''}
+        {index + 1} of {count} · Photography by {THANK_YOU.photographer}
+        <span className="ty-caps mt-0.5 block text-[11px] not-italic text-ivory/30 md:hidden">swipe to browse</span>
       </p>
     </motion.div>
   );
 }
 
 /**
- * Full-screen gallery: a masonry wall of the wedding photos, a lightbox, and
- * a slideshow. Opens straight into the lightbox when a film-strip frame is
- * tapped. The panel mounts fresh on every open, so it starts from props.
+ * Full-screen gallery: the wedding photos in order (by chapter when set), a
+ * lightbox and a slideshow. Opens straight into the lightbox when a
+ * film-strip frame is tapped. The panel mounts fresh on every open.
  */
 export function PhotoGallery({ open, photos, startIndex = null, onClose }) {
   return (
@@ -192,15 +203,22 @@ export function PhotoGallery({ open, photos, startIndex = null, onClose }) {
 function GalleryPanel({ photos, startIndex, onClose }) {
   const [lightbox, setLightbox] = useState(startIndex);
   const [playing, setPlaying] = useState(false);
-  const [chapter, setChapter] = useState('all');
   const panelRef = useRef(null);
 
   const chapters = useMemo(() => {
-    const seen = [];
-    for (const p of photos) if (p.chapter && !seen.includes(p.chapter)) seen.push(p.chapter);
-    return seen;
+    const order = [];
+    const byName = new Map();
+    for (const p of photos) {
+      const name = p.chapter || null;
+      if (!byName.has(name)) {
+        byName.set(name, []);
+        order.push(name);
+      }
+      byName.get(name).push(p);
+    }
+    return order.map((name) => ({ name, items: byName.get(name) }));
   }, [photos]);
-  const visible = useMemo(() => (chapter === 'all' ? photos : photos.filter((p) => p.chapter === chapter)), [photos, chapter]);
+  const named = chapters.filter((c) => c.name);
 
   // lock page scroll, move focus in, and give it back on close
   useEffect(() => {
@@ -228,95 +246,82 @@ function GalleryPanel({ photos, startIndex, onClose }) {
   }, []);
 
   return (
-        <motion.div
-          ref={panelRef}
-          tabIndex={-1}
-          className="fixed inset-0 z-[10000] overflow-y-auto overscroll-contain focus:outline-none"
-          style={{ background: 'radial-gradient(90% 55% at 50% 0%, rgba(79,31,85,0.38) 0%, rgba(10,8,7,0) 62%), radial-gradient(60% 40% at 50% 0%, rgba(201,169,97,0.08) 0%, rgba(10,8,7,0) 70%), #0A0807' }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5, ease: EASE }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Our wedding photos"
-        >
-          <header className="relative px-4 pb-8 pt-16 text-center md:px-10 md:pt-14">
-            <div className="absolute right-3 top-3 flex items-center gap-3 md:right-6 md:top-5">
-              {photos.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLightbox(0);
-                    setPlaying(true);
-                  }}
-                  className="ty-link text-[16px]"
-                >
-                  Play slideshow
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Close gallery"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-foil/30 text-ivory/80 transition hover:border-foil hover:text-foil-light"
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
-              </button>
-            </div>
-            <p className="ty-caps text-[12px] text-foil/80" style={{ letterSpacing: '0.28em' }}>Barcelona · September 2026</p>
-            <h2 className="foil-text mx-auto mt-1 w-fit px-[0.2em] font-script text-[52px] leading-[1.2] md:text-[72px]">Our Wedding</h2>
-            <div className="mx-auto mt-3 flex items-center justify-center gap-3" aria-hidden="true">
-              <span className="h-px w-16 bg-gradient-to-r from-transparent to-foil/60" />
-              <span className="h-[5px] w-[5px] rotate-45 bg-foil/80" />
-              <span className="h-px w-16 bg-gradient-to-l from-transparent to-foil/60" />
-            </div>
-            {chapters.length > 1 && (
-              <nav className="mx-auto mt-6 flex max-w-3xl justify-center gap-5 overflow-x-auto pb-1 scrollbar-hide" aria-label="Chapters">
-                {['all', ...chapters].map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setChapter(c)}
-                    aria-pressed={chapter === c}
-                    className={`ty-caps whitespace-nowrap border-b pb-1 text-[13px] transition ${chapter === c ? 'border-foil text-foil-light' : 'border-transparent text-ivory/55 hover:text-foil-light'}`}
-                  >
-                    {c === 'all' ? 'All' : c}
-                  </button>
-                ))}
-              </nav>
-            )}
-          </header>
-
-          <div
-            className="mx-auto columns-2 gap-3 px-3 pb-16 md:gap-5 md:px-10"
-            style={{ maxWidth: visible.length < 7 ? '980px' : '1240px' }}
-            data-cols={visible.length < 7 ? 'few' : 'many'}
+    <motion.div
+      ref={panelRef}
+      tabIndex={-1}
+      className="fixed inset-0 z-[10000] overflow-y-auto overscroll-contain focus:outline-none"
+      style={{ background: 'radial-gradient(90% 55% at 50% 0%, rgba(79,31,85,0.32) 0%, rgba(10,8,7,0) 62%), radial-gradient(60% 40% at 50% 0%, rgba(201,169,97,0.08) 0%, rgba(10,8,7,0) 70%), #0A0807' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5, ease: EASE }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Our wedding photos"
+    >
+      <header className="relative px-4 pb-10 pt-16 text-center md:px-12 md:pt-14">
+        <div className="absolute right-3 top-3 flex items-center gap-4 md:right-6 md:top-5">
+          {photos.length > 1 && (
+            <button
+              type="button"
+              onClick={() => {
+                setLightbox(0);
+                setPlaying(true);
+              }}
+              className="ty-link min-h-[44px] text-[16px]"
+            >
+              Play slideshow
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close gallery"
+            className="ty-caps flex min-h-[44px] items-center px-1 text-[12px] lowercase text-ivory/70 transition hover:text-foil-light"
           >
-            {visible.map((p) => (
-              <Thumb key={p.id} photo={p} index={photos.indexOf(p)} onOpen={setLightbox} />
-            ))}
-          </div>
+            Close
+          </button>
+        </div>
+        <p className="ty-caps text-[12px] text-foil/80">Barcelona · September 2026</p>
+        <h2 className="foil-text mx-auto mt-1 w-fit px-[0.2em] font-script text-[52px] leading-[1.2] md:text-[72px]">Our Wedding</h2>
+        <div className="mx-auto mt-3 flex items-center justify-center gap-3" aria-hidden="true">
+          <span className="h-px w-16 bg-gradient-to-r from-transparent to-foil/60" />
+          <span className="h-[5px] w-[5px] rotate-45 bg-foil/80" />
+          <span className="h-px w-16 bg-gradient-to-l from-transparent to-foil/60" />
+        </div>
+      </header>
 
-          <footer className="pb-12 text-center">
-            <div className="mx-auto mb-4 h-px w-24 bg-gradient-to-r from-transparent via-gold-400/50 to-transparent" />
-            <p className="font-display text-[16px] italic text-ivory/60">Photography by {THANK_YOU.photographer}</p>
-            <p className="ty-caps mt-1 text-[11px] text-ivory/35">{THANK_YOU.hashtag}</p>
-          </footer>
-
-          <AnimatePresence>
-            {lightbox !== null && photos[lightbox] && (
-              <Lightbox
-                key="lightbox"
-                photos={photos}
-                index={lightbox}
-                setIndex={setLightbox}
-                onClose={closeLightbox}
-                playing={playing}
-                setPlaying={setPlaying}
-              />
+      <div className="mx-auto max-w-[1180px] px-4 pb-20 md:px-12">
+        {chapters.map((c) => (
+          <section key={c.name || 'all'} className={c.name ? 'pt-6' : ''} aria-label={c.name || undefined}>
+            {c.name && named.length > 1 && (
+              <div className="py-12 text-center md:py-16">
+                <p className="ty-caps text-[11px] text-foil/70">{ROMAN[named.indexOf(c)] || ''}</p>
+                <h3 className="foil-text mx-auto w-fit px-[0.2em] font-script text-[40px] leading-[1.25] md:text-[46px]">{c.name}</h3>
+                <span className="mx-auto mt-2 block h-px w-16 bg-gradient-to-r from-transparent via-foil/70 to-transparent" aria-hidden="true" />
+              </div>
             )}
-          </AnimatePresence>
-        </motion.div>
+            <Grid items={c.items} photos={photos} onOpen={setLightbox} />
+          </section>
+        ))}
+      </div>
+
+      <footer className="pb-14 text-center">
+        <div className="mx-auto mb-5 h-px w-24 bg-gradient-to-r from-transparent via-foil/50 to-transparent" />
+        <p className="font-display text-[16px] italic text-ivory/60">Photography by {THANK_YOU.photographer}</p>
+        {THANK_YOU.vogueUrl && (
+          <a href={THANK_YOU.vogueUrl} target="_blank" rel="noopener noreferrer" className="ty-link mt-2 inline-block text-[16px]">
+            Read our story in <span className="not-italic tracking-[0.14em]">VOGUE</span>
+          </a>
+        )}
+        <p className="ty-caps mt-2 text-[11px] text-ivory/35">{THANK_YOU.hashtag}</p>
+      </footer>
+
+      <AnimatePresence>
+        {lightbox !== null && photos[lightbox] && (
+          <Lightbox key="lightbox" photos={photos} index={lightbox} setIndex={setLightbox} onClose={closeLightbox} playing={playing} setPlaying={setPlaying} />
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
