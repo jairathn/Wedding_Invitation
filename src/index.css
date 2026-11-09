@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Pinyon+Script&family=Cormorant+SC:wght@500;600&display=swap');
+/* Web fonts are linked from index.html so they never block the first paint */
 @import "tailwindcss";
 
 @theme {
@@ -69,6 +69,12 @@ html.night body {
   color-scheme: dark;
 }
 
+/* no accidental pull-to-refresh or rubber-banding on the card */
+html.night,
+html.night body {
+  overscroll-behavior-y: none;
+}
+
 html.night ::-webkit-scrollbar-track {
   background: var(--color-night-900);
 }
@@ -132,9 +138,10 @@ html.night ::selection {
   animation-iteration-count: infinite;
 }
 
-.film-strip:hover .film-track,
-.film-strip:focus-within .film-track {
-  animation-play-state: paused;
+@media (hover: hover) {
+  .film-strip:hover .film-track {
+    animation-play-state: paused;
+  }
 }
 
 @keyframes slow-glow {
@@ -190,51 +197,54 @@ html.night ::selection {
   filter: none;
 }
 
-/* Engraved stationery controls */
-.ty-cta {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6em;
-  font-family: var(--font-caps);
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  color: var(--color-foil-light);
-  background: linear-gradient(180deg, rgba(201, 169, 97, 0.16), rgba(201, 169, 97, 0.05));
-  border: 1px solid rgba(201, 169, 97, 0.78);
-  box-shadow: inset 0 0 0 3px rgba(14, 10, 11, 0.9), inset 0 0 0 4px rgba(201, 169, 97, 0.32);
-  transition: background 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
-}
+/* Engraved stationery controls. In the components layer, so Tailwind
+   utilities on the same element (font-semibold, colours) still apply. */
+@layer components {
+  .ty-cta {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
+    font-family: var(--font-caps);
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: var(--color-foil-light);
+    background: linear-gradient(180deg, rgba(201, 169, 97, 0.16), rgba(201, 169, 97, 0.05));
+    border: 1px solid rgba(201, 169, 97, 0.78);
+    box-shadow: inset 0 0 0 3px rgba(14, 10, 11, 0.9), inset 0 0 0 4px rgba(201, 169, 97, 0.32);
+    transition: background 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+  }
 
-.ty-cta:hover,
-.ty-cta:focus-visible {
-  color: #FFF8E6;
-  background: linear-gradient(180deg, rgba(201, 169, 97, 0.3), rgba(201, 169, 97, 0.12));
-  outline: none;
-}
+  .ty-cta:hover,
+  .ty-cta:focus-visible {
+    color: #FFF8E6;
+    background: linear-gradient(180deg, rgba(201, 169, 97, 0.3), rgba(201, 169, 97, 0.12));
+    outline: none;
+  }
 
-.ty-link {
-  font-family: var(--font-display);
-  font-style: italic;
-  color: rgba(244, 237, 227, 0.78);
-  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
-  transition: color 0.3s ease, background-size 0.45s ease;
-  padding-bottom: 2px;
-}
+  .ty-link {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: rgba(244, 237, 227, 0.78);
+    background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+    transition: color 0.3s ease, background-size 0.45s ease;
+    padding-bottom: 2px;
+  }
 
-.ty-link:hover,
-.ty-link:focus-visible {
-  color: var(--color-foil-light);
-  background-size: 100% 1px;
-  outline: none;
-}
+  .ty-link:hover,
+  .ty-link:focus-visible {
+    color: var(--color-foil-light);
+    background-size: 100% 1px;
+    outline: none;
+  }
 
-.ty-caps {
-  font-family: var(--font-caps);
-  font-weight: 500;
-  letter-spacing: 0.22em;
-  text-indent: 0.22em; /* cancels the trailing tracking on centred lines */
+  .ty-caps {
+    font-family: var(--font-caps);
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-indent: 0.18em; /* cancels the trailing tracking on centred lines */
+  }
 }
 
 /* Thank-you layout. The card is sized once (--card-w); the film strips are
@@ -289,9 +299,60 @@ html.night ::selection {
   }
 }
 
+/* Short screens (iPhone SE and mini, larger text, landscape): size the card
+   by width so everything on it stays legible, and let the page scroll. */
+@media (max-height: 640px) {
+  .ty-page {
+    --card-w: min(400px, 88vw);
+    --lift: 0px;
+    --mid: calc(50 * var(--vh));
+  }
+  .ty-stage {
+    padding-top: 72px;
+    padding-bottom: 72px;
+  }
+  .ty-page .ty-strip {
+    display: none;
+  }
+}
+
+/* the "open the envelope again" line sits in the bottom margin */
+.ty-reopen {
+  bottom: max(10px, env(safe-area-inset-bottom));
+}
+
 .ty-card {
   width: var(--card-w);
   aspect-ratio: 0.68;
+}
+
+/* clip sideways spill (scrims, strips) without making the page a scroller */
+.ty-page {
+  overflow-x: hidden;
+  overflow-x: clip;
+  font-family: var(--font-display);
+}
+
+/* the page is exactly as tall as the visible screen (not iOS's toolbar-hidden
+   100vh), so on phones nothing scrolls the card off its film strip */
+html.night body,
+html.night #root {
+  min-height: 0;
+}
+
+/* sizes in container units, with a fixed fallback for browsers without them (iOS 15) */
+.ty-seal {
+  width: 84px;
+  height: 84px;
+  width: clamp(74px, 23cqw, 92px);
+  height: clamp(74px, 23cqw, 92px);
+}
+
+.ty-roundel {
+  width: 64px;
+  height: 64px;
+  width: clamp(58px, 18.5cqw, 70px);
+  height: clamp(58px, 18.5cqw, 70px);
 }
 
 .ty-strip {

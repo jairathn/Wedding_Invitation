@@ -7,7 +7,7 @@ export function VideoPlayer({ isFlipped = false, videoId = '1149072071', color =
 
   const iframeRef = useRef(null);
   const playerRef = useRef(null);
-  const [showButton, setShowButton] = useState(true);
+  const [showButton] = useState(true);
 
   const handleFullscreen = () => {
     if (playerRef.current) {
@@ -31,20 +31,26 @@ export function VideoPlayer({ isFlipped = false, videoId = '1149072071', color =
     });
 
     // Listen to Vimeo player events and dispatch custom events for BackgroundMusic component
+    let playing = false;
     player.on('play', () => {
+      playing = true;
       window.dispatchEvent(new Event('video-play'));
     });
 
     player.on('pause', () => {
+      playing = false;
       window.dispatchEvent(new Event('video-pause'));
     });
 
     player.on('ended', () => {
+      playing = false;
       window.dispatchEvent(new Event('video-ended'));
     });
 
-    // Cleanup on unmount
+    // Cleanup on unmount. destroy() sends no 'pause', so if the film was
+    // playing when it went away (the card turned over), let the music resume.
     return () => {
+      if (playing) window.dispatchEvent(new Event('video-pause'));
       if (playerRef.current) {
         playerRef.current.destroy();
       }

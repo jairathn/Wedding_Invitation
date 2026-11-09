@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { matchGuest, firstName } from '../../lib/guests';
+import { matchGuest, resolveGuest, firstName } from '../../lib/guests';
 import { ENVELOPE_CLIP, THANK_YOU } from '../config';
 
 export const FLAP = 0.3; // flap depth as a fraction of the envelope's height
-export const ENVELOPE_WIDTH = 'min(372px, 76vw, calc(45 * var(--vh)))';
+export const ENVELOPE_WIDTH = 'min(372px, 76vw, max(calc(45 * var(--vh)), 240px))';
 const EASE = [0.4, 0, 0.2, 1];
 const touch = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
+const tracked = (em) => ({ letterSpacing: `${em}em`, textIndent: `${em}em` });
 
 // A poured-wax rim: alternating radii with a little irregularity
 const RIM = Array.from({ length: 44 }, (_, i) => {
@@ -79,14 +81,13 @@ function SealFace() {
 }
 
 function WaxSeal({ onClick }) {
-  const size = 'clamp(74px, 23cqw, 92px)';
   return (
     <motion.button
       type="button"
       onClick={onClick}
       aria-label="Open your thank-you card"
-      className="relative block cursor-pointer rounded-full focus:outline-none focus-visible:ring-1 focus-visible:ring-foil-light/80 focus-visible:ring-offset-4 focus-visible:ring-offset-ink-950"
-      style={{ width: size, height: size, filter: 'drop-shadow(0 6px 10px rgba(0,0,0,0.55))' }}
+      className="ty-seal relative block cursor-pointer rounded-full focus:outline-none focus-visible:ring-1 focus-visible:ring-foil-light/80 focus-visible:ring-offset-4 focus-visible:ring-offset-ink-950"
+      style={{ filter: 'drop-shadow(0 6px 10px rgba(0,0,0,0.55))' }}
       initial={{ opacity: 0, scale: 0.85 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 1, transition: { duration: 0.7 } }}
@@ -177,12 +178,14 @@ export function EnvelopePocket() {
  */
 export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealClick, onGuestMatched, onClipNearEnd }) {
   const [name, setName] = useState(prefillName);
-  const [error, setError] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
+  const [help, setHelp] = useState(null); // { message, suggestions? }
   const [checking, setChecking] = useState(false);
   const [clipFailed, setClipFailed] = useState(false);
   const videoRef = useRef(null);
+  const inputRef = useRef(null);
+  const helpRef = useRef(null);
   const nearEndFired = useRef(false);
+  const accepted = useRef(false);
 
   const sealed = stage === 'sealed';
   const naming = stage === 'naming';
@@ -216,33 +219,72 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
     };
   }, [stage, clipFailed, onClipNearEnd]);
 
+  // Bring the answer into view (short screens scroll a little)
+  useEffect(() => {
+    if (!help) return undefined;
+    const t = window.setTimeout(() => helpRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 80);
+    return () => window.clearTimeout(t);
+  }, [help]);
+
+  // The seal tap itself focuses the field: iOS only raises the keyboard for a
+  // focus that happens inside the tap, so the form is rendered (inert) from the start.
+  const breakSeal = () => {
+    flushSync(() => onSealClick());
+    inputRef.current?.focus({ preventScroll: true });
+  };
+
+  // Inside the tap: fetch the clip if nothing is buffered yet (iOS doesn't
+  // preload), and start it once so it may play later even in Low Power Mode
+  const primeClip = () => {
+    setClipFailed(false);
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.readyState < 3) v.load();
+    v.play()
+      .then(() => v.pause())
+      .catch(() => {});
+  };
+
   const accept = (match) => {
-    setSuggestions([]);
-    setError('');
+    if (accepted.current) return; // once, even if a fading suggestion is tapped again
+    accepted.current = true;
+    setHelp(null);
     onGuestMatched(match);
+  };
+
+  const pick = (suggestion) => {
+    setName(suggestion);
+    const m = resolveGuest(suggestion);
+    if (m.status !== 'exact') return;
+    primeClip();
+    accept(m);
+  };
+
+  const tryAgain = () => {
+    setHelp(null);
+    inputRef.current?.focus();
+    inputRef.current?.select();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (checking) return;
-    setError('');
-    setSuggestions([]);
+    if (checking || accepted.current) return;
     const result = matchGuest(name);
     if (result.status === 'empty') {
-      setError('Please write your first and last name.');
+      setHelp({ message: 'Please write your first and last name.' });
+      inputRef.current?.focus();
       return;
     }
+    if (touch) inputRef.current?.blur(); // lower the keyboard so the answer can be seen
+    setHelp(null);
     setChecking(true);
-    videoRef.current?.load(); // let iOS start buffering inside the tap
+    primeClip();
     await new Promise((r) => setTimeout(r, 420));
     setChecking(false);
     if (result.status === 'exact') return accept(result);
-    if (result.status === 'fuzzy') {
-      setSuggestions(result.suggestions.slice(0, 3));
-      setError('Did you mean…');
-      return;
-    }
-    setError('We couldn’t find that name on our guest list. If this link came from us and your name isn’t working, please text us.');
+    if (result.status === 'fuzzy') return setHelp({ message: 'Is this you?', suggestions: result.suggestions.slice(0, 3) });
+    if (result.status === 'need-last') return setHelp({ message: 'Several guests share that name. Please add your last name.' });
+    setHelp({ message: 'We couldn’t find that name. Please try your first and last name, and if it still won’t open, text Shriya or Neil.' });
   };
 
   const greetingName = firstName(guestName);
@@ -307,69 +349,72 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
             )}
           </AnimatePresence>
 
-          {/* Sender line, then the name, always below the flap point */}
+          {/* Sender line while sealed, then the address form, always below the flap point */}
           <AnimatePresence>
             {(sealed || naming) && (
               <motion.div
                 key="front"
-                className="absolute inset-x-[11%] bottom-[10%] z-30 flex flex-col items-center justify-center text-center"
+                className="absolute inset-x-[11%] bottom-[10%] z-30 grid place-items-center text-center"
                 style={{ top: `calc(${FLAP * 100}% + clamp(46px, 15cqw, 58px))` }}
                 exit={{ opacity: 0, transition: { duration: 0.3 } }}
               >
-                <AnimatePresence mode="wait" initial={false}>
-                  {sealed ? (
-                    <motion.div key="sender" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.3 } }} transition={{ duration: 0.8 }}>
-                      <p className="font-display italic text-ivory/90" style={{ fontSize: 'clamp(22px, 7.6cqw, 29px)', lineHeight: 1.1 }}>
-                        Shriya &amp; Neil
-                      </p>
-                      <p className="ty-caps mt-[0.7em] text-foil/80" style={{ fontSize: 'clamp(10.5px, 2.9cqw, 12.5px)' }}>
-                        Barcelona · MMXXVI
-                      </p>
-                    </motion.div>
-                  ) : (
-                    <motion.form
-                      key="form"
-                      onSubmit={handleSubmit}
-                      noValidate
-                      className="flex w-full flex-col items-center"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
-                    >
-                      <label htmlFor="guest-name" className="ty-caps lowercase text-foil/80" style={{ fontSize: 'clamp(10.5px, 2.9cqw, 12.5px)' }}>
-                        Addressed to
-                      </label>
-                      <input
-                        id="guest-name"
-                        type="text"
-                        value={name}
-                        onChange={(e) => {
-                          setName(e.target.value);
-                          if (error) setError('');
-                        }}
-                        placeholder="your first & last name"
-                        autoComplete="name"
-                        autoCapitalize="words"
-                        enterKeyHint="go"
-                        spellCheck={false}
-                        autoFocus
-                        className="mt-[3cqw] w-full rounded-none border-0 border-b border-foil/50 bg-transparent px-1 pb-[0.25em] text-center font-display italic text-foil-light placeholder:text-ivory/30 focus:border-foil-light focus:outline-none"
-                        style={{ fontSize: 'clamp(22px, 7.4cqw, 28px)', lineHeight: 1.25 }}
-                      />
-                      <button
-                        type="submit"
-                        disabled={checking}
-                        className="ty-caps mt-[6cqw] inline-flex min-h-[46px] items-center gap-3 border border-foil/55 bg-foil/[0.06] px-[1.6em] font-semibold lowercase text-foil-light transition hover:border-foil hover:bg-foil/[0.14] disabled:opacity-60"
-                        style={{ fontSize: 'clamp(11.5px, 3cqw, 13px)' }}
-                      >
-                        {checking ? 'One moment' : 'Open'}
-                        <svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true">
-                          <path d="M0 4h20M17 1l3 3-3 3" fill="none" stroke="#C9A961" strokeWidth="1" />
-                        </svg>
-                      </button>
-                    </motion.form>
-                  )}
-                </AnimatePresence>
+                <motion.div
+                  className="[grid-area:1/1]"
+                  aria-hidden={!sealed}
+                  initial={false}
+                  animate={{ opacity: sealed ? 1 : 0 }}
+                  transition={{ duration: sealed ? 0.8 : 0.3 }}
+                >
+                  <p className="font-display italic text-ivory/90" style={{ fontSize: 'clamp(22px, 7.6cqw, 29px)', lineHeight: 1.1 }}>
+                    Shriya &amp; Neil
+                  </p>
+                  <p className="ty-caps mt-[0.7em] text-foil/85" style={{ fontSize: 'clamp(12px, 3.6cqw, 13.5px)', ...tracked(0.2) }}>
+                    Barcelona · MMXXVI
+                  </p>
+                </motion.div>
+
+                <motion.form
+                  onSubmit={handleSubmit}
+                  noValidate
+                  inert={!naming}
+                  className="flex w-full flex-col items-center [grid-area:1/1]"
+                  initial={false}
+                  animate={{ opacity: naming ? 1 : 0, y: naming ? 0 : 8 }}
+                  transition={{ duration: 0.6, delay: naming ? 0.3 : 0, ease: EASE }}
+                  style={{ pointerEvents: naming ? 'auto' : 'none' }}
+                >
+                  <label htmlFor="guest-name" className="ty-caps text-foil/90" style={{ fontSize: 'clamp(12.5px, 3.8cqw, 14px)', ...tracked(0.18) }}>
+                    Addressed to
+                  </label>
+                  <input
+                    ref={inputRef}
+                    id="guest-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (help) setHelp(null);
+                    }}
+                    placeholder="your first & last name"
+                    autoComplete="name"
+                    autoCapitalize="words"
+                    enterKeyHint="go"
+                    spellCheck={false}
+                    className="mt-[2.4cqw] min-h-[48px] w-full rounded-[2px] border border-foil/25 border-b-foil/70 bg-ivory/[0.035] px-3 text-center font-display italic text-foil-light transition-colors placeholder:text-ivory/55 focus:border-foil/50 focus:border-b-foil-light focus:bg-ivory/[0.06] focus:outline-none"
+                    style={{ fontSize: 'clamp(21px, 7cqw, 26px)', lineHeight: 1.2 }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={checking}
+                    className="ty-caps mt-[5cqw] inline-flex min-h-[46px] items-center gap-3 border border-foil/55 bg-foil/[0.06] px-[1.5em] font-semibold text-foil-light transition hover:border-foil hover:bg-foil/[0.14] focus-visible:border-foil focus-visible:bg-foil/[0.14] focus-visible:outline-none disabled:opacity-60"
+                    style={{ fontSize: 'clamp(14px, 4.2cqw, 16px)', ...tracked(0.16) }}
+                  >
+                    {checking ? 'One moment' : 'Open'}
+                    <svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true">
+                      <path d="M0 4h20M17 1l3 3-3 3" fill="none" stroke="#C9A961" strokeWidth="1" />
+                    </svg>
+                  </button>
+                </motion.form>
               </motion.div>
             )}
           </AnimatePresence>
@@ -440,14 +485,12 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
         {/* Seal → Ganesha roundel at the flap's point */}
         <div className="absolute left-1/2 z-30 -translate-x-1/2 -translate-y-1/2" style={{ top: `${FLAP * 100}%` }}>
           <AnimatePresence mode="wait">
-            {sealed && <WaxSeal key="seal" onClick={onSealClick} />}
+            {sealed && <WaxSeal key="seal" onClick={breakSeal} />}
             {naming && (
               <motion.div
                 key="ganesha"
-                className="flex items-center justify-center rounded-full"
+                className="ty-roundel flex items-center justify-center rounded-full"
                 style={{
-                  width: 'clamp(58px, 18.5cqw, 70px)',
-                  height: 'clamp(58px, 18.5cqw, 70px)',
                   background: '#100C0D',
                   boxShadow: '0 0 0 0.75px rgba(201,169,97,0.55), 0 0 0 4px #100C0D, 0 0 0 4.75px rgba(201,169,97,0.2)',
                 }}
@@ -463,12 +506,12 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
         </div>
       </div>
 
-      {/* Hint under the envelope while sealed; help and suggestions while naming */}
+      {/* Hint under the envelope while sealed; the answer to a name while naming */}
       <AnimatePresence>
         {sealed && (
           <motion.p
             key="hint"
-            className="pointer-events-none absolute inset-x-0 top-full mt-7 text-center font-display text-[16px] italic text-ivory/55"
+            className="pointer-events-none absolute inset-x-0 top-full mt-7 text-center font-display text-[17px] italic text-ivory/70"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.3 } }}
@@ -477,35 +520,40 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
             {touch ? 'Tap the seal to open' : 'Click the seal to open'}
           </motion.p>
         )}
-        {naming && (error || suggestions.length > 0) && (
+        {naming && help && (
           <motion.div
             key="help"
-            className="absolute inset-x-0 top-full z-30 mt-6 text-center"
+            ref={helpRef}
+            className="absolute inset-x-0 top-full z-30 mt-4 scroll-mb-4"
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
             transition={{ duration: 0.35, ease: EASE }}
-            role="alert"
           >
-            {error && <p className="font-display text-[16px] italic leading-snug text-blush-200/90">{error}</p>}
-            {suggestions.length > 0 && (
-              <div className="mt-3 flex flex-col items-center gap-2.5">
-                {suggestions.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => {
-                      setName(s);
-                      const m = matchGuest(s);
-                      if (m.status === 'exact') accept(m);
-                    }}
-                    className="ty-link text-[19px]"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div role="alert" className="rounded-[3px] border border-foil/25 bg-[#0C090A]/[0.94] px-[7%] pb-2 pt-4 text-center shadow-[0_18px_44px_rgba(0,0,0,0.55)]">
+              <p className="font-display text-[17px] leading-snug text-ivory/90">{help.message}</p>
+              {help.suggestions?.length > 0 && (
+                <div className="mt-3 flex flex-col gap-2">
+                  {help.suggestions.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => pick(s)}
+                      className="min-h-[46px] border border-foil/45 px-4 font-display text-[19px] italic leading-tight text-foil-light transition hover:border-foil hover:bg-foil/[0.08] focus-visible:border-foil focus-visible:bg-foil/[0.08] focus-visible:outline-none"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {touch ? (
+                <button type="button" onClick={tryAgain} className="ty-link mt-1 inline-flex min-h-[44px] items-center text-[16px]">
+                  Try again
+                </button>
+              ) : (
+                <div className="h-2" />
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

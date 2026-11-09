@@ -6,18 +6,13 @@ const PERFS =
 const FADE = 'linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%)';
 const MIN_FRAMES = 48; // enough to cover a 2560px screen before the loop repeats
 
-function Strip({ items, direction, secondsPerFrame, onOpen, label, numberFrom, quiet }) {
+function Strip({ items, direction, secondsPerFrame, onOpen, numberFrom, quiet }) {
   const reps = Math.max(1, Math.ceil(MIN_FRAMES / items.length));
   const set = Array.from({ length: reps }, () => items).flat();
   const loop = [...set, ...set];
 
   return (
-    <div
-      className="film-strip relative w-full overflow-hidden"
-      style={{ height: 'var(--strip-h)', WebkitMaskImage: FADE, maskImage: FADE }}
-      role="region"
-      aria-label={label}
-    >
+    <div className="film-strip relative w-full overflow-hidden" style={{ height: 'var(--strip-h)', overflow: 'clip', WebkitMaskImage: FADE, maskImage: FADE }}>
       <div
         className="film-track absolute inset-y-0 left-0 flex w-max"
         style={{
@@ -38,11 +33,10 @@ function Strip({ items, direction, secondsPerFrame, onOpen, label, numberFrom, q
             <button
               key={`${photo.id}-${i}`}
               type="button"
-              tabIndex={i < set.length ? 0 : -1}
-              aria-hidden={i >= set.length ? 'true' : undefined}
+              tabIndex={-1}
+              onMouseDown={(e) => e.preventDefault()} // keep focus where it was; the strip never holds it
               onClick={() => onOpen(photo.index)}
               className="group relative h-full flex-shrink-0 px-[3px] focus:outline-none"
-              aria-label={photo.alt ? `Open photo: ${photo.alt}` : 'Open photo'}
             >
               <span className="relative block h-full overflow-hidden bg-black" style={{ aspectRatio: `${photo.w} / ${photo.h}` }}>
                 <img
@@ -70,7 +64,11 @@ function Strip({ items, direction, secondsPerFrame, onOpen, label, numberFrom, q
   );
 }
 
-/** Film strips of wedding photos laid under the card, above and below it. */
+/**
+ * Film strips of wedding photos laid under the card, above and below it.
+ * They are a pointer shortcut into the gallery; keyboard and screen-reader
+ * guests reach the same photos through the card's "Our photographs".
+ */
 export function FilmStrips({ show, quiet = false, photos, onOpen }) {
   if (!show || !photos.length) return null; // mount (and load thumbnails) only once the card is open
   const indexed = photos.map((p, index) => ({ ...p, index }));
@@ -80,16 +78,17 @@ export function FilmStrips({ show, quiet = false, photos, onOpen }) {
 
   return (
     <motion.div
-      className="pointer-events-none fixed inset-0 z-[2]"
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-[calc(100*var(--vh))]"
       initial={{ opacity: 0 }}
       animate={{ opacity: quiet ? 0.45 : 1 }}
       transition={{ duration: quiet ? 0.8 : 2, ease: 'easeInOut' }}
     >
       <div className="ty-strip ty-strip-top pointer-events-auto absolute" style={{ transform: 'rotate(-0.8deg)' }}>
-        <Strip items={top.length ? top : indexed} direction="left" secondsPerFrame={11} onOpen={onOpen} label="Wedding photos" numberFrom={12} quiet={quiet} />
+        <Strip items={top.length ? top : indexed} direction="left" secondsPerFrame={11} onOpen={onOpen} numberFrom={12} quiet={quiet} />
       </div>
       <div className="ty-strip ty-strip-bottom pointer-events-auto absolute" style={{ transform: 'rotate(0.6deg)' }}>
-        <Strip items={bottom.length ? bottom : indexed} direction="right" secondsPerFrame={12} onOpen={onOpen} label="More wedding photos" numberFrom={1} quiet={quiet} />
+        <Strip items={bottom.length ? bottom : indexed} direction="right" secondsPerFrame={12} onOpen={onOpen} numberFrom={1} quiet={quiet} />
       </div>
     </motion.div>
   );

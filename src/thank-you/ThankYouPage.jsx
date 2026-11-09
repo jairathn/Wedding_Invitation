@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { NightBackground } from './components/NightBackground';
@@ -8,10 +8,12 @@ import { ThankYouCard } from './components/ThankYouCard';
 import { FilmStrips } from './components/FilmStrips';
 import { PhotoGallery } from './components/PhotoGallery';
 import { BackgroundMusic } from '../components/BackgroundMusic';
-import { firstName, recallGuest, rememberGuest } from '../lib/guests';
+import { greetingName, recallGuest, rememberGuest, resolveGuest } from '../lib/guests';
 import { skyBurst } from './sky';
+import { layerState, newLayerToken, popLayer, pushLayer } from './layers';
 import { THANK_YOU } from './config';
 import photoManifest from './data/photos.json';
+import lettersUrl from './data/letters.json?url';
 
 const EASE = [0.4, 0, 0.2, 1];
 const PULL = [0.22, 1, 0.36, 1];
@@ -25,9 +27,21 @@ const REVEAL_MS = 3400;
 // How dark (and how soft) the night photo sits behind each stage
 const DIM = { sealed: 0.12, naming: 0.3, opening: 0.62, revealing: 0.5, card: 0.45 };
 
-// Letters load in their own small chunk, only once someone opens the envelope
+// Letters are a separate file, fetched only once someone opens the envelope.
+// A failed fetch is forgotten, so the next attempt really tries again.
 let lettersPromise;
-const loadLetters = () => (lettersPromise ||= import('./data/letters.json').then((m) => m.default));
+const loadLetters = () =>
+  (lettersPromise ||= fetch(lettersUrl)
+    .then((r) => {
+      if (!r.ok) throw new Error(`letters: HTTP ${r.status}`);
+      return r.json();
+    })
+    .catch((err) => {
+      lettersPromise = undefined;
+      throw err;
+    }));
+
+const GALLERY_CLOSED = { open: false, start: null, token: null };
 
 /** Shared gold gradient referenced by the card's SVG ornaments. */
 function GoldDefs() {
@@ -47,13 +61,28 @@ function GoldDefs() {
 const stripDear = (s) => s.replace(/^Dear\s+/, '').replace(/,\s*$/, '');
 
 export default function ThankYouPage() {
+  // A guest who has opened their card on this device before goes straight back to it
+  const [returning] = useState(() => {
+    const m = resolveGuest(recallGuest());
+    return m.status === 'exact' ? m : null;
+  });
+  // A name remembered from an earlier visit that no longer matches exactly is
+  // offered back; reopening the envelope starts blank, so it doubles as "not you?"
+  const [prefill] = useState(() => (returning ? '' : recallGuest()));
   // sealed → naming → opening (clip plays) → revealing (card slides out) → card
-  const [stage, setStage] = useState('sealed');
-  const [guest, setGuest] = useState(null);
-  const [letter, setLetter] = useState(null);
+  const [stage, setStage] = useState(returning ? 'card' : 'sealed');
+  const [entry, setEntry] = useState(returning ? 'return' : 'reveal');
+  const [guest, setGuest] = useState(returning ? { person: returning.person, displayName: returning.displayName } : null);
+  const [letter, setLetter] = useState({ status: returning ? 'loading' : 'idle', value: null });
   const [face, setFace] = useState('front');
-  const [gallery, setGallery] = useState({ open: false, start: null });
-  const [prefill] = useState(recallGuest);
+  const [gallery, setGallery] = useState(GALLERY_CLOSED);
+  const stageRef = useRef(stage);
+  const letterRequest = useRef(0);
+  const letterFailures = useRef(0);
+
+  useEffect(() => {
+    stageRef.current = stage;
+  }, [stage]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -67,22 +96,66 @@ export default function ThankYouPage() {
     };
   }, []);
 
+  // Only the newest request may set the letter (a retry, or a different name)
+  const requestLetter = useCallback((person) => {
+    const id = ++letterRequest.current;
+    loadLetters().then(
+      (all) => {
+        if (id !== letterRequest.current) return;
+        const value = all[person.letter];
+        setLetter(value ? { status: 'ready', value } : { status: 'failed', value: null });
+      },
+      () => {
+        if (id !== letterRequest.current) return;
+        letterFailures.current += 1;
+        setLetter({ status: 'failed', value: null });
+      },
+    );
+  }, []);
+
+  useEffect(() => {
+    if (returning) requestLetter(returning.person);
+  }, [returning, requestLetter]);
+
+  const retryLetter = useCallback(() => {
+    if (!guest) return;
+    // After a second failure or a long stall (say the site was redeployed while
+    // this tab was open), a fresh load is the sure fix. The guest is remembered,
+    // so it comes straight back to the card.
+    if (letterFailures.current >= 2 || letter.status === 'loading') {
+      window.location.reload();
+      return;
+    }
+    setLetter({ status: 'loading', value: null });
+    requestLetter(guest.person);
+  }, [guest, letter.status, requestLetter]);
+
   const onSealClick = () => {
-    setStage((s) => (s === 'sealed' ? 'naming' : s));
-    loadLetters();
+    if (stageRef.current !== 'sealed') return;
+    stageRef.current = 'naming';
+    setStage('naming');
+    loadLetters().catch(() => {}); // warm it; a failure is retried on submit
   };
 
   const onGuestMatched = ({ person, displayName }) => {
-    if (stage !== 'naming') return;
+    // accept once, even if a stale button (still fading out) is tapped again
+    if (stageRef.current !== 'naming') return;
+    stageRef.current = 'opening';
     rememberGuest(displayName);
     setGuest({ person, displayName });
-    loadLetters()
-      .then((all) => setLetter(all[person.letter] || null))
-      .catch(() => setLetter(null));
+    setLetter({ status: 'loading', value: null });
+    requestLetter(person);
     setStage('opening');
   };
 
   const onClipNearEnd = useCallback(() => setStage((s) => (s === 'opening' ? 'revealing' : s)), []);
+
+  const reopenEnvelope = () => {
+    stageRef.current = 'sealed';
+    setEntry('reveal');
+    setFace('front');
+    setStage('sealed');
+  };
 
   useEffect(() => {
     if (stage !== 'revealing') return undefined;
@@ -96,12 +169,30 @@ export default function ThankYouPage() {
     };
   }, [stage]);
 
+  // The gallery gets a history entry, so Back closes it rather than the site
+  const openGallery = useCallback((start = null) => {
+    const token = newLayerToken();
+    pushLayer('gallery', token);
+    setGallery({ open: true, start, token });
+  }, []);
+  const closeGallery = useCallback(() => {
+    if (!popLayer('gallery', gallery.token)) setGallery(GALLERY_CLOSED);
+  }, [gallery.token]);
+  useEffect(() => {
+    if (!gallery.open) return undefined;
+    const onPop = () => {
+      if (layerState().token !== gallery.token) setGallery(GALLERY_CLOSED);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [gallery.open, gallery.token]);
+
   const revealing = stage === 'revealing';
-  const showCard = revealing || stage === 'card';
+  const atCard = stage === 'card';
+  const showCard = revealing || atCard;
   const envelopeOpen = stage === 'opening' || revealing;
-  const recipient = letter?.salutation ? stripDear(letter.salutation) : firstName(guest?.displayName);
-  const openGallery = useCallback((start = null) => setGallery({ open: true, start }), []);
-  const closeGallery = useCallback(() => setGallery({ open: false, start: null }), []);
+  const greet = guest ? greetingName(guest.person, guest.displayName) : '';
+  const recipient = letter.value?.salutation ? stripDear(letter.value.salutation) : greet;
 
   const envelopeAnimate = revealing
     ? { y: ['22%', '45%', '45%', '140%'], opacity: [1, 1, 1, 0] }
@@ -110,78 +201,113 @@ export default function ThankYouPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="ty-page relative min-h-[calc(100*var(--vh))] overflow-hidden text-ivory">
+      <div className="ty-page relative min-h-[calc(100*var(--vh))] text-ivory">
         <GoldDefs />
+        {/* asks for the script font early, so "Dear …," never swaps fonts on screen */}
+        <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 font-script opacity-0">
+          Dear
+        </span>
         <NightBackground dim={DIM[stage]} soft={stage !== 'sealed' && stage !== 'naming'} />
         <SkyEffects petals={stage === 'sealed' || stage === 'naming'} />
-        <FilmStrips show={stage === 'card'} quiet={face === 'back' || gallery.open} photos={photos} onOpen={openGallery} />
 
-        {/* quiet chrome: sound (from BackgroundMusic) on the left, invitation on the right */}
-        <AnimatePresence>
-          {stage === 'card' && (
-            <motion.div
-              key="invite-link"
-              className="fixed right-4 top-4 z-[25] md:right-7 md:top-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ delay: 1.2, duration: 1 }}
-            >
-              <Link to="/invitation" className="ty-link text-[16px] text-ivory/65">
-                Your invitation
-              </Link>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <BackgroundMusic src={THANK_YOU.musicSrc} startAt={THANK_YOU.musicStartAt} variant="night" />
-
-        <main className="ty-stage pointer-events-none relative z-10 flex min-h-[calc(100*var(--vh))] items-center justify-center">
-          <div className="grid place-items-center">
-            {showCard && (
+        {/* everything behind the gallery goes inert while it is open */}
+        <div inert={gallery.open}>
+          {/* quiet chrome: sound (from BackgroundMusic) on the left, invitation on the right */}
+          <AnimatePresence>
+            {atCard && (
               <motion.div
-                className="pointer-events-auto relative z-30 [grid-area:1/1]"
-                initial={{ y: '16%', scale: 0.7, opacity: 0 }}
-                animate={revealing ? { y: ['16%', '-26%', '-26%', '0%'], scale: [0.7, 0.7, 0.7, 1], opacity: 1 } : { y: '0%', scale: 1, opacity: 1 }}
-                transition={{ ...REVEAL, opacity: { delay: 0.5, duration: 0.01 } }}
+                key="invite-link"
+                className="absolute right-3 top-3 z-[25] md:right-6 md:top-5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: 1.2, duration: 1 }}
               >
-                <ThankYouCard recipient={recipient} letter={letter} hasPhotos={photos.length > 0} onOpenGallery={() => openGallery(null)} onFaceChange={setFace} />
+                <Link to="/invitation" className="ty-link inline-flex min-h-[44px] items-center px-2 text-[16px]">
+                  Your invitation
+                </Link>
               </motion.div>
             )}
+          </AnimatePresence>
+          <BackgroundMusic src={THANK_YOU.musicSrc} startAt={THANK_YOU.musicStartAt} variant="night" />
 
-            {stage !== 'card' && (
+          <main className="ty-stage pointer-events-none relative z-10 flex min-h-[calc(100*var(--vh))] items-center justify-center">
+            <div className="grid place-items-center">
+              {showCard && (
+                <motion.div
+                  className={`relative z-30 [grid-area:1/1] ${atCard ? 'pointer-events-auto' : 'pointer-events-none'}`}
+                  initial={revealing ? { y: '16%', scale: 0.7, opacity: 0 } : { y: '3%', scale: 0.985, opacity: 0 }}
+                  animate={revealing ? { y: ['16%', '-26%', '-26%', '0%'], scale: [0.7, 0.7, 0.7, 1], opacity: 1 } : { y: '0%', scale: 1, opacity: 1 }}
+                  transition={revealing ? { ...REVEAL, opacity: { delay: 0.5, duration: 0.01 } } : { duration: 1.2, delay: 0.15, ease: EASE }}
+                >
+                  <ThankYouCard
+                    recipient={recipient}
+                    letter={letter.value}
+                    letterStatus={letter.status}
+                    onRetryLetter={retryLetter}
+                    hasPhotos={photos.length > 0}
+                    onOpenGallery={() => openGallery(null)}
+                    onFaceChange={setFace}
+                  />
+                </motion.div>
+              )}
+
+              {!atCard && (
+                <motion.div
+                  className="pointer-events-auto relative z-20 [grid-area:1/1]"
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={envelopeAnimate}
+                  transition={envelopeTransition}
+                >
+                  <ThankYouEnvelope
+                    stage={stage}
+                    guestName={greet}
+                    prefillName={prefill}
+                    onSealClick={onSealClick}
+                    onGuestMatched={onGuestMatched}
+                    onClipNearEnd={onClipNearEnd}
+                  />
+                </motion.div>
+              )}
+
+              {/* the envelope's back panel, in front of the card while it slides out */}
+              {revealing && (
+                <motion.div
+                  aria-hidden="true"
+                  className="pointer-events-none relative z-40 [grid-area:1/1]"
+                  initial={{ opacity: 0, y: '22%' }}
+                  animate={{ opacity: [0, 1, 1, 0], y: ['22%', '45%', '45%', '140%'] }}
+                  transition={{ y: REVEAL, opacity: { duration: 3.3, times: [0, 0.15, 0.8, 1] } }}
+                >
+                  <EnvelopePocket />
+                </motion.div>
+              )}
+            </div>
+          </main>
+
+          {/* film strips come after the card in reading order; they repeat the gallery */}
+          <FilmStrips show={atCard} quiet={face === 'back' || gallery.open} photos={photos} onOpen={openGallery} />
+
+          {/* returning guests skip the envelope; this brings it back */}
+          <AnimatePresence>
+            {atCard && entry === 'return' && (
               <motion.div
-                className="pointer-events-auto relative z-20 [grid-area:1/1]"
-                initial={{ opacity: 0, y: 24 }}
-                animate={envelopeAnimate}
-                transition={envelopeTransition}
+                key="reopen"
+                className="ty-reopen absolute inset-x-0 z-[25] flex justify-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: 1.6, duration: 1 }}
               >
-                <ThankYouEnvelope
-                  stage={stage}
-                  guestName={guest?.displayName}
-                  prefillName={prefill}
-                  onSealClick={onSealClick}
-                  onGuestMatched={onGuestMatched}
-                  onClipNearEnd={onClipNearEnd}
-                />
+                <button type="button" onClick={reopenEnvelope} className="ty-link inline-flex min-h-[44px] items-center px-2 text-[16px]">
+                  Open the envelope again
+                </button>
               </motion.div>
             )}
+          </AnimatePresence>
+        </div>
 
-            {/* the envelope's back panel, in front of the card while it slides out */}
-            {revealing && (
-              <motion.div
-                aria-hidden="true"
-                className="pointer-events-none relative z-40 [grid-area:1/1]"
-                initial={{ opacity: 0, y: '22%' }}
-                animate={{ opacity: [0, 1, 1, 0], y: ['22%', '45%', '45%', '140%'] }}
-                transition={{ y: REVEAL, opacity: { duration: 3.3, times: [0, 0.15, 0.8, 1] } }}
-              >
-                <EnvelopePocket />
-              </motion.div>
-            )}
-          </div>
-        </main>
-
-        <PhotoGallery open={gallery.open} photos={photos} startIndex={gallery.start} onClose={closeGallery} />
+        <PhotoGallery open={gallery.open} photos={photos} startIndex={gallery.start} token={gallery.token} onClose={closeGallery} />
       </div>
     </MotionConfig>
   );

@@ -1,5 +1,5 @@
 {
-  "_about": "Guests who attended (from the attendance export; names only). 'letter' points at src/thank-you/data/letters.json; 'aliases' are other names a guest may type; 'inviteKey' is their key in personalizedMessages.json when it differs from 'name'.",
+  "_about": "Guests who attended (from the attendance export; names only). 'letter' points at src/thank-you/data/letters.json; 'greet' is the name the couple calls them by, when it differs from their first name; 'aliases' are other names a guest may type; 'inviteKey' is their key in personalizedMessages.json when it differs from 'name'.",
   "people": [
     {
       "name": "Rahul Abhyankar",
@@ -27,6 +27,7 @@
     {
       "name": "Jessica Quinn",
       "letter": "adapa",
+      "greet": "Jess",
       "aliases": [
         "Jess Quinn",
         "Jessica Adapa",
@@ -100,6 +101,7 @@
     {
       "name": "Michael Broderick",
       "letter": "broderick",
+      "greet": "Mike",
       "aliases": [
         "Mike Broderick"
       ]
@@ -206,6 +208,7 @@
     {
       "name": "Steven Goldenthal",
       "letter": "goldenthal",
+      "greet": "Steve",
       "aliases": [
         "Steve Goldenthal"
       ]
@@ -288,6 +291,7 @@
     {
       "name": "Alexandra Valas",
       "letter": "huyke",
+      "greet": "Lexi",
       "aliases": [
         "Lexi Valas",
         "Alex Valas"
@@ -449,6 +453,7 @@
     {
       "name": "William Kasberg",
       "letter": "kasberg",
+      "greet": "Will",
       "aliases": [
         "Will Kasberg"
       ]
@@ -562,10 +567,7 @@
     },
     {
       "name": "Ayse Schablik",
-      "letter": "patel-dilip",
-      "aliases": [
-        "Schablik Ayse"
-      ]
+      "letter": "patel-dilip"
     },
     {
       "name": "Heena Patel",
@@ -642,6 +644,7 @@
     {
       "name": "Vignesh Ramachandran",
       "letter": "ramachandran",
+      "greet": "Vig",
       "aliases": [
         "Vig Ramachandran"
       ]
@@ -657,6 +660,7 @@
     {
       "name": "Stephanie Leung",
       "letter": "riordan",
+      "greet": "Steph",
       "aliases": [
         "Steph Leung"
       ]
@@ -692,6 +696,7 @@
     {
       "name": "Partha Ryali",
       "letter": "ryali-needhi",
+      "greet": "Parth",
       "aliases": [
         "Parth Ryali"
       ]
@@ -711,6 +716,7 @@
     {
       "name": "Timothy Palmer",
       "letter": "sampang",
+      "greet": "Tim",
       "aliases": [
         "Tim Palmer"
       ]
@@ -793,6 +799,7 @@
     {
       "name": "Sukhjoth Singh",
       "letter": "singh",
+      "greet": "Jot",
       "aliases": [
         "Sukhjot Singh",
         "Jot Singh"

@@ -7,11 +7,38 @@ export function BackgroundMusic({ src = '/audio/background-music.mp3', startAt =
   const [isPausedForVideo, setIsPausedForVideo] = useState(false);
   const audioRef = useRef(null);
   const targetVolumeRef = useRef(0.6); // 60% volume
+  const videoActiveRef = useRef(false); // a film is playing somewhere on the page
+
+  useEffect(() => {
+    const on = () => {
+      videoActiveRef.current = true;
+    };
+    const off = () => {
+      videoActiveRef.current = false;
+    };
+    window.addEventListener('video-play', on);
+    window.addEventListener('video-pause', off);
+    window.addEventListener('video-ended', off);
+    return () => {
+      window.removeEventListener('video-play', on);
+      window.removeEventListener('video-pause', off);
+      window.removeEventListener('video-ended', off);
+    };
+  }, []);
 
   // Try to play audio after first user interaction
   useEffect(() => {
     const handleFirstInteraction = () => {
       if (audioRef.current && !isPlaying) {
+        // On iPhones, play as ambient sound: it mixes with other audio and
+        // stays quiet when the ring/silent switch is set to silent
+        if (variant === 'night' && 'audioSession' in navigator) {
+          try {
+            navigator.audioSession.type = 'ambient';
+          } catch {
+            /* not supported */
+          }
+        }
         // Start at 0 volume
         audioRef.current.volume = 0;
         if (startAt && audioRef.current.currentTime < startAt) {
@@ -20,6 +47,14 @@ export function BackgroundMusic({ src = '/audio/background-music.mp3', startAt =
 
         audioRef.current.play().then(() => {
           setIsPlaying(true);
+
+          // The first tap was on a film that is now playing: wait for it to stop
+          if (videoActiveRef.current && audioRef.current) {
+            audioRef.current.volume = targetVolumeRef.current;
+            audioRef.current.pause();
+            setIsPausedForVideo(true);
+            return;
+          }
 
           // Fade in to 60% volume over 2 seconds
           const fadeInDuration = 2000; // 2 seconds
@@ -51,7 +86,7 @@ export function BackgroundMusic({ src = '/audio/background-music.mp3', startAt =
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
-  }, [isPlaying, startAt]);
+  }, [isPlaying, startAt, variant]);
 
   // Listen for video play/pause events
   useEffect(() => {
@@ -93,7 +128,7 @@ export function BackgroundMusic({ src = '/audio/background-music.mp3', startAt =
       <audio
         ref={audioRef}
         loop
-        preload="auto"
+        preload="none" // fetched on the first tap, so it never competes with the page loading
       >
         <source src={src} type="audio/mpeg" />
       </audio>
@@ -103,7 +138,8 @@ export function BackgroundMusic({ src = '/audio/background-music.mp3', startAt =
         {isPlaying && variant === 'night' && (
           <motion.button
             type="button"
-            className="ty-caps fixed left-4 top-4 z-[25] flex min-h-[44px] items-center gap-2.5 text-[12px] lowercase text-ivory/60 transition-colors hover:text-foil-light md:left-7 md:top-6"
+            className="ty-caps absolute left-3 top-3 z-[25] flex min-h-[44px] items-center gap-2.5 px-2 text-[13.5px] text-ivory/80 transition-colors hover:text-foil-light focus-visible:text-foil-light focus-visible:outline-none md:left-6 md:top-5"
+            style={{ letterSpacing: '0.16em', textIndent: '0.16em' }}
             onClick={toggleMute}
             aria-label={isMuted ? 'Turn the music on' : 'Turn the music off'}
             aria-pressed={!isMuted}
@@ -122,7 +158,7 @@ export function BackgroundMusic({ src = '/audio/background-music.mp3', startAt =
                 />
               ))}
             </span>
-            {isMuted ? 'Sound off' : 'Sound'}
+            {isMuted ? 'Sound off' : 'Sound on'}
           </motion.button>
         )}
       </AnimatePresence>

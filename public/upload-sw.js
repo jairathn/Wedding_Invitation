@@ -4,7 +4,7 @@
 const CACHE_NAME = 'wedding-app-v1';
 
 // Install event
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 

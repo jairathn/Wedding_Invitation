@@ -14,6 +14,9 @@ const LQIP_PORTRAIT = 'data:image/jpeg;base64,/9j/2wBDABALDA4MChAODQ4SERATGCgaGB
  */
 export function NightBackground({ dim = 0.12, soft = false }) {
   const [loaded, setLoaded] = useState(false);
+  // the defocused copy is only fetched once the story first needs it
+  const [softUsed, setSoftUsed] = useState(soft);
+  if (soft && !softUsed) setSoftUsed(true);
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden bg-night-950" aria-hidden="true">
@@ -37,17 +40,19 @@ export function NightBackground({ dim = 0.12, soft = false }) {
 
       {/* Once the flap opens, a defocused, quieter copy takes over: the party
           falls out of focus so the clip, then the card, is the lit subject */}
-      <picture>
-        <source media="(orientation: portrait)" type="image/webp" srcSet={`${H}/hero-portrait-750.webp`} />
-        <source type="image/webp" srcSet={`${H}/hero-landscape-1280.webp`} />
-        <img
-          src={`${H}/hero-landscape-1280.jpg`}
-          alt=""
-          decoding="async"
-          className="hero-photo absolute inset-0 h-full w-full object-cover"
-          style={{ filter: 'blur(18px) saturate(0.75) brightness(0.8)', transform: 'scale(1.08)', opacity: soft ? 1 : 0, transition: 'opacity 1.6s ease' }}
-        />
-      </picture>
+      {softUsed && (
+        <picture>
+          <source media="(orientation: portrait)" type="image/webp" srcSet={`${H}/hero-portrait-750.webp`} />
+          <source type="image/webp" srcSet={`${H}/hero-landscape-1280.webp`} />
+          <img
+            src={`${H}/hero-landscape-1280.jpg`}
+            alt=""
+            decoding="async"
+            className="hero-photo absolute inset-0 h-full w-full object-cover"
+            style={{ filter: 'blur(18px) saturate(0.75) brightness(0.8)', transform: 'scale(1.08)', opacity: soft ? 1 : 0, transition: 'opacity 1.6s ease' }}
+          />
+        </picture>
+      )}
 
       {/* Edge vignette so the envelope and card glow in the centre */}
       <div

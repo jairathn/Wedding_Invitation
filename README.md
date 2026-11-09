@@ -8,14 +8,15 @@ React + Vite site for Shriya & Neil's wedding (Barcelona, September 9–11, 2026
 - **`/app`**, **`/admin`** — the wedding-weekend guest app and its dashboard.
 - **`/public`**, **`/privacy`**, **`/sms-terms`** — SMS opt-in and policy pages.
 
-Only guests who attended can open either card (`src/data/attendees.json`).
+Only guests who attended can open either card (`src/data/attendees.json`). A guest's
+device remembers them for 60 days, so a return visit opens straight to their card.
 
 ## Common edits
 
 | To change… | Edit |
 | --- | --- |
 | A guest's letter or salutation | `src/thank-you/data/letters.json` (keep the wording exactly as written) |
-| Who can open a card / alternate names | `src/data/attendees.json` (`aliases` = other names a guest may type) |
+| Who can open a card / alternate names | `src/data/attendees.json` (`aliases` = other names a guest may type, `greet` = the name you call them by) |
 | Vogue article link, song, card video, dates | `src/thank-you/config.js` (`vogueUrl`, `musicSrc`, `cardVimeoId`, …) |
 | The clip inside the envelope | `public/video/thank-you-dance.mp4` (see `source-media/README.md`) |
 | Gallery captions, chapters, featured photos | `src/thank-you/data/photos.json` |
@@ -30,7 +31,8 @@ npm run photos
 
 This writes web sizes to `public/photos/` (`-sm` for film strips, `-md` for the grid,
 `-lg` for the lightbox) and refreshes `src/thank-you/data/photos.json`, keeping any
-chapter/alt/featured edits already made there. `npm run photos:hero` rebuilds the
+chapter/alt/featured edits already made there. Photos are ordered by capture time
+where the camera recorded it (film scans don't count), otherwise by file name. `npm run photos:hero` rebuilds the
 background images from `source-media/photos/shriyaneil_wedding0594.jpg`.
 
 ## Development

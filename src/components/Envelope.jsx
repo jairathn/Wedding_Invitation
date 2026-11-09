@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PaperTexture } from './PaperTexture';
 import { WaxSeal } from './WaxSeal';
-import { matchGuest, recallGuest, rememberGuest } from '../lib/guests';
+import { matchGuest, recallGuest, rememberGuest, resolveGuest } from '../lib/guests';
 
 export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
   const [name, setName] = useState(recallGuest);
@@ -64,12 +64,17 @@ export function Envelope({ onOpen, isOpen, guestName, onNameSubmit }) {
       setIsValidating(false);
       return;
     }
+    if (result.status === 'need-last') {
+      setError('Several guests share that name. Please add your last name.');
+      setIsValidating(false);
+      return;
+    }
     setError("If you received this link directly, but your name isn't working, please text us!");
     setIsValidating(false);
   };
 
   const handleSuggestionClick = (suggestedName) => {
-    const result = matchGuest(suggestedName);
+    const result = resolveGuest(suggestedName);
     openFor(result.status === 'exact' ? result.displayName : suggestedName);
   };
 
