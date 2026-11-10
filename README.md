@@ -19,21 +19,26 @@ device remembers them for 60 days, so a return visit opens straight to their car
 | Who can open a card / alternate names | `src/data/attendees.json` (`aliases` = other names a guest may type, `greet` = the name you call them by) |
 | Vogue article link, song, card video, dates | `src/thank-you/config.js` (`vogueUrl`, `musicSrc`, `cardVimeoId`, …) |
 | The clip inside the envelope | `public/video/thank-you-dance.mp4` (see `source-media/README.md`) |
-| Gallery captions, chapters, featured photos | `src/thank-you/data/photos.json` |
+| Gallery order, chapters, captions | `src/thank-you/data/photos.json` (`seq`, `chapter`, `alt`) |
 
 ## Photos
 
-Full-size originals go in `source-media/photos/` (not deployed). Then:
+Photos for the gallery go in `source-media/photos/`: full-size originals, or the
+zip files made by the photo packer. Never put them in `public/`, which is
+published exactly as it is. Then:
 
 ```bash
 npm run photos
 ```
 
 This writes web sizes to `public/photos/` (`-sm` for film strips, `-md` for the grid,
-`-lg` for the lightbox) and refreshes `src/thank-you/data/photos.json`, keeping any
-chapter/alt/featured edits already made there. Photos are ordered by capture time
-where the camera recorded it (film scans don't count), otherwise by file name. `npm run photos:hero` rebuilds the
-background images from `source-media/photos/shriyaneil_wedding0594.jpg`.
+`-lg` for the lightbox) and refreshes `src/thank-you/data/photos.json`. Zips are
+unpacked automatically, and when the same photo is there twice the larger one is used.
+Re-running keeps what's set in `photos.json`: each photo's place (`seq`), its
+`chapter` and caption (`alt`), and the `excluded` list of files to leave out (the
+sneak-peek repeats). New photos without a `seq` go at the end, by capture time where
+the camera recorded it (film scans don't count), otherwise by file name.
+`npm run photos:hero` rebuilds the background images from `source-media/photos/shriyaneil_wedding0594.jpg`.
 
 ## Development
 

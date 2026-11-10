@@ -6,16 +6,25 @@
  *     Builds the night background (landscape bottom-half crop + full portrait),
  *     the social-share image, and prints tiny blur placeholders.
  *
- *   node scripts/process-photos.mjs gallery <folder-or-photo> [...]
- *     Turns the photographer's full-size exports into web sizes
+ *   node scripts/process-photos.mjs gallery <folder-or-photo-or-zip> [...]
+ *     Turns the photographer's exports into web sizes
  *     (public/photos/<id>-{sm,md,lg}.webp) and writes the gallery manifest
- *     (src/thank-you/data/photos.json). Photos are ordered by capture time when
- *     EXIF has it, otherwise by the photographer's file sequence numbers.
- *     Existing chapter/alt/featured edits in the manifest are preserved.
+ *     (src/thank-you/data/photos.json). Zip files (as made by the photo
+ *     packer) are unpacked to a temporary folder. When two inputs share a
+ *     name, the larger original wins.
+ *
+ *     The manifest is safe to edit by hand, and re-running keeps the edits:
+ *       seq      the photo's place in the gallery (photos without one follow,
+ *                by capture time when EXIF has it, else by file sequence)
+ *       chapter  the gallery section it sits in
+ *       alt      a caption / description
+ *       excluded (top level) source file names to leave out, e.g. duplicates
  */
 import sharp from 'sharp';
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -97,13 +106,40 @@ const slugify = (s) => s.toLowerCase().replace(/\.[a-z0-9]+$/, '').replace(/[^a-
 
 const IMAGE_RE = /\.(jpe?g|png|webp|tiff?)$/i;
 
-async function listInputs(inputs) {
+const ZIP_RE = /\.zip$/i;
+
+// Image files under a folder, at any depth (zips may hold a folder)
+async function imagesIn(dir) {
+  const out = [];
+  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+    const p = path.join(dir, entry.name);
+    if (entry.isDirectory() && !entry.name.startsWith('__MACOSX')) out.push(...(await imagesIn(p)));
+    else if (entry.isFile() && IMAGE_RE.test(entry.name) && !entry.name.startsWith('._')) out.push(p);
+  }
+  return out;
+}
+
+// Unpack a zip into a temporary folder (removed by the caller when done)
+async function unzipToTemp(zip, temps) {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'photos-'));
+  temps.push(dir);
+  try {
+    execFileSync('unzip', ['-q', '-o', zip, '-d', dir], { stdio: ['ignore', 'ignore', 'inherit'] });
+  } catch (err) {
+    throw new Error(`could not unpack ${zip} (is the unzip command installed?): ${err.message}`);
+  }
+  return imagesIn(dir);
+}
+
+async function listInputs(inputs, temps) {
   const files = [];
   for (const input of inputs) {
     const stat = await fs.stat(input);
-    if (stat.isDirectory()) {
-      for (const f of await fs.readdir(input)) if (IMAGE_RE.test(f)) files.push(path.join(input, f));
-    } else if (IMAGE_RE.test(input)) files.push(input);
+    const entries = stat.isDirectory() ? (await fs.readdir(input)).sort().map((f) => path.join(input, f)) : [input];
+    for (const f of entries) {
+      if (IMAGE_RE.test(f)) files.push(f);
+      else if (ZIP_RE.test(f)) files.push(...(await unzipToTemp(f, temps)));
+    }
   }
   return files;
 }
@@ -121,9 +157,11 @@ async function decodeTrimmed(file) {
     const top = -(t.info.trimOffsetTop || 0);
     const right = info.width - t.info.width - left;
     const bottom = info.height - t.info.height - top;
-    const thin = (px, dim) => px >= 0 && px <= dim * 0.04;
-    const changed = t.info.width !== info.width || t.info.height !== info.height;
-    if (changed && thin(left, info.width) && thin(right, info.width) && thin(top, info.height) && thin(bottom, info.height)) {
+    // A print margin surrounds the whole frame: all four sides trimmed, none
+    // by much. A digital photo with one bright edge (sky, a white wall) only
+    // loses a side or two, and is left alone.
+    const margin = (px, dim) => px >= 4 && px <= dim * 0.04;
+    if (margin(left, info.width) && margin(right, info.width) && margin(top, info.height) && margin(bottom, info.height)) {
       // Scans sit slightly askew, so the margin is wedge-shaped and a
       // bounding-box trim leaves white slivers. Shave a little more; the
       // black film frame (~3% thick) absorbs it.
@@ -143,15 +181,40 @@ async function decodeTrimmed(file) {
 }
 
 async function gallery(inputs) {
-  if (!inputs.length) throw new Error('usage: node scripts/process-photos.mjs gallery <folder-or-photo> [...]');
-  const files = await listInputs(inputs);
+  if (!inputs.length) throw new Error('usage: node scripts/process-photos.mjs gallery <folder-or-photo-or-zip> [...]');
+  const temps = [];
+  try {
+    await galleryFrom(await listInputs(inputs, temps), inputs);
+  } finally {
+    for (const dir of temps) await fs.rm(dir, { recursive: true, force: true });
+  }
+}
+
+async function galleryFrom(allFiles, inputs) {
+  let previous = {};
+  let excluded = [];
+  try {
+    const old = JSON.parse(await fs.readFile(MANIFEST, 'utf8'));
+    for (const p of old.photos || []) previous[p.id] = p;
+    excluded = old.excluded || [];
+  } catch {
+    previous = {};
+  }
+
+  // One file per photo: skip excluded names; when a name repeats (an original
+  // and a packed copy), keep the one with the most pixels
+  const skip = new Set(excluded.map((n) => n.toLowerCase()));
+  const best = new Map();
+  for (const file of allFiles) {
+    if (skip.has(path.basename(file).toLowerCase())) continue;
+    const id = slugify(path.basename(file));
+    const { width = 0, height = 0 } = await sharp(file).metadata();
+    const have = best.get(id);
+    if (!have || width * height > have.pixels) best.set(id, { file, pixels: width * height });
+  }
+  const files = [...best.values()].map((b) => b.file);
   if (!files.length) throw new Error(`no images found in ${inputs.join(', ')}`);
   await fs.mkdir(PHOTO_OUT, { recursive: true });
-
-  let previous = {};
-  try {
-    for (const p of JSON.parse(await fs.readFile(MANIFEST, 'utf8')).photos || []) previous[p.id] = p;
-  } catch { previous = {}; }
 
   const photos = [];
   for (const [i, file] of files.entries()) {
@@ -179,16 +242,22 @@ async function gallery(inputs) {
       taken: exifDate(meta.exif),
       chapter: prev.chapter ?? null,
       alt: prev.alt ?? '',
+      ...(prev.seq != null ? { seq: prev.seq } : {}),
       ...(prev.featured ? { featured: true } : {}),
       source: base,
     });
     process.stdout.write(`\r${i + 1}/${files.length} ${base}`.padEnd(70));
   }
-  // One key for every photo: capture time where the camera recorded it, then
-  // the photographer's file order (undated photos keep their file order, last)
+  // Hand-set order first (seq); then one key for every other photo: capture
+  // time where the camera recorded it, then the photographer's file order
   const sortKey = (p) => `${p.taken ?? '9999'}|${naturalKey(p.source)}`;
-  photos.sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
-  const manifest = { _about: 'Generated by scripts/process-photos.mjs. Safe to edit chapter/alt/featured by hand; re-running keeps those edits.', photos };
+  const seqOf = (p) => (Number.isFinite(p.seq) ? p.seq : Infinity);
+  photos.sort((a, b) => seqOf(a) - seqOf(b) || sortKey(a).localeCompare(sortKey(b)));
+  const manifest = {
+    _about: 'Generated by scripts/process-photos.mjs. Safe to edit seq/chapter/alt by hand, and the excluded list; re-running keeps them.',
+    ...(excluded.length ? { excluded } : {}),
+    photos,
+  };
   await fs.writeFile(MANIFEST, JSON.stringify(manifest, null, 2) + '\n');
   console.log(`\n${photos.length} photos -> ${path.relative(ROOT, PHOTO_OUT)}, manifest -> ${path.relative(ROOT, MANIFEST)}`);
 }
