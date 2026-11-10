@@ -72,7 +72,6 @@ export default function ThankYouPage() {
   const [prefill] = useState(() => (returning ? '' : recallGuest()));
   // sealed → naming → opening (clip plays) → revealing (card slides out) → card
   const [stage, setStage] = useState(returning ? 'card' : 'sealed');
-  const [entry, setEntry] = useState(returning ? 'return' : 'reveal');
   const [guest, setGuest] = useState(returning ? { person: returning.person, displayName: returning.displayName } : null);
   const [letter, setLetter] = useState({ status: returning ? 'loading' : 'idle', value: null });
   const [face, setFace] = useState('front');
@@ -153,7 +152,6 @@ export default function ThankYouPage() {
 
   const reopenEnvelope = () => {
     stageRef.current = 'sealed';
-    setEntry('reveal');
     setFace('front');
     setStage('sealed');
   };
@@ -312,9 +310,10 @@ export default function ThankYouPage() {
           {/* film strips come after the card in reading order; they repeat the gallery */}
           <FilmStrips show={atCard} quiet={face === 'back' || gallery.open} photos={photos} onOpen={openGallery} />
 
-          {/* returning guests skip the envelope; this brings it back */}
+          {/* always under the card, so anyone can watch the envelope open again
+              (or, on a shared phone, open it under their own name) */}
           <AnimatePresence>
-            {atCard && entry === 'return' && (
+            {atCard && (
               <motion.div
                 key="reopen"
                 className="ty-reopen absolute inset-x-0 z-[25] flex justify-center"
