@@ -1,12 +1,30 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export function BackgroundMusic() {
+export function BackgroundMusic({ src = '/audio/background-music.mp3', startAt = 0, variant = 'light' }) {
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPausedForVideo, setIsPausedForVideo] = useState(false);
   const audioRef = useRef(null);
   const targetVolumeRef = useRef(0.6); // 60% volume
+  const videoActiveRef = useRef(false); // a film is playing somewhere on the page
+
+  useEffect(() => {
+    const on = () => {
+      videoActiveRef.current = true;
+    };
+    const off = () => {
+      videoActiveRef.current = false;
+    };
+    window.addEventListener('video-play', on);
+    window.addEventListener('video-pause', off);
+    window.addEventListener('video-ended', off);
+    return () => {
+      window.removeEventListener('video-play', on);
+      window.removeEventListener('video-pause', off);
+      window.removeEventListener('video-ended', off);
+    };
+  }, []);
 
   // Try to play audio after first user interaction
   useEffect(() => {
@@ -14,9 +32,20 @@ export function BackgroundMusic() {
       if (audioRef.current && !isPlaying) {
         // Start at 0 volume
         audioRef.current.volume = 0;
+        if (startAt && audioRef.current.currentTime < startAt) {
+          audioRef.current.currentTime = startAt;
+        }
 
         audioRef.current.play().then(() => {
           setIsPlaying(true);
+
+          // The first tap was on a film that is now playing: wait for it to stop
+          if (videoActiveRef.current && audioRef.current) {
+            audioRef.current.volume = targetVolumeRef.current;
+            audioRef.current.pause();
+            setIsPausedForVideo(true);
+            return;
+          }
 
           // Fade in to 60% volume over 2 seconds
           const fadeInDuration = 2000; // 2 seconds
@@ -48,7 +77,7 @@ export function BackgroundMusic() {
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
-  }, [isPlaying]);
+  }, [isPlaying, startAt]);
 
   // Listen for video play/pause events
   useEffect(() => {
@@ -90,17 +119,48 @@ export function BackgroundMusic() {
       <audio
         ref={audioRef}
         loop
-        preload="auto"
+        preload="none" // fetched on the first tap, so it never competes with the page loading
       >
-        <source src="/audio/background-music.mp3" type="audio/mpeg" />
+        <source src={src} type="audio/mpeg" />
       </audio>
+
+      {/* Night theme: a quiet engraved "Sound" toggle with three foil bars */}
+      <AnimatePresence>
+        {isPlaying && variant === 'night' && (
+          <motion.button
+            type="button"
+            className="ty-caps absolute left-3 top-3 z-[25] flex min-h-[44px] items-center gap-2.5 px-2 text-[13.5px] text-ivory/80 transition-colors hover:text-foil-light focus-visible:text-foil-light focus-visible:outline-none md:left-6 md:top-5"
+            style={{ letterSpacing: '0.16em', textIndent: '0.16em' }}
+            onClick={toggleMute}
+            aria-label={isMuted ? 'Turn the music on' : 'Turn the music off'}
+            aria-pressed={!isMuted}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <span className="flex h-[10px] items-end gap-[2px]" aria-hidden="true">
+              {[5, 9, 6].map((h, i) => (
+                <motion.span
+                  key={i}
+                  className="w-[1.5px] origin-bottom bg-foil"
+                  style={{ height: h }}
+                  animate={isMuted ? { scaleY: 0.25 } : { scaleY: [1, 0.45, 0.9, 0.6, 1] }}
+                  transition={isMuted ? { duration: 0.3 } : { duration: 1.4 + i * 0.25, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              ))}
+            </span>
+            {isMuted ? 'Sound off' : 'Sound on'}
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Mute/Unmute button - bottom left */}
       <AnimatePresence>
-        {isPlaying && (
+        {isPlaying && variant !== 'night' && (
           <motion.button
             className="fixed bottom-6 left-6 z-[9998] w-12 h-12 rounded-full bg-warm-white/90 hover:bg-warm-white backdrop-blur-md flex items-center justify-center transition-colors shadow-lg"
             onClick={toggleMute}
+            aria-label={isMuted ? 'Unmute music' : 'Mute music'}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}

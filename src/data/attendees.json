@@ -1,0 +1,919 @@
+{
+  "_about": "Guests who attended (from the attendance export; names only). 'letter' points at src/thank-you/data/letters.json; 'greet' is the name the couple calls them by, when it differs from their first name; 'aliases' are other names a guest may type; 'inviteKey' is their key in personalizedMessages.json when it differs from 'name'.",
+  "people": [
+    {
+      "name": "Rahul Abhyankar",
+      "letter": "abhyankar"
+    },
+    {
+      "name": "Sonia Dhingra",
+      "letter": "abhyankar",
+      "aliases": [
+        "Sonia Abhyankar"
+      ]
+    },
+    {
+      "name": "Alina Abhyankar",
+      "letter": "abhyankar"
+    },
+    {
+      "name": "Arush Abhyankar",
+      "letter": "abhyankar"
+    },
+    {
+      "name": "Arjun Adapa",
+      "letter": "adapa"
+    },
+    {
+      "name": "Jessica Quinn",
+      "letter": "adapa",
+      "greet": "Jess",
+      "aliases": [
+        "Jess Quinn",
+        "Jessica Adapa",
+        "Jess Adapa"
+      ]
+    },
+    {
+      "name": "Arvind Bansal",
+      "letter": "bansal-arvind"
+    },
+    {
+      "name": "Anu Bansal",
+      "letter": "bansal-arvind"
+    },
+    {
+      "name": "Arushi Bansal",
+      "letter": "bansal-arvind"
+    },
+    {
+      "name": "Anvit Bansal",
+      "letter": "bansal-arvind"
+    },
+    {
+      "name": "Sushil Bansal",
+      "letter": "bansal-sushil"
+    },
+    {
+      "name": "Jyoti Bansal",
+      "letter": "bansal-sushil"
+    },
+    {
+      "name": "Ashwani Bedi",
+      "letter": "bedi"
+    },
+    {
+      "name": "Sushma Bedi",
+      "letter": "bedi"
+    },
+    {
+      "name": "Munish Bhatla",
+      "letter": "bhatla"
+    },
+    {
+      "name": "Sheenam Bhatla",
+      "letter": "bhatla"
+    },
+    {
+      "name": "Chander Syal",
+      "letter": "bhatla"
+    },
+    {
+      "name": "Suvir Bhatla",
+      "letter": "bhatla"
+    },
+    {
+      "name": "Aadya Bhatla",
+      "letter": "bhatla"
+    },
+    {
+      "name": "Indu Syal",
+      "letter": "bhatla"
+    },
+    {
+      "name": "Pranay Bonagiri",
+      "letter": "bonagiri"
+    },
+    {
+      "name": "Anjalee Bonagiri",
+      "letter": "bonagiri"
+    },
+    {
+      "name": "Michael Broderick",
+      "letter": "broderick",
+      "greet": "Mike",
+      "aliases": [
+        "Mike Broderick"
+      ]
+    },
+    {
+      "name": "Sharon Chiang",
+      "letter": "broderick"
+    },
+    {
+      "name": "Shayan Cheraghlou",
+      "letter": "cheraghlou"
+    },
+    {
+      "name": "Pauli Luna",
+      "letter": "cheraghlou"
+    },
+    {
+      "name": "Manohar Chhasatiya",
+      "letter": "chhasatiya-oja"
+    },
+    {
+      "name": "Minakshi Chhasatiya",
+      "letter": "chhasatiya-oja"
+    },
+    {
+      "name": "Parth Chhasatiya",
+      "letter": "chhasatiya-oja"
+    },
+    {
+      "name": "Surinder Dhawan",
+      "letter": "dhawan"
+    },
+    {
+      "name": "Harsha Dhawan",
+      "letter": "dhawan"
+    },
+    {
+      "name": "Ashok Dhingra",
+      "letter": "dhingra"
+    },
+    {
+      "name": "Anita Dhingra",
+      "letter": "dhingra",
+      "aliases": [
+        "Pinky Dhingra"
+      ]
+    },
+    {
+      "name": "Nikhil Dhingra",
+      "letter": "dhingra"
+    },
+    {
+      "name": "Shubham Dixit",
+      "letter": "dixit"
+    },
+    {
+      "name": "Arjun Dupati",
+      "letter": "dupati"
+    },
+    {
+      "name": "Mark Farha",
+      "letter": "farha"
+    },
+    {
+      "name": "Isavel McGough",
+      "letter": "farha"
+    },
+    {
+      "name": "Brandon Fields",
+      "letter": "fields"
+    },
+    {
+      "name": "Rachel Greathouse",
+      "letter": "fields"
+    },
+    {
+      "name": "Akash Garg",
+      "letter": "garg"
+    },
+    {
+      "name": "Natesh Garg",
+      "letter": "garg"
+    },
+    {
+      "name": "Ruple Goel",
+      "letter": "goel-ruple",
+      "aliases": [
+        "Ruple Jairath"
+      ],
+      "inviteKey": "Ruple Jairath"
+    },
+    {
+      "name": "Nitin Goel",
+      "letter": "goel-ruple"
+    },
+    {
+      "name": "Vinod Goel",
+      "letter": "goel-vinod"
+    },
+    {
+      "name": "Vibha Goel",
+      "letter": "goel-vinod"
+    },
+    {
+      "name": "Steven Goldenthal",
+      "letter": "goldenthal",
+      "greet": "Steve",
+      "aliases": [
+        "Steve Goldenthal"
+      ]
+    },
+    {
+      "name": "Serena Sherry",
+      "letter": "goldenthal"
+    },
+    {
+      "name": "Penny Goshert",
+      "letter": "goshert"
+    },
+    {
+      "name": "Mark Goshert",
+      "letter": "goshert"
+    },
+    {
+      "name": "Sharat Gupta",
+      "letter": "gupta"
+    },
+    {
+      "name": "Nidhi Gupta",
+      "letter": "gupta"
+    },
+    {
+      "name": "Amisha Gupta",
+      "letter": "gupta"
+    },
+    {
+      "name": "Arjun Gupta",
+      "letter": "gupta"
+    },
+    {
+      "name": "Sudheer Gurram",
+      "letter": "gurram"
+    },
+    {
+      "name": "Mythili Gurram",
+      "letter": "gurram"
+    },
+    {
+      "name": "Paul Hanona",
+      "letter": "hanona"
+    },
+    {
+      "name": "Jay Hass",
+      "letter": "hass"
+    },
+    {
+      "name": "Wendy Hass",
+      "letter": "hass"
+    },
+    {
+      "name": "Robert Hass",
+      "letter": "hass"
+    },
+    {
+      "name": "Harina Hirpara",
+      "letter": "hirpara"
+    },
+    {
+      "name": "Raj Hirpara",
+      "letter": "hirpara"
+    },
+    {
+      "name": "Raeya Hirpara",
+      "letter": "hirpara"
+    },
+    {
+      "name": "Siara Hirpara",
+      "letter": "hirpara",
+      "aliases": [
+        "Siara Hipara"
+      ]
+    },
+    {
+      "name": "Fernando Huyke",
+      "letter": "huyke"
+    },
+    {
+      "name": "Alexandra Valas",
+      "letter": "huyke",
+      "greet": "Lexi",
+      "aliases": [
+        "Lexi Valas",
+        "Alex Valas"
+      ]
+    },
+    {
+      "name": "Jodi Isaac",
+      "letter": "isaac"
+    },
+    {
+      "name": "Kevin Thomas",
+      "letter": "isaac"
+    },
+    {
+      "name": "Vanita Jain",
+      "letter": "jain"
+    },
+    {
+      "name": "Neil Jain",
+      "letter": "jain"
+    },
+    {
+      "name": "Aanaya Jain",
+      "letter": "jain"
+    },
+    {
+      "name": "Rihan Jain",
+      "letter": "jain"
+    },
+    {
+      "name": "Shriyam Jairath",
+      "letter": "jairath-vyas"
+    },
+    {
+      "name": "Umesh Jairath",
+      "letter": "jairath-umesh"
+    },
+    {
+      "name": "Sanju Jairath",
+      "letter": "jairath-umesh"
+    },
+    {
+      "name": "Siddharth Jani",
+      "letter": "jani"
+    },
+    {
+      "name": "Jigisha Jani",
+      "letter": "jani"
+    },
+    {
+      "name": "Alpesh Jayswal",
+      "letter": "jayswal-alpesh"
+    },
+    {
+      "name": "Anmol Jayswal",
+      "letter": "jayswal-alpesh"
+    },
+    {
+      "name": "Kanu Jayswal",
+      "letter": "jayswal-kanu"
+    },
+    {
+      "name": "Rekha Jayswal",
+      "letter": "jayswal-kanu"
+    },
+    {
+      "name": "Kishan Jayswal",
+      "letter": "jayswal-kanu"
+    },
+    {
+      "name": "Kokila Jayswal",
+      "letter": "jayswal-ashwin"
+    },
+    {
+      "name": "Ashwin Jayswal",
+      "letter": "jayswal-ashwin"
+    },
+    {
+      "name": "Ravi Jayswal",
+      "letter": "jayswal-ashwin"
+    },
+    {
+      "name": "Yash Jayswal",
+      "letter": "jayswal-ashwin"
+    },
+    {
+      "name": "Rajni Jayswal",
+      "letter": "jayswal-rajni"
+    },
+    {
+      "name": "Urvashi Jayswal",
+      "letter": "jayswal-rajni"
+    },
+    {
+      "name": "Neil Jayswal",
+      "letter": "jayswal-rajni"
+    },
+    {
+      "name": "Shilpa Jayswal",
+      "letter": "jayswal-shilpa"
+    },
+    {
+      "name": "Chirag Patel",
+      "letter": "jayswal-shilpa",
+      "aliases": [
+        "Chirag Jayswal"
+      ]
+    },
+    {
+      "name": "Shriya Jayswal",
+      "letter": "couple",
+      "aliases": [
+        "Shriya Jairath"
+      ]
+    },
+    {
+      "name": "Neil Jairath",
+      "letter": "couple"
+    },
+    {
+      "name": "Tara Jayswal",
+      "letter": "jayswal-tara"
+    },
+    {
+      "name": "Aanya Jayswal",
+      "letter": "jayswal-tara"
+    },
+    {
+      "name": "Pratima Jayswal",
+      "letter": "jayswal-tara"
+    },
+    {
+      "name": "Bishan Patel",
+      "letter": "jayswal-tara",
+      "aliases": [
+        "Bishan Jayswal"
+      ]
+    },
+    {
+      "name": "Efe Kakpovbia",
+      "letter": "kakpovbia"
+    },
+    {
+      "name": "Vishva Kalra",
+      "letter": "kalra"
+    },
+    {
+      "name": "Preeti Kalra",
+      "letter": "kalra"
+    },
+    {
+      "name": "Deepak Kapadia",
+      "letter": "kapadia"
+    },
+    {
+      "name": "Maya Kapadia",
+      "letter": "kapadia"
+    },
+    {
+      "name": "William Kasberg",
+      "letter": "kasberg",
+      "greet": "Will",
+      "aliases": [
+        "Will Kasberg"
+      ]
+    },
+    {
+      "name": "Kathleen Kasberg",
+      "letter": "kasberg"
+    },
+    {
+      "name": "Rajwant Kaur",
+      "letter": "kaur"
+    },
+    {
+      "name": "Rajeev Kumar",
+      "letter": "kaur",
+      "aliases": [
+        "Rajeev Kaur"
+      ]
+    },
+    {
+      "name": "Ajay Kolli",
+      "letter": "kolli"
+    },
+    {
+      "name": "Sravya Chary",
+      "letter": "kolli"
+    },
+    {
+      "name": "Melissa Laughter",
+      "letter": "laughter"
+    },
+    {
+      "name": "Chris Cychosz",
+      "letter": "laughter"
+    },
+    {
+      "name": "Andrew Lehmer",
+      "letter": "lehmer"
+    },
+    {
+      "name": "Andrew Lubera",
+      "letter": "lubera"
+    },
+    {
+      "name": "Lauren McGee",
+      "letter": "mcgee"
+    },
+    {
+      "name": "Hugo Chavarria",
+      "letter": "mcgee"
+    },
+    {
+      "name": "Mahesh Moolani",
+      "letter": "moolani"
+    },
+    {
+      "name": "Urmila Moolani",
+      "letter": "moolani"
+    },
+    {
+      "name": "Shahid Mufti",
+      "letter": "mufti"
+    },
+    {
+      "name": "Gazala Mufti",
+      "letter": "mufti"
+    },
+    {
+      "name": "Harnek Neelam",
+      "letter": "neelam"
+    },
+    {
+      "name": "Raveena Oja",
+      "letter": "chhasatiya-oja"
+    },
+    {
+      "name": "Eric Oja",
+      "letter": "chhasatiya-oja"
+    },
+    {
+      "name": "Taevas Oja",
+      "letter": "chhasatiya-oja"
+    },
+    {
+      "name": "Vartan Pahalyants",
+      "letter": "pahalyants"
+    },
+    {
+      "name": "Brian Chau",
+      "letter": "pahalyants"
+    },
+    {
+      "name": "Chetan Parikh",
+      "letter": "parikh-chetan"
+    },
+    {
+      "name": "Sona Parikh",
+      "letter": "parikh-chetan"
+    },
+    {
+      "name": "Nidhi Parikh",
+      "letter": "parikh-nidhi"
+    },
+    {
+      "name": "Tarla Parikh",
+      "letter": "parikh-nidhi"
+    },
+    {
+      "name": "Dilip Patel",
+      "letter": "patel-dilip"
+    },
+    {
+      "name": "Ayse Schablik",
+      "letter": "patel-dilip"
+    },
+    {
+      "name": "Heena Patel",
+      "letter": "patel-heena"
+    },
+    {
+      "name": "Priya Patel",
+      "letter": "patel-priya"
+    },
+    {
+      "name": "Sunny Patel",
+      "letter": "patel-priya"
+    },
+    {
+      "name": "Roopesh Patel",
+      "letter": "patel-roopesh"
+    },
+    {
+      "name": "Bhavna Patel",
+      "letter": "patel-roopesh"
+    },
+    {
+      "name": "Arpeet Patel",
+      "letter": "patel-roopesh"
+    },
+    {
+      "name": "Meera Patel",
+      "letter": "patel-roopesh"
+    },
+    {
+      "name": "Shital Patel",
+      "letter": "patel-shital"
+    },
+    {
+      "name": "Vihan Patel",
+      "letter": "patel-shital"
+    },
+    {
+      "name": "Tom Pottanat",
+      "letter": "pottanat"
+    },
+    {
+      "name": "Neha Pottanat",
+      "letter": "pottanat"
+    },
+    {
+      "name": "Mira Pottanat",
+      "letter": "pottanat"
+    },
+    {
+      "name": "Tirzah Pottanat",
+      "letter": "pottanat"
+    },
+    {
+      "name": "Ashwin Prasad",
+      "letter": "prasad-ashwin"
+    },
+    {
+      "name": "Phrare Teinwan",
+      "letter": "prasad-ashwin"
+    },
+    {
+      "name": "Vajravel Prasad",
+      "letter": "prasad-vajravel"
+    },
+    {
+      "name": "Sultan Qiblawi",
+      "letter": "qiblawi"
+    },
+    {
+      "name": "Yasmine Abushukur",
+      "letter": "qiblawi"
+    },
+    {
+      "name": "Vignesh Ramachandran",
+      "letter": "ramachandran",
+      "greet": "Vig",
+      "aliases": [
+        "Vig Ramachandran"
+      ]
+    },
+    {
+      "name": "Esha Hansoti",
+      "letter": "ramachandran"
+    },
+    {
+      "name": "John Riordan",
+      "letter": "riordan"
+    },
+    {
+      "name": "Stephanie Leung",
+      "letter": "riordan",
+      "greet": "Steph",
+      "aliases": [
+        "Steph Leung"
+      ]
+    },
+    {
+      "name": "Niamh Rock",
+      "letter": "rock"
+    },
+    {
+      "name": "Larry Rodgers",
+      "letter": "rodgers"
+    },
+    {
+      "name": "Susan Rodgers",
+      "letter": "rodgers"
+    },
+    {
+      "name": "Balaji Ryali",
+      "letter": "ryali-balaji"
+    },
+    {
+      "name": "Sumana Ryali",
+      "letter": "ryali-balaji"
+    },
+    {
+      "name": "Needhi Ryali",
+      "letter": "ryali-needhi",
+      "aliases": [
+        "Needhi Jayswal"
+      ],
+      "inviteKey": "Needhi Jayswal"
+    },
+    {
+      "name": "Partha Ryali",
+      "letter": "ryali-needhi",
+      "greet": "Parth",
+      "aliases": [
+        "Parth Ryali"
+      ]
+    },
+    {
+      "name": "Brian Sabino",
+      "letter": "sabino"
+    },
+    {
+      "name": "Janina Pirela",
+      "letter": "sabino"
+    },
+    {
+      "name": "Leilani Sampang",
+      "letter": "sampang"
+    },
+    {
+      "name": "Timothy Palmer",
+      "letter": "sampang",
+      "greet": "Tim",
+      "aliases": [
+        "Tim Palmer"
+      ]
+    },
+    {
+      "name": "Vritti Samtani",
+      "letter": "samtani"
+    },
+    {
+      "name": "Arnab Sarkar",
+      "letter": "sarkar"
+    },
+    {
+      "name": "Shivani Syal",
+      "letter": "sarkar"
+    },
+    {
+      "name": "Ram Seetharam",
+      "letter": "seetharam"
+    },
+    {
+      "name": "Jyoti Seetharam",
+      "letter": "seetharam"
+    },
+    {
+      "name": "Hemang Shah",
+      "letter": "shah-hemang"
+    },
+    {
+      "name": "Darshana Shah",
+      "letter": "shah-hemang",
+      "aliases": [
+        "Darshna Shah"
+      ]
+    },
+    {
+      "name": "Rushil Vora",
+      "letter": "shah-sehal"
+    },
+    {
+      "name": "Sehal Shah",
+      "letter": "shah-sehal"
+    },
+    {
+      "name": "Pranav Shah",
+      "letter": "shah-pranav"
+    },
+    {
+      "name": "Trusha Shah",
+      "letter": "shah-pranav"
+    },
+    {
+      "name": "Kunaal Shah",
+      "letter": "shah-pranav"
+    },
+    {
+      "name": "Saku Shah",
+      "letter": "shah-saku"
+    },
+    {
+      "name": "Nisha Sharma",
+      "letter": "sharma"
+    },
+    {
+      "name": "Jay Sharma",
+      "letter": "sharma"
+    },
+    {
+      "name": "Sam Sharma",
+      "letter": "sharma"
+    },
+    {
+      "name": "Mohit Sheth",
+      "letter": "sheth"
+    },
+    {
+      "name": "Kokila Sheth",
+      "letter": "sheth"
+    },
+    {
+      "name": "Sukhjoth Singh",
+      "letter": "singh",
+      "greet": "Jot",
+      "aliases": [
+        "Sukhjot Singh",
+        "Jot Singh"
+      ],
+      "inviteKey": "Sukhjot Singh"
+    },
+    {
+      "name": "Shagun Patel",
+      "letter": "singh"
+    },
+    {
+      "name": "Christopher Slane",
+      "letter": "slane",
+      "aliases": [
+        "Chris Slane"
+      ]
+    },
+    {
+      "name": "Katie Slane",
+      "letter": "slane"
+    },
+    {
+      "name": "Manisha Soni",
+      "letter": "soni"
+    },
+    {
+      "name": "Hemal Soni",
+      "letter": "soni"
+    },
+    {
+      "name": "Sai Soni",
+      "letter": "soni"
+    },
+    {
+      "name": "Karan Syal",
+      "letter": "syal"
+    },
+    {
+      "name": "Vijeyta Sharma",
+      "letter": "syal"
+    },
+    {
+      "name": "Vedant Sharma Syal",
+      "letter": "syal",
+      "aliases": [
+        "Vedant Syal"
+      ]
+    },
+    {
+      "name": "Ankit Thapar",
+      "letter": "thapar"
+    },
+    {
+      "name": "Anjali Thapar",
+      "letter": "thapar"
+    },
+    {
+      "name": "Idhant Thapar",
+      "letter": "thapar"
+    },
+    {
+      "name": "Kishore Vora",
+      "letter": "vora"
+    },
+    {
+      "name": "Beena Vora",
+      "letter": "vora"
+    },
+    {
+      "name": "Ketan Vyas",
+      "letter": "vyas-ketan"
+    },
+    {
+      "name": "Nikita Vyas",
+      "letter": "vyas-ketan"
+    },
+    {
+      "name": "Pinal Vyas",
+      "letter": "vyas-pinal"
+    },
+    {
+      "name": "Jayshree Vyas",
+      "letter": "vyas-pinal"
+    },
+    {
+      "name": "Shloak Vyas",
+      "letter": "jairath-vyas"
+    },
+    {
+      "name": "Mark Wohlford",
+      "letter": "wohlford"
+    },
+    {
+      "name": "Sontha Wohlford",
+      "letter": "wohlford",
+      "aliases": [
+        "Santha Wohlford"
+      ],
+      "inviteKey": "Santha Wohlford"
+    },
+    {
+      "name": "Taylor Wood",
+      "letter": "wood"
+    },
+    {
+      "name": "Sam Rosas",
+      "letter": "wood",
+      "aliases": [
+        "Sam Wood"
+      ]
+    },
+    {
+      "name": "Kaitlyn Yin",
+      "letter": "yin"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import { VideoPlayer } from './VideoPlayer';
 import { RSVPButton } from './RSVPButton';
 import { PaperTexture } from './PaperTexture';
 import personalizedMessages from '../data/personalizedMessages.json';
+import { inviteMessageKey } from '../lib/guests';
 
 export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, guestName = '' }) {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -12,13 +13,15 @@ export function InvitationCard({ isVisible, animateUp, emergenceProgress = 1, gu
   const message = useMemo(() => {
     if (!guestName) return null;
 
-    // Try exact match first
-    if (personalizedMessages[guestName]) {
-      return personalizedMessages[guestName].message;
+    // Messages are keyed by the name on the original invite list, which can
+    // differ from what a guest types (nicknames, maiden names, spellings).
+    const key = inviteMessageKey(guestName);
+    if (personalizedMessages[key]) {
+      return personalizedMessages[key].message;
     }
 
     // Try case-insensitive match
-    const normalizedGuestName = guestName.toLowerCase().trim();
+    const normalizedGuestName = key.toLowerCase().trim();
     const matchedKey = Object.keys(personalizedMessages).find(
       key => key.toLowerCase().trim() === normalizedGuestName
     );

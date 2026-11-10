@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+/* Web fonts are linked from index.html so they never block the first paint */
 @import "tailwindcss";
 
 @theme {
@@ -25,12 +25,398 @@
   /* Invitation site keeps its own fonts */
   --font-serif-invite: 'Cormorant Garamond', Georgia, serif;
   --font-sans-invite: 'Montserrat', system-ui, sans-serif;
+
+  /* Thank-you site — "fireworks night" palette sampled from the reception
+     photo (shriyaneil_wedding0594): wine-black sky, plum, bougainvillea
+     orchid, dance-floor fuchsia, blush petals, ember gold. */
+  --color-night-950: #0B0509;
+  --color-night-900: #130810;
+  --color-night-800: #1D0C19;
+  --color-night-700: #2A1126;
+  --color-plum-700: #381647;
+  --color-plum-600: #4F1F55;
+  --color-orchid-500: #BB559A;
+  --color-orchid-400: #D873B8;
+  --color-fuchsia-glow: #EB58D1;
+  --color-blush-200: #F3DDD6;
+  --color-blush-300: #EACCC5;
+  --color-champagne: #F5E6C8;
+  --color-gold-300: #F3D9A4;
+  --color-gold-400: #E8C27A;
+  --color-gold-500: #D4A853;
+  --color-gold-600: #B8893A;
+  --color-ember: #F2A65A;
+  --color-ivory: #FBF3EA;
+
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-script: 'Pinyon Script', 'Snell Roundhand', cursive;
+  --font-caps: 'Cormorant SC', 'Cormorant Garamond', Georgia, serif;
+
+  /* black-tie stationery */
+  --color-ink-950: #0A0807;
+  --color-ink-900: #0E0A0B;
+  --color-ink-800: #151012;
+  --color-foil: #C9A961;
+  --color-foil-light: #F1DFB0;
+  --color-foil-dark: #8C6A2F;
+}
+
+/* ─── Thank-you site (night theme) ─── */
+
+html.night body {
+  background-color: var(--color-night-950);
+  color: var(--color-ivory);
+  color-scheme: dark;
+}
+
+/* no accidental pull-to-refresh or rubber-banding on the card */
+html.night,
+html.night body {
+  overscroll-behavior-y: none;
+}
+
+html.night ::-webkit-scrollbar-track {
+  background: var(--color-night-900);
+}
+
+html.night ::-webkit-scrollbar-thumb {
+  background: var(--color-plum-600);
+}
+
+html.night ::selection {
+  background-color: var(--color-orchid-500);
+  color: var(--color-ivory);
+}
+
+/* Gold-foil text: one slow sweep of light, then it rests */
+.foil-text {
+  background: linear-gradient(100deg, #8C6A2F 0%, #C9A961 20%, #F1DFB0 36%, #FFF8E6 44%, #E2C788 54%, #A9823F 72%, #D9BD7E 88%, #8C6A2F 100%);
+  background-size: 260% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: foil-once 3.4s cubic-bezier(0.4, 0, 0.2, 1) 0.5s 1 both;
+}
+
+.foil-once {
+  animation: foil-once 3.4s cubic-bezier(0.4, 0, 0.2, 1) 0.5s 1 both;
+}
+
+@keyframes foil-once {
+  from { background-position: 100% 50%; }
+  to { background-position: 8% 50%; }
+}
+
+@keyframes foil-sweep {
+  from { background-position: 0% 50%; }
+  to { background-position: 250% 50%; }
+}
+
+@keyframes ken-burns {
+  from { transform: scale(1.0) translate3d(0, 0, 0); }
+  to { transform: scale(1.07) translate3d(-0.6%, -0.8%, 0); }
+}
+
+.ken-burns {
+  animation: ken-burns 38s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes strip-left {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes strip-right {
+  from { transform: translate3d(-50%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+.film-track {
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@media (hover: hover) {
+  .film-strip:hover .film-track {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes slow-glow {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.scroll-fade {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 calc(100% - 32px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 calc(100% - 32px), transparent 100%);
+}
+
+/* until the guest scrolls, only the bottom edge fades */
+.scroll-fade:not([data-scrolled='true']) {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent 100%);
+}
+
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 168, 83, 0.35) transparent;
+}
+
+.thin-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: rgba(212, 168, 83, 0.35);
+  border-radius: 4px;
+}
+
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foil-text,
+  .foil-once,
+  .ken-burns,
+  .film-track {
+    animation: none !important;
+  }
+}
+
+/* Film-strip frames sit back, graded like old prints, until touched */
+.film-frame {
+  filter: sepia(0.2) saturate(0.65) brightness(0.75);
+}
+
+.film-strip button:hover .film-frame,
+.film-strip button:focus-visible .film-frame {
+  filter: none;
+}
+
+/* Engraved stationery controls. In the components layer, so Tailwind
+   utilities on the same element (font-semibold, colours) still apply. */
+@layer components {
+  .ty-cta {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
+    font-family: var(--font-caps);
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: var(--color-foil-light);
+    background: linear-gradient(180deg, rgba(201, 169, 97, 0.16), rgba(201, 169, 97, 0.05));
+    border: 1px solid rgba(201, 169, 97, 0.78);
+    box-shadow: inset 0 0 0 3px rgba(14, 10, 11, 0.9), inset 0 0 0 4px rgba(201, 169, 97, 0.32);
+    transition: background 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  .ty-cta:hover,
+  .ty-cta:focus-visible {
+    color: #FFF8E6;
+    background: linear-gradient(180deg, rgba(201, 169, 97, 0.3), rgba(201, 169, 97, 0.12));
+    outline: none;
+  }
+
+  .ty-link {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: rgba(244, 237, 227, 0.78);
+    background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+    transition: color 0.3s ease, background-size 0.45s ease;
+    padding-bottom: 2px;
+  }
+
+  .ty-link:hover,
+  .ty-link:focus-visible {
+    color: var(--color-foil-light);
+    background-size: 100% 1px;
+    outline: none;
+  }
+
+  .ty-caps {
+    font-family: var(--font-caps);
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-indent: 0.18em; /* cancels the trailing tracking on centred lines */
+  }
+}
+
+/* Thank-you layout. The card is sized once (--card-w); the film strips are
+   placed from the card's own edges so it always lies across them by
+   --overlap, on every screen. --chrome keeps the corner links clear. */
+.ty-page {
+  --vh: 1vh;
+  --strip-h: clamp(92px, calc(12 * var(--vh)), 128px);
+  --band: 14px;
+  --overlap: 40px;
+  --chrome: 72px;
+  --mid: calc(50 * var(--vh));
+  --card-w: min(480px, 86vw, calc((100 * var(--vh) - 2 * var(--strip-h) + 2 * var(--overlap) - 2 * var(--chrome)) * 0.68));
+  --card-h: calc(var(--card-w) / 0.68);
+}
+
+/* Use the phone's visible height (toolbars shown) where supported */
+@supports (height: 1svh) {
+  .ty-page {
+    --vh: 1svh;
+  }
+}
+
+@media (min-height: 1100px) and (min-width: 700px) {
+  .ty-page {
+    --card-w: min(560px, 86vw, calc((100 * var(--vh) - 2 * var(--strip-h) + 2 * var(--overlap) - 2 * var(--chrome)) * 0.68));
+  }
+}
+
+/* Phones and short laptops: one strip, below the card. The card is lifted
+   by half the strip's visible height so card + film sit centred together. */
+@media (max-width: 640px), (max-height: 800px) {
+  .ty-page {
+    --strip-h: clamp(72px, calc(10.5 * var(--vh)), 92px);
+    --band: 12px;
+    --overlap: 22px;
+    --lift: calc((var(--strip-h) - var(--overlap)) / 2);
+    --mid: calc(50 * var(--vh) - var(--lift));
+    --card-w: min(480px, 86vw, calc((100 * var(--vh) - var(--strip-h) + var(--overlap) - 2 * var(--chrome)) * 0.68));
+  }
+  .ty-stage {
+    padding-bottom: calc(2 * var(--lift));
+  }
+  .ty-strip-top {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .film-edge-print {
+    display: none;
+  }
+}
+
+/* Short screens (iPhone SE and mini, larger text, landscape): size the card
+   by width so everything on it stays legible, and let the page scroll. The
+   envelope stays centred until the card arrives. */
+@media (max-height: 640px) {
+  .ty-page {
+    --card-w: min(400px, 88vw);
+    --lift: 0px;
+    --mid: calc(50 * var(--vh));
+  }
+  .ty-page:is([data-stage='revealing'], [data-stage='card']) .ty-stage {
+    padding-top: 72px;
+    padding-bottom: 72px;
+  }
+  .ty-page .ty-strip {
+    display: none;
+  }
+}
+
+/* The envelope: as large as the screen allows, never smaller than 240px on a
+   phone held upright; on a phone held sideways, small enough that the hint
+   under it stays on screen. */
+.ty-page {
+  --env-w: min(372px, 76vw, max(calc(45 * var(--vh)), 240px));
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .ty-page {
+    --env-w: min(372px, 76vw, max(calc((100 * var(--vh) - 112px) * 0.72), 190px));
+  }
+}
+
+/* the "open the envelope again" line sits in the bottom margin */
+.ty-reopen {
+  bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+.ty-card {
+  width: var(--card-w);
+  aspect-ratio: 0.68;
+}
+
+/* clip sideways spill (scrims, strips) without making the page a scroller */
+.ty-page {
+  overflow-x: clip;
+  font-family: var(--font-display);
+}
+
+/* while the envelope drops away below the screen, it mustn't grow the page */
+.ty-page:is([data-stage='opening'], [data-stage='revealing']) {
+  overflow-y: clip;
+}
+
+/* Browsers without overflow: clip (iOS 15). These sit in @supports because
+   the CSS minifier drops a plain fallback written next to the clip value. */
+@supports not (overflow: clip) {
+  .ty-page {
+    overflow-x: hidden;
+  }
+  .ty-page:is([data-stage='opening'], [data-stage='revealing']) {
+    overflow-y: hidden;
+  }
+}
+
+/* the page is exactly as tall as the visible screen (not iOS's toolbar-hidden
+   100vh), so on phones nothing scrolls the card off its film strip */
+html.night body,
+html.night #root {
+  min-height: 0;
+}
+
+/* Sizes in container units, with a fixed size for browsers without them
+   (iOS 15). The fallback lives in its own @supports block because the CSS
+   minifier drops a plain "width: 84px" written before the cqw value. */
+.ty-seal {
+  width: clamp(74px, 23cqw, 92px);
+  height: clamp(74px, 23cqw, 92px);
+}
+
+.ty-roundel {
+  width: clamp(58px, 18.5cqw, 70px);
+  height: clamp(58px, 18.5cqw, 70px);
+}
+
+@supports not (width: 1cqw) {
+  .ty-seal {
+    width: 84px;
+    height: 84px;
+  }
+  .ty-roundel {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+.ty-strip {
+  left: -3vw;
+  right: -3vw;
+}
+
+.ty-strip-top {
+  top: calc(var(--mid) - var(--card-h) / 2 - var(--strip-h) + var(--overlap));
+}
+
+.ty-strip-bottom {
+  top: calc(var(--mid) + var(--card-h) / 2 - var(--overlap));
 }
 
 * {
+  box-sizing: border-box;
+}
+
+/* This reset is unlayered, so it outranks every Tailwind utility (utilities
+   live in @layer utilities). The invitation and wedding app were built
+   around that; the thank-you page (.ty-page) relies on Tailwind's own
+   preflight reset instead so its spacing utilities work. */
+:where(*:not(.ty-page, .ty-page *)) {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
 html {

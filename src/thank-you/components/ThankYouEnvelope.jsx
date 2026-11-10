@@ -1,0 +1,578 @@
+import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { matchGuest, resolveGuest, firstName } from '../../lib/guests';
+import { ENVELOPE_CLIP, THANK_YOU } from '../config';
+
+export const FLAP = 0.3; // flap depth as a fraction of the envelope's height
+export const ENVELOPE_WIDTH = 'var(--env-w, 300px)'; // set per screen shape in index.css
+const EASE = [0.4, 0, 0.2, 1];
+const touch = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
+const tracked = (em) => ({ letterSpacing: `${em}em`, textIndent: `${em}em` });
+
+// A poured-wax rim: alternating radii with a little irregularity
+const RIM = Array.from({ length: 44 }, (_, i) => {
+  const a = (i / 44) * Math.PI * 2;
+  const r = 50 * (i % 2 ? 0.925 : 1) * (1 + 0.03 * Math.sin(i * 2.7) + 0.015 * Math.cos(i * 5.1));
+  return `${(50 + r * Math.cos(a)).toFixed(2)}% ${(50 + r * Math.sin(a)).toFixed(2)}%`;
+}).join(', ');
+// The seal cracks along this line when it is broken
+const LEFT_HALF = 'polygon(0 0, 53% 0, 46% 36%, 56% 61%, 48% 100%, 0 100%)';
+const RIGHT_HALF = 'polygon(53% 0, 100% 0, 100% 100%, 48% 100%, 56% 61%, 46% 36%)';
+
+/** Gold-foil Ganesha drawn through an alpha mask of the original artwork. */
+export function GoldGanesha({ size }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="foil-once"
+      style={{
+        width: size,
+        height: size,
+        WebkitMaskImage: 'url(/images/thank-you/ganesha-mask.png)',
+        maskImage: 'url(/images/thank-you/ganesha-mask.png)',
+        WebkitMaskSize: 'contain',
+        maskSize: 'contain',
+        WebkitMaskRepeat: 'no-repeat',
+        maskRepeat: 'no-repeat',
+        WebkitMaskPosition: 'center',
+        maskPosition: 'center',
+        background: 'linear-gradient(115deg, #8C6A2F 8%, #C9A961 30%, #F1DFB0 46%, #FFF8E6 52%, #D9BD7E 64%, #8C6A2F 92%)',
+        backgroundSize: '240% 100%',
+      }}
+    />
+  );
+}
+
+function SealFace() {
+  return (
+    <>
+      <span
+        className="absolute inset-0"
+        style={{
+          clipPath: `polygon(${RIM})`,
+          background: 'radial-gradient(circle at 36% 30%, #A2457C 0%, #74215D 34%, #4E1343 70%, #320B2C 100%)',
+        }}
+      />
+      {/* pressed centre */}
+      <span
+        className="absolute inset-[17%] rounded-full"
+        style={{
+          background: 'radial-gradient(circle at 40% 35%, #7E2A63 0%, #5A1749 60%, #45103A 100%)',
+          boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.6), inset 0 -1px 2px rgba(255,205,235,0.2), 0 1px 0 rgba(255,205,235,0.12)',
+        }}
+      />
+      {/* specular highlight on the wax */}
+      <span className="absolute inset-0" style={{ clipPath: `polygon(${RIM})`, background: 'radial-gradient(ellipse 46% 26% at 34% 20%, rgba(255,232,246,0.32), transparent 70%)' }} />
+      <span
+        className="absolute inset-0 flex items-center justify-center font-display font-semibold italic leading-none"
+        style={{
+          fontSize: 'clamp(26px, 8.6cqw, 33px)',
+          color: '#D8BC7C',
+          opacity: 0.92,
+          letterSpacing: '0.01em',
+          textShadow: '0 -1px 0 rgba(28,0,20,0.8), 0 1px 0 rgba(255,214,240,0.22)',
+        }}
+      >
+        S&amp;N
+      </span>
+    </>
+  );
+}
+
+function WaxSeal({ onClick }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      aria-label="Open your thank-you card"
+      className="ty-seal relative block cursor-pointer rounded-full focus:outline-none focus-visible:ring-1 focus-visible:ring-foil-light/80 focus-visible:ring-offset-4 focus-visible:ring-offset-ink-950"
+      style={{ filter: 'drop-shadow(0 6px 10px rgba(0,0,0,0.55))' }}
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 1, transition: { duration: 0.7 } }}
+      transition={{ duration: 0.8, delay: 0.4, ease: EASE }}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
+    >
+      {/* two halves that crack apart when the seal is broken */}
+      <motion.span
+        className="absolute inset-0"
+        style={{ clipPath: LEFT_HALF }}
+        exit={{ x: -12, y: 4, rotate: -16, opacity: 0, transition: { duration: 0.65, ease: EASE } }}
+      >
+        <SealFace />
+      </motion.span>
+      <motion.span
+        className="absolute inset-0"
+        style={{ clipPath: RIGHT_HALF }}
+        exit={{ x: 12, y: 6, rotate: 13, opacity: 0, transition: { duration: 0.65, ease: EASE } }}
+      >
+        <SealFace />
+      </motion.span>
+    </motion.button>
+  );
+}
+
+/** Velvet back panel with the folded-flap seams of a real envelope. */
+function Velvet({ seams = true }) {
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 opacity-[0.045] mix-blend-screen"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+        }}
+      />
+      <div aria-hidden="true" className="absolute inset-0" style={{ background: 'radial-gradient(80% 55% at 28% 16%, rgba(255,236,226,0.07), transparent 70%)' }} />
+      <motion.div aria-hidden="true" className="absolute inset-0" initial={false} animate={{ opacity: seams ? 1 : 0 }} transition={{ duration: 0.8 }}>
+        {/* bottom flap, a shade lighter */}
+        <div className="absolute inset-0" style={{ clipPath: 'polygon(0 100%, 50% 58%, 100% 100%)', background: 'linear-gradient(0deg, #17120F, #120E0F)' }} />
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polyline points="0,100 50,58 100,100" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
+          <polyline points="0,100.6 50,58.7 100,100.6" fill="none" stroke="rgba(255,240,230,0.06)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          {/* side flaps meet the bottom flap */}
+          <polyline points="0,0 38,62" fill="none" stroke="rgba(0,0,0,0.45)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <polyline points="100,0 62,62" fill="none" stroke="rgba(0,0,0,0.45)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+        </svg>
+      </motion.div>
+    </>
+  );
+}
+
+const bodyStyle = {
+  background: `radial-gradient(120% 75% at 50% 8%, #1B1517 0%, #110D0E 45%, ${ENVELOPE_CLIP.velvet} 100%)`,
+  boxShadow: '0 28px 70px rgba(0,0,0,0.6), 0 0 0 0.75px rgba(201,169,97,0.3)',
+};
+
+/**
+ * The envelope's back panel, drawn above the card while it slides out so the
+ * card visibly comes from inside the envelope (rendered by the page during
+ * the reveal, in the same place and with the same motion as the envelope).
+ */
+export function EnvelopePocket() {
+  return (
+    <div style={{ containerType: 'inline-size', width: ENVELOPE_WIDTH }}>
+      <div
+        className="relative overflow-hidden rounded-b-[4px]"
+        style={{
+          aspectRatio: '0.72',
+          ...bodyStyle,
+          // thumb-cut at the opening
+          WebkitMaskImage: 'radial-gradient(circle 9cqw at 50% 0, transparent 98%, #000 100%)',
+          maskImage: 'radial-gradient(circle 9cqw at 50% 0, transparent 98%, #000 100%)',
+        }}
+      >
+        <Velvet />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Black-velvet portrait envelope. The guest touches the wax seal, writes
+ * their name, the flap opens on a gold-foil "Dear …," and the first-dance
+ * clip plays inside.
+ */
+export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealClick, onGuestMatched, onClipNearEnd }) {
+  const [name, setName] = useState(prefillName);
+  const [help, setHelp] = useState(null); // { message, suggestions? }
+  const [checking, setChecking] = useState(false);
+  const [clipFailed, setClipFailed] = useState(false);
+  const videoRef = useRef(null);
+  const inputRef = useRef(null);
+  const helpRef = useRef(null);
+  const nearEndFired = useRef(false);
+  const accepted = useRef(false);
+  const wantPlaying = useRef(false); // the opening stage has started the clip for real
+
+  const sealed = stage === 'sealed';
+  const naming = stage === 'naming';
+  const playing = stage === 'opening';
+  const open = stage === 'opening' || stage === 'revealing' || stage === 'card';
+
+  // Play the clip once the flap is open; tell the page when it is nearly done
+  useEffect(() => {
+    if (stage !== 'opening') return undefined;
+    const video = videoRef.current;
+    const fire = () => {
+      if (!nearEndFired.current) {
+        nearEndFired.current = true;
+        onClipNearEnd?.();
+      }
+    };
+    const startTimer = window.setTimeout(() => {
+      if (!video) return;
+      wantPlaying.current = true;
+      if (video.paused && video.currentTime > 0.3) video.currentTime = 0;
+      video.play().catch(() => setClipFailed(true));
+    }, 650);
+    const fallback = window.setTimeout(fire, clipFailed ? 4200 : 10500); // never leave a guest waiting
+    const onTime = () => {
+      if (video.duration && video.currentTime >= video.duration - 0.9) fire();
+    };
+    // if anything else pauses it before the end (say the tap's warm-up
+    // resolving late on a slow connection), carry on playing
+    const onPause = () => {
+      if (wantPlaying.current && !video.ended && document.visibilityState === 'visible') video.play().catch(() => {});
+    };
+    video?.addEventListener('timeupdate', onTime);
+    video?.addEventListener('ended', fire);
+    video?.addEventListener('pause', onPause);
+    return () => {
+      window.clearTimeout(startTimer);
+      window.clearTimeout(fallback);
+      video?.removeEventListener('timeupdate', onTime);
+      video?.removeEventListener('ended', fire);
+      video?.removeEventListener('pause', onPause);
+    };
+  }, [stage, clipFailed, onClipNearEnd]);
+
+  // Bring the answer into view (short screens scroll a little)
+  useEffect(() => {
+    if (!help) return undefined;
+    const t = window.setTimeout(() => helpRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 80);
+    return () => window.clearTimeout(t);
+  }, [help]);
+
+  // The seal tap itself focuses the field: iOS only raises the keyboard for a
+  // focus that happens inside the tap, so the form is rendered (inert) from the start.
+  const breakSeal = () => {
+    flushSync(() => onSealClick());
+    inputRef.current?.focus({ preventScroll: true });
+  };
+
+  // Inside the tap: start fetching the clip if nothing has (iOS doesn't
+  // preload), and start it once so it may play later even in Low Power Mode.
+  // That warm-up pauses again only if the real playback hasn't begun: on a
+  // slow connection its play() can resolve after the opening has started it.
+  const primeClip = () => {
+    setClipFailed(false);
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.readyState === 0 && v.networkState !== HTMLMediaElement.NETWORK_LOADING) v.load();
+    if (!v.paused) return;
+    v.play()
+      .then(() => {
+        if (!wantPlaying.current) v.pause();
+      })
+      .catch(() => {});
+  };
+
+  const accept = (match) => {
+    if (accepted.current) return; // once, even if a fading suggestion is tapped again
+    accepted.current = true;
+    setHelp(null);
+    onGuestMatched(match);
+  };
+
+  const pick = (suggestion) => {
+    setName(suggestion);
+    const m = resolveGuest(suggestion);
+    if (m.status !== 'exact') return;
+    primeClip();
+    accept(m);
+  };
+
+  const tryAgain = () => {
+    setHelp(null);
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (checking || accepted.current) return;
+    const result = matchGuest(name);
+    if (result.status === 'empty') {
+      setHelp({ message: 'Please write your first and last name.' });
+      inputRef.current?.focus();
+      return;
+    }
+    if (touch) inputRef.current?.blur(); // lower the keyboard so the answer can be seen
+    setHelp(null);
+    setChecking(true);
+    primeClip();
+    await new Promise((r) => setTimeout(r, 420));
+    setChecking(false);
+    if (result.status === 'exact') return accept(result);
+    if (result.status === 'fuzzy') return setHelp({ message: 'Is this you?', suggestions: result.suggestions.slice(0, 3) });
+    if (result.status === 'need-last') return setHelp({ message: 'Several guests share that name. Please add your last name.' });
+    setHelp({ message: 'We couldn’t find that name. Please try your first and last name, and if it still won’t open, text Shriya or Neil.' });
+  };
+
+  const greetingName = firstName(guestName);
+  // sized by name length so "Dear …," always sits inside the widest part of the liner
+  const n = greetingName.length;
+  const greetingSize = n >= 10 ? 'clamp(19px, 6.2cqw, 25px)' : n >= 8 ? 'clamp(21px, 7cqw, 28px)' : n >= 6 ? 'clamp(24px, 8cqw, 32px)' : 'clamp(27px, 9cqw, 36px)';
+
+  return (
+    <div className="relative" style={{ containerType: 'inline-size', width: ENVELOPE_WIDTH }}>
+      {/* soft scrim + contact shadow (no coloured halo: the seal is the only jewel) */}
+      <div aria-hidden="true" className="pointer-events-none absolute -inset-14" style={{ background: 'radial-gradient(closest-side, rgba(11,5,9,0.5), transparent)' }} />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-6 left-1/2 h-10 w-[86%] -translate-x-1/2 rounded-[50%] bg-black/75 blur-2xl" />
+
+      <div className="relative" style={{ aspectRatio: '0.72', perspective: '1400px' }}>
+        {/* Envelope back panel */}
+        <div className="absolute inset-0 overflow-hidden rounded-[4px]" style={bodyStyle}>
+          <Velvet seams={!playing} />
+
+          {/* First-dance clip in a window, feathered into the velvet */}
+          <motion.div
+            aria-hidden="true"
+            className="absolute inset-x-[3.4cqw] top-[3.4cqw] bottom-[17%] overflow-hidden"
+            initial={false}
+            animate={{ opacity: playing ? 1 : 0 }}
+            transition={{ duration: playing ? 1.4 : 0.6, delay: playing ? 0.45 : 0, ease: 'easeOut' }}
+            style={{
+              WebkitMaskImage: 'radial-gradient(ellipse 98% 94% at 50% 50%, #000 66%, transparent 100%)',
+              maskImage: 'radial-gradient(ellipse 98% 94% at 50% 50%, #000 66%, transparent 100%)',
+            }}
+          >
+            {(naming || open) && (
+              <video
+                ref={videoRef}
+                muted
+                playsInline
+                preload="auto"
+                poster={ENVELOPE_CLIP.poster}
+                onError={() => setClipFailed(true)}
+                className="h-full w-full object-cover"
+                style={{ objectPosition: '50% 60%' }}
+              >
+                <source src={ENVELOPE_CLIP.src} type="video/mp4" />
+              </video>
+            )}
+          </motion.div>
+
+          {/* Hashtag set on the velvet beneath the window */}
+          <AnimatePresence>
+            {playing && (
+              <motion.p
+                key="hashtag"
+                className="pointer-events-none absolute inset-x-0 bottom-[6%] text-center font-display italic text-foil-light/85"
+                style={{ fontSize: 'clamp(15px, 5.2cqw, 20px)', letterSpacing: '0.02em' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.4 } }}
+                transition={{ delay: 2.2, duration: 1.2 }}
+                aria-hidden="true"
+              >
+                {THANK_YOU.hashtag}
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          {/* Sender line while sealed, then the address form, always below the flap point */}
+          <AnimatePresence>
+            {(sealed || naming) && (
+              <motion.div
+                key="front"
+                className="absolute inset-x-[11%] bottom-[10%] z-30 grid place-items-center text-center"
+                style={{ top: `calc(${FLAP * 100}% + clamp(46px, 15cqw, 58px))` }}
+                exit={{ opacity: 0, transition: { duration: 0.3 } }}
+              >
+                <motion.div
+                  className="[grid-area:1/1]"
+                  aria-hidden={!sealed}
+                  initial={false}
+                  animate={{ opacity: sealed ? 1 : 0 }}
+                  transition={{ duration: sealed ? 0.8 : 0.3 }}
+                >
+                  <p className="font-display italic text-ivory/90" style={{ fontSize: 'clamp(22px, 7.6cqw, 29px)', lineHeight: 1.1 }}>
+                    Shriya &amp; Neil
+                  </p>
+                  <p className="ty-caps mt-[0.7em] text-foil/85" style={{ fontSize: 'clamp(12px, 3.6cqw, 13.5px)', ...tracked(0.2) }}>
+                    Barcelona · MMXXVI
+                  </p>
+                </motion.div>
+
+                <motion.form
+                  onSubmit={handleSubmit}
+                  noValidate
+                  inert={!naming}
+                  className="flex w-full flex-col items-center [grid-area:1/1]"
+                  initial={false}
+                  animate={{ opacity: naming ? 1 : 0, y: naming ? 0 : 8 }}
+                  transition={{ duration: 0.6, delay: naming ? 0.3 : 0, ease: EASE }}
+                  style={{ pointerEvents: naming ? 'auto' : 'none' }}
+                >
+                  <label htmlFor="guest-name" className="ty-caps text-foil/90" style={{ fontSize: 'clamp(12.5px, 3.8cqw, 14px)', ...tracked(0.18) }}>
+                    Addressed to
+                  </label>
+                  <input
+                    ref={inputRef}
+                    id="guest-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (help) setHelp(null);
+                    }}
+                    placeholder="first & last name"
+                    autoComplete="name"
+                    autoCapitalize="words"
+                    enterKeyHint="go"
+                    spellCheck={false}
+                    className="mt-[2.4cqw] min-h-[48px] w-full rounded-[2px] border border-foil/25 border-b-foil/70 bg-ivory/[0.035] px-2 text-center font-display italic text-foil-light transition-colors placeholder:text-ivory/55 focus:border-foil/50 focus:border-b-foil-light focus:bg-ivory/[0.06] focus:outline-none"
+                    style={{ fontSize: 'clamp(21px, 7cqw, 26px)', lineHeight: 1.2 }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={checking}
+                    className="ty-caps mt-[5cqw] inline-flex min-h-[46px] items-center gap-3 border border-foil/55 bg-foil/[0.06] px-[1.5em] font-semibold text-foil-light transition hover:border-foil hover:bg-foil/[0.14] focus-visible:border-foil focus-visible:bg-foil/[0.14] focus-visible:outline-none disabled:opacity-60"
+                    style={{ fontSize: 'clamp(14px, 4.2cqw, 16px)', ...tracked(0.16) }}
+                  >
+                    {checking ? 'One moment' : 'Open'}
+                    <svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true">
+                      <path d="M0 4h20M17 1l3 3-3 3" fill="none" stroke="#C9A961" strokeWidth="1" />
+                    </svg>
+                  </button>
+                </motion.form>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Flap: velvet outside, banded gold-foil liner inside */}
+        <motion.div
+          className="pointer-events-none absolute inset-x-0 top-0 origin-top"
+          style={{ height: `${FLAP * 100}%`, transformStyle: 'preserve-3d', zIndex: 20 }}
+          initial={false}
+          animate={{ rotateX: open ? -180 : 0 }}
+          transition={{ duration: 0.95, ease: EASE }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+              background: 'linear-gradient(180deg, #1E1719 0%, #141011 62%, #0F0B0C 100%)',
+            }}
+          />
+          <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+            <polyline points="0,0 50,100 100,0" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="5" vectorEffect="non-scaling-stroke" transform="translate(0 1.4)" />
+            <polyline points="0.4,0 50,99.2 99.6,0" fill="none" stroke="rgba(201,169,97,0.55)" strokeWidth="0.9" vectorEffect="non-scaling-stroke" />
+          </svg>
+          <div
+            className="absolute inset-0"
+            style={{
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              transform: 'rotateX(180deg)',
+              clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
+              background: 'linear-gradient(118deg, #6E4F1C 0%, #B8924A 16%, #F3E2B4 28%, #C49B52 40%, #8C6A2F 54%, #E2C88A 68%, #A27C3C 82%, #6E4F1C 100%)',
+            }}
+          >
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 opacity-[0.22]"
+              style={{
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'%3E%3Cg fill='none' stroke='%23432808' stroke-width='0.7'%3E%3Cpath d='M11 4c2 3 2 5 0 7-2-2-2-4 0-7z'/%3E%3Cpath d='M11 18c-2-3-2-5 0-7 2 2 2 4 0 7z'/%3E%3Cpath d='M4 11c3-2 5-2 7 0-2 2-4 2-7 0z'/%3E%3Cpath d='M18 11c-3 2-5 2-7 0 2-2 4-2 7 0z'/%3E%3C/g%3E%3C/svg%3E\")",
+                backgroundSize: '22px 22px',
+              }}
+            />
+            {/* fold shadow along the hinge */}
+            <div aria-hidden="true" className="absolute inset-0" style={{ background: 'linear-gradient(0deg, rgba(0,0,0,0.35), transparent 18%)' }} />
+            {open && greetingName && (
+              <motion.p
+                className="absolute inset-x-0 text-center font-script"
+                style={{
+                  top: '54%',
+                  fontSize: greetingSize,
+                  lineHeight: 1.2,
+                  color: '#4A2F0C',
+                  textShadow: '0 1px 0 rgba(255,246,222,0.7), 0 -1px 0 rgba(60,35,5,0.25)',
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8, duration: 1.2 }}
+              >
+                Dear {greetingName},
+              </motion.p>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Seal → Ganesha roundel at the flap's point */}
+        <div className="absolute left-1/2 z-30 -translate-x-1/2 -translate-y-1/2" style={{ top: `${FLAP * 100}%` }}>
+          <AnimatePresence mode="wait">
+            {sealed && <WaxSeal key="seal" onClick={breakSeal} />}
+            {naming && (
+              <motion.div
+                key="ganesha"
+                className="ty-roundel flex items-center justify-center rounded-full"
+                style={{
+                  background: '#100C0D',
+                  boxShadow: '0 0 0 0.75px rgba(201,169,97,0.55), 0 0 0 4px #100C0D, 0 0 0 4.75px rgba(201,169,97,0.2)',
+                }}
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.25 } }}
+                transition={{ duration: 0.7, delay: 0.25, ease: EASE }}
+              >
+                <GoldGanesha size="clamp(38px, 12cqw, 46px)" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Hint under the envelope while sealed; the answer to a name while naming */}
+      <AnimatePresence>
+        {sealed && (
+          <motion.p
+            key="hint"
+            className="pointer-events-none absolute inset-x-0 top-full mt-7 text-center font-display text-[17px] italic text-ivory/70"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.3 } }}
+            transition={{ delay: 2.2, duration: 1.4 }}
+          >
+            {touch ? 'Tap the seal to open' : 'Click the seal to open'}
+          </motion.p>
+        )}
+        {naming && help && (
+          <motion.div
+            key="help"
+            ref={helpRef}
+            className="absolute inset-x-0 top-full z-30 mt-4 scroll-mb-4"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
+            transition={{ duration: 0.35, ease: EASE }}
+          >
+            <div role="alert" className="rounded-[3px] border border-foil/25 bg-[#0C090A]/[0.94] px-[7%] pb-2 pt-4 text-center shadow-[0_18px_44px_rgba(0,0,0,0.55)]">
+              <p className="font-display text-[17px] leading-snug text-ivory/90">{help.message}</p>
+              {help.suggestions?.length > 0 && (
+                <div className="mt-3 flex flex-col gap-2">
+                  {help.suggestions.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => pick(s)}
+                      className="min-h-[46px] border border-foil/45 px-4 font-display text-[19px] italic leading-tight text-foil-light transition hover:border-foil hover:bg-foil/[0.08] focus-visible:border-foil focus-visible:bg-foil/[0.08] focus-visible:outline-none"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {touch ? (
+                <button type="button" onClick={tryAgain} className="ty-link mt-1 inline-flex min-h-[44px] items-center text-[16px]">
+                  Try again
+                </button>
+              ) : (
+                <div className="h-2" />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
