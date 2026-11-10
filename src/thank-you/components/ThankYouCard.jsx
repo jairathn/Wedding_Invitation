@@ -72,14 +72,17 @@ const ctaClass =
   'ty-caps min-h-[46px] border border-foil/55 bg-foil/[0.06] px-[2em] font-semibold text-foil-light transition hover:border-foil hover:bg-foil/[0.14] focus-visible:border-foil focus-visible:bg-foil/[0.14] focus-visible:outline-none';
 const ctaStyle = { fontSize: 'clamp(14px, 4.1cqw, 16px)', ...tracked(0.16) };
 
-function Front({ recipient, onRead, onPhotos, hasPhotos }) {
+function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
   return (
     <Stock>
       {/* scrolls only as a last resort, when a very short screen can't fit it all */}
       <div className="thin-scroll relative flex h-full flex-col items-center overflow-y-auto overscroll-contain px-[10%] pb-[9.5cqw] pt-[10.5cqw] text-center">
         <div className="flex flex-col items-center">
           {recipient && (
-            <p className="font-display italic text-ivory/85" style={{ fontSize: 'clamp(16px, 4.6cqw, 20px)', lineHeight: 1.2, textWrap: 'balance' }}>
+            <p
+              className="font-display italic text-ivory/85"
+              style={{ fontSize: 'clamp(16px, 4.6cqw, 20px)', lineHeight: 1.2, textWrap: 'balance', opacity: recipientPending ? 0 : 1, transition: 'opacity 0.7s ease' }}
+            >
               {recipient},
             </p>
           )}
@@ -329,7 +332,7 @@ function Back({ letter, status, onRetry, onFront, onPhotos, hasPhotos, firstReve
  * back: their letter. The flip turns the card edge-on, swaps faces and turns
  * it back, so the letter ends up as a flat, natively scrollable element.
  */
-export function ThankYouCard({ recipient, letter, letterStatus, onRetryLetter, onOpenGallery, hasPhotos, onFaceChange }) {
+export function ThankYouCard({ recipient, recipientPending = false, letter, letterStatus, onRetryLetter, onOpenGallery, hasPhotos, onFaceChange }) {
   const [face, setFace] = useState('front');
   const [busy, setBusy] = useState(false);
   const revealed = useRef(false);
@@ -365,7 +368,7 @@ export function ThankYouCard({ recipient, letter, letterStatus, onRetryLetter, o
     <div ref={rootRef} className="ty-card relative" style={{ perspective: '1800px' }}>
       <motion.div className="relative h-full w-full" style={{ containerType: 'inline-size' }} animate={controls} initial={{ rotateY: 0 }}>
         {face === 'front' ? (
-          <Front recipient={recipient} onRead={() => flipTo('back')} onPhotos={onOpenGallery} hasPhotos={hasPhotos} />
+          <Front recipient={recipient} recipientPending={recipientPending} onRead={() => flipTo('back')} onPhotos={onOpenGallery} hasPhotos={hasPhotos} />
         ) : (
           <Back
             letter={letter}

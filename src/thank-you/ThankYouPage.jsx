@@ -8,9 +8,9 @@ import { ThankYouCard } from './components/ThankYouCard';
 import { FilmStrips } from './components/FilmStrips';
 import { PhotoGallery } from './components/PhotoGallery';
 import { BackgroundMusic } from '../components/BackgroundMusic';
-import { greetingName, recallGuest, rememberGuest, resolveGuest } from '../lib/guests';
+import { greetingName, recallGuest, recallGuestRecord, rememberGuest, resolveGuest } from '../lib/guests';
 import { skyBurst } from './sky';
-import { layerState, newLayerToken, popLayer, pushLayer } from './layers';
+import { currentLayer, leaveLayers, leaveStaleLayers, newLayerToken, pushLayer } from './layers';
 import { THANK_YOU } from './config';
 import photoManifest from './data/photos.json';
 import lettersUrl from './data/letters.json?url';
@@ -63,8 +63,9 @@ const stripDear = (s) => s.replace(/^Dear\s+/, '').replace(/,\s*$/, '');
 export default function ThankYouPage() {
   // A guest who has opened their card on this device before goes straight back to it
   const [returning] = useState(() => {
-    const m = resolveGuest(recallGuest());
-    return m.status === 'exact' ? m : null;
+    const record = recallGuestRecord();
+    const m = resolveGuest(record.name);
+    return m.status === 'exact' ? { ...m, names: record.names } : null;
   });
   // A name remembered from an earlier visit that no longer matches exactly is
   // offered back; reopening the envelope starts blank, so it doubles as "not you?"
@@ -172,27 +173,49 @@ export default function ThankYouPage() {
   // The gallery gets a history entry, so Back closes it rather than the site
   const openGallery = useCallback((start = null) => {
     const token = newLayerToken();
-    pushLayer('gallery', token);
+    pushLayer({ ty: 'gallery', token, depth: 1, start });
     setGallery({ open: true, start, token });
   }, []);
   const closeGallery = useCallback(() => {
-    if (!popLayer('gallery', gallery.token)) setGallery(GALLERY_CLOSED);
+    if (!leaveLayers(gallery.token)) setGallery(GALLERY_CLOSED);
   }, [gallery.token]);
+  // Back and Forward: the history entry says whether the gallery is open
   useEffect(() => {
-    if (!gallery.open) return undefined;
+    leaveStaleLayers();
     const onPop = () => {
-      if (layerState().token !== gallery.token) setGallery(GALLERY_CLOSED);
+      const layer = currentLayer();
+      if (!layer) {
+        setGallery((g) => (g.open ? GALLERY_CLOSED : g));
+        return;
+      }
+      if (stageRef.current !== 'card') return;
+      setGallery((g) => (g.open && g.token === layer.token ? g : { open: true, start: layer.ty === 'gallery' ? layer.start : null, token: layer.token }));
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [gallery.open, gallery.token]);
+  }, []);
+
+  // A returning guest's card shows before their letter has loaded. The names
+  // line remembered from last time stands in; without one, the line is held
+  // back for a moment so it doesn't change on screen.
+  const [holdDone, setHoldDone] = useState(!returning || !!returning.names);
+  useEffect(() => {
+    if (holdDone) return undefined;
+    const t = window.setTimeout(() => setHoldDone(true), 1500);
+    return () => window.clearTimeout(t);
+  }, [holdDone]);
+  const recipientPending = !holdDone && letter.status === 'loading';
+  useEffect(() => {
+    if (letter.status === 'ready' && guest && letter.value?.salutation) rememberGuest(guest.displayName, stripDear(letter.value.salutation));
+  }, [letter, guest]);
 
   const revealing = stage === 'revealing';
   const atCard = stage === 'card';
   const showCard = revealing || atCard;
   const envelopeOpen = stage === 'opening' || revealing;
   const greet = guest ? greetingName(guest.person, guest.displayName) : '';
-  const recipient = letter.value?.salutation ? stripDear(letter.value.salutation) : greet;
+  const rememberedNames = returning?.names && guest?.displayName === returning.displayName && letter.status === 'loading' ? returning.names : '';
+  const recipient = letter.value?.salutation ? stripDear(letter.value.salutation) : rememberedNames || greet;
 
   const envelopeAnimate = revealing
     ? { y: ['22%', '45%', '45%', '140%'], opacity: [1, 1, 1, 0] }
@@ -201,7 +224,7 @@ export default function ThankYouPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="ty-page relative min-h-[calc(100*var(--vh))] text-ivory">
+      <div className="ty-page relative min-h-[calc(100*var(--vh))] text-ivory" data-stage={stage}>
         <GoldDefs />
         {/* asks for the script font early, so "Dear …," never swaps fonts on screen */}
         <span aria-hidden="true" className="pointer-events-none absolute left-0 top-0 font-script opacity-0">
@@ -242,6 +265,7 @@ export default function ThankYouPage() {
                 >
                   <ThankYouCard
                     recipient={recipient}
+                    recipientPending={recipientPending}
                     letter={letter.value}
                     letterStatus={letter.status}
                     onRetryLetter={retryLetter}

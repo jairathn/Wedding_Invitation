@@ -30,15 +30,6 @@ export function BackgroundMusic({ src = '/audio/background-music.mp3', startAt =
   useEffect(() => {
     const handleFirstInteraction = () => {
       if (audioRef.current && !isPlaying) {
-        // On iPhones, play as ambient sound: it mixes with other audio and
-        // stays quiet when the ring/silent switch is set to silent
-        if (variant === 'night' && 'audioSession' in navigator) {
-          try {
-            navigator.audioSession.type = 'ambient';
-          } catch {
-            /* not supported */
-          }
-        }
         // Start at 0 volume
         audioRef.current.volume = 0;
         if (startAt && audioRef.current.currentTime < startAt) {
@@ -86,7 +77,7 @@ export function BackgroundMusic({ src = '/audio/background-music.mp3', startAt =
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
-  }, [isPlaying, startAt, variant]);
+  }, [isPlaying, startAt]);
 
   // Listen for video play/pause events
   useEffect(() => {

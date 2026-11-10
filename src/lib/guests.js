@@ -151,8 +151,8 @@ export const firstName = (name) => String(name || '').trim().split(/\s+/)[0] || 
 // session when local storage is unavailable.
 const SESSION_KEY = 'sn:guest';
 const KEEP_MS = 60 * 24 * 60 * 60 * 1000;
-export function rememberGuest(name) {
-  const value = JSON.stringify({ name, t: Date.now() });
+export function rememberGuest(name, names) {
+  const value = JSON.stringify({ name, t: Date.now(), ...(names ? { names } : {}) });
   try {
     localStorage.setItem(SESSION_KEY, value);
   } catch {
@@ -163,16 +163,18 @@ export function rememberGuest(name) {
     }
   }
 }
-export function recallGuest() {
+/** { name, names } remembered on this device ('' when none); names is the card's greeting line. */
+export function recallGuestRecord() {
   for (const store of ['localStorage', 'sessionStorage']) {
     try {
       const raw = window[store].getItem(SESSION_KEY);
       if (!raw) continue;
-      const { name, t } = JSON.parse(raw);
-      if (typeof name === 'string' && Date.now() - t < KEEP_MS) return name;
+      const { name, t, names } = JSON.parse(raw);
+      if (typeof name === 'string' && Date.now() - t < KEEP_MS) return { name, names: typeof names === 'string' ? names : '' };
     } catch {
       /* unreadable or legacy value */
     }
   }
-  return '';
+  return { name: '', names: '' };
 }
+export const recallGuest = () => recallGuestRecord().name;

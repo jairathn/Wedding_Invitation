@@ -5,7 +5,7 @@ import { matchGuest, resolveGuest, firstName } from '../../lib/guests';
 import { ENVELOPE_CLIP, THANK_YOU } from '../config';
 
 export const FLAP = 0.3; // flap depth as a fraction of the envelope's height
-export const ENVELOPE_WIDTH = 'min(372px, 76vw, max(calc(45 * var(--vh)), 240px))';
+export const ENVELOPE_WIDTH = 'var(--env-w, 300px)'; // set per screen shape in index.css
 const EASE = [0.4, 0, 0.2, 1];
 const touch = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
 const tracked = (em) => ({ letterSpacing: `${em}em`, textIndent: `${em}em` });
@@ -186,6 +186,7 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
   const helpRef = useRef(null);
   const nearEndFired = useRef(false);
   const accepted = useRef(false);
+  const wantPlaying = useRef(false); // the opening stage has started the clip for real
 
   const sealed = stage === 'sealed';
   const naming = stage === 'naming';
@@ -203,19 +204,29 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
       }
     };
     const startTimer = window.setTimeout(() => {
-      video?.play().catch(() => setClipFailed(true));
+      if (!video) return;
+      wantPlaying.current = true;
+      if (video.paused && video.currentTime > 0.3) video.currentTime = 0;
+      video.play().catch(() => setClipFailed(true));
     }, 650);
     const fallback = window.setTimeout(fire, clipFailed ? 4200 : 10500); // never leave a guest waiting
     const onTime = () => {
       if (video.duration && video.currentTime >= video.duration - 0.9) fire();
     };
+    // if anything else pauses it before the end (say the tap's warm-up
+    // resolving late on a slow connection), carry on playing
+    const onPause = () => {
+      if (wantPlaying.current && !video.ended && document.visibilityState === 'visible') video.play().catch(() => {});
+    };
     video?.addEventListener('timeupdate', onTime);
     video?.addEventListener('ended', fire);
+    video?.addEventListener('pause', onPause);
     return () => {
       window.clearTimeout(startTimer);
       window.clearTimeout(fallback);
       video?.removeEventListener('timeupdate', onTime);
       video?.removeEventListener('ended', fire);
+      video?.removeEventListener('pause', onPause);
     };
   }, [stage, clipFailed, onClipNearEnd]);
 
@@ -233,15 +244,20 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
     inputRef.current?.focus({ preventScroll: true });
   };
 
-  // Inside the tap: fetch the clip if nothing is buffered yet (iOS doesn't
-  // preload), and start it once so it may play later even in Low Power Mode
+  // Inside the tap: start fetching the clip if nothing has (iOS doesn't
+  // preload), and start it once so it may play later even in Low Power Mode.
+  // That warm-up pauses again only if the real playback hasn't begun: on a
+  // slow connection its play() can resolve after the opening has started it.
   const primeClip = () => {
     setClipFailed(false);
     const v = videoRef.current;
     if (!v) return;
-    if (v.readyState < 3) v.load();
+    if (v.readyState === 0 && v.networkState !== HTMLMediaElement.NETWORK_LOADING) v.load();
+    if (!v.paused) return;
     v.play()
-      .then(() => v.pause())
+      .then(() => {
+        if (!wantPlaying.current) v.pause();
+      })
       .catch(() => {});
   };
 
@@ -395,12 +411,12 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
                       setName(e.target.value);
                       if (help) setHelp(null);
                     }}
-                    placeholder="your first & last name"
+                    placeholder="first & last name"
                     autoComplete="name"
                     autoCapitalize="words"
                     enterKeyHint="go"
                     spellCheck={false}
-                    className="mt-[2.4cqw] min-h-[48px] w-full rounded-[2px] border border-foil/25 border-b-foil/70 bg-ivory/[0.035] px-3 text-center font-display italic text-foil-light transition-colors placeholder:text-ivory/55 focus:border-foil/50 focus:border-b-foil-light focus:bg-ivory/[0.06] focus:outline-none"
+                    className="mt-[2.4cqw] min-h-[48px] w-full rounded-[2px] border border-foil/25 border-b-foil/70 bg-ivory/[0.035] px-2 text-center font-display italic text-foil-light transition-colors placeholder:text-ivory/55 focus:border-foil/50 focus:border-b-foil-light focus:bg-ivory/[0.06] focus:outline-none"
                     style={{ fontSize: 'clamp(21px, 7cqw, 26px)', lineHeight: 1.2 }}
                   />
                   <button

@@ -300,19 +300,33 @@ html.night ::selection {
 }
 
 /* Short screens (iPhone SE and mini, larger text, landscape): size the card
-   by width so everything on it stays legible, and let the page scroll. */
+   by width so everything on it stays legible, and let the page scroll. The
+   envelope stays centred until the card arrives. */
 @media (max-height: 640px) {
   .ty-page {
     --card-w: min(400px, 88vw);
     --lift: 0px;
     --mid: calc(50 * var(--vh));
   }
-  .ty-stage {
+  .ty-page:is([data-stage='revealing'], [data-stage='card']) .ty-stage {
     padding-top: 72px;
     padding-bottom: 72px;
   }
   .ty-page .ty-strip {
     display: none;
+  }
+}
+
+/* The envelope: as large as the screen allows, never smaller than 240px on a
+   phone held upright; on a phone held sideways, small enough that the hint
+   under it stays on screen. */
+.ty-page {
+  --env-w: min(372px, 76vw, max(calc(45 * var(--vh)), 240px));
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .ty-page {
+    --env-w: min(372px, 76vw, max(calc((100 * var(--vh) - 112px) * 0.72), 190px));
   }
 }
 
@@ -328,9 +342,24 @@ html.night ::selection {
 
 /* clip sideways spill (scrims, strips) without making the page a scroller */
 .ty-page {
-  overflow-x: hidden;
   overflow-x: clip;
   font-family: var(--font-display);
+}
+
+/* while the envelope drops away below the screen, it mustn't grow the page */
+.ty-page:is([data-stage='opening'], [data-stage='revealing']) {
+  overflow-y: clip;
+}
+
+/* Browsers without overflow: clip (iOS 15). These sit in @supports because
+   the CSS minifier drops a plain fallback written next to the clip value. */
+@supports not (overflow: clip) {
+  .ty-page {
+    overflow-x: hidden;
+  }
+  .ty-page:is([data-stage='opening'], [data-stage='revealing']) {
+    overflow-y: hidden;
+  }
 }
 
 /* the page is exactly as tall as the visible screen (not iOS's toolbar-hidden

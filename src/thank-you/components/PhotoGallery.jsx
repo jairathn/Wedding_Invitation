@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useIsPresent } from 'framer-motion';
 import { THANK_YOU } from '../config';
-import { layerState, popLayer, pushLayer } from '../layers';
+import { currentLayer, leaveLayers, pushLayer, updateLayer } from '../layers';
 
 const EASE = [0.4, 0, 0.2, 1];
 const SLIDE_MS = 5200;
@@ -59,6 +59,7 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direc
   const touch = useRef(null);
   const pinch = useRef(false);
   const [returnTo] = useState(() => document.activeElement);
+  const [openedAt] = useState(() => performance.now());
   const [dir, setDir] = useState(1);
 
   const go = useCallback(
@@ -154,7 +155,9 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direc
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose(); // a tap on the dark surround closes
+        // a tap on the dark surround closes, but not the second click of the
+        // double-click that opened it
+        if (e.target === e.currentTarget && e.detail < 2 && performance.now() - openedAt > 450) onClose();
       }}
       role="dialog"
       aria-modal="true"
@@ -241,8 +244,13 @@ export function PhotoGallery({ open, photos, startIndex = null, token = null, on
 }
 
 function GalleryPanel({ photos, startIndex, token, onClose }) {
-  const [lightbox, setLightbox] = useState(startIndex);
-  const [direct, setDirect] = useState(startIndex !== null);
+  // Forward into a photo's history entry reopens that photo over the grid
+  const [entry] = useState(() => {
+    const c = currentLayer();
+    return c?.token === token && c.ty === 'photo' ? c : null;
+  });
+  const [lightbox, setLightbox] = useState(entry ? entry.index ?? 0 : startIndex);
+  const [direct, setDirect] = useState(!entry && startIndex !== null);
   const [playing, setPlaying] = useState(false);
   const [returnTo] = useState(() => document.activeElement);
   const panelRef = useRef(null);
@@ -289,7 +297,7 @@ function GalleryPanel({ photos, startIndex, token, onClose }) {
   // A photo opened from the grid has its own history entry: Back returns to the grid
   const openPhoto = useCallback(
     (i) => {
-      pushLayer('photo', token);
+      pushLayer({ ty: 'photo', token, depth: 2, index: i });
       setLightbox(i);
     },
     [token],
@@ -300,24 +308,35 @@ function GalleryPanel({ photos, startIndex, token, onClose }) {
       onClose(); // opened from the film strip: straight back to the card
       return;
     }
-    if (!popLayer('photo', token)) setLightbox(null);
+    if (!leaveLayers(token, 1)) setLightbox(null);
   }, [direct, onClose, token]);
   const showAll = useCallback(() => {
     setPlaying(false);
     setDirect(false);
     setLightbox(null);
-  }, []);
+    const c = currentLayer();
+    if (c?.token === token && c.ty === 'gallery') updateLayer({ start: null });
+  }, [token]);
+  // keep the photo's entry on the photo showing, so Forward returns to it
+  useEffect(() => {
+    const c = currentLayer();
+    if (lightbox !== null && c?.token === token && c.ty === 'photo' && c.index !== lightbox) updateLayer({ index: lightbox });
+  }, [lightbox, token]);
   useEffect(() => {
     const onPop = () => {
-      const s = layerState();
-      if (s.token === token && s.ty === 'gallery') {
+      const c = currentLayer();
+      if (c?.token !== token) return; // the page opens and closes the gallery itself
+      if (c.ty === 'photo') {
+        setDirect(false);
+        setLightbox(c.index ?? 0);
+      } else if (!direct) {
         setPlaying(false);
         setLightbox(null);
       }
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [token]);
+  }, [token, direct]);
 
   const backButton = (extra = '') => (
     <button
