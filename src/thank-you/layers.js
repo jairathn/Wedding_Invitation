@@ -3,9 +3,10 @@
 // is on top instead of leaving the site, and Forward opens it again.
 //
 // Each entry records what it stands for: { ty: 'gallery' | 'photo', token,
-// depth, start?, index? }. depth counts our entries above the page's own (the
-// gallery is 1, a photo opened from the grid is 2). Every gallery opening gets
-// its own token, so entries left from earlier openings are recognised as stale.
+// depth, start?, index?, tab? }. depth counts our entries above the page's own
+// (the gallery is 1, a photo opened from the grid is 2); tab is the gallery tab
+// it belongs to. Every gallery opening gets its own token, so entries left from
+// earlier openings are recognised as stale.
 
 const DEFAULT_DEPTH = { gallery: 1, photo: 2 };
 
@@ -17,7 +18,14 @@ export function newLayerToken() {
 export function currentLayer() {
   const s = window.history.state;
   if (!s?.ty || !s.token) return null;
-  return { ty: s.ty, token: s.token, depth: s.depth ?? DEFAULT_DEPTH[s.ty] ?? 1, start: s.start ?? null, index: s.index ?? null };
+  return {
+    ty: s.ty,
+    token: s.token,
+    depth: s.depth ?? DEFAULT_DEPTH[s.ty] ?? 1,
+    start: s.start ?? null,
+    index: s.index ?? null,
+    tab: s.tab ?? null,
+  };
 }
 
 /** Add an entry for a layer that just opened. */

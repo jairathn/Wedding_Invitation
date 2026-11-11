@@ -129,11 +129,30 @@ export function PhotoGrid({ photos, offset = 0, total, density, onOpen, reveal }
   const ref = useRef(null);
   const [width, setWidth] = useState(0);
   const [range, setRange] = useState([0, 0]);
+  const layoutRef = useRef(null);
+  const anchor = useRef(null);
 
+  // When the width changes (a phone turned sideways), note the photo at the
+  // top of the screen so it can stay there once the rows are re-laid
   useLayoutEffect(() => {
     const el = ref.current;
-    setWidth(el.clientWidth);
-    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    let last = el.clientWidth;
+    setWidth(last);
+    const ro = new ResizeObserver(() => {
+      const w = el.clientWidth;
+      if (w === last) return;
+      last = w;
+      const sc = scrollerOf(el);
+      const old = layoutRef.current;
+      if (sc && old?.rows.length) {
+        const y = sc.getBoundingClientRect().top - el.getBoundingClientRect().top;
+        if (y > 0 && y < old.height) {
+          const row = old.rows[Math.min(firstBelow(old.rows, y), old.rows.length - 1)];
+          anchor.current = { i: row.items[0].i, by: row.top - y };
+        }
+      }
+      setWidth(w);
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -154,8 +173,18 @@ export function PhotoGrid({ photos, offset = 0, total, density, onOpen, reveal }
   }, [layout]);
 
   useLayoutEffect(() => {
+    layoutRef.current = layout;
+    const a = anchor.current;
+    anchor.current = null;
+    const el = ref.current;
+    const sc = scrollerOf(el);
+    const row = a && layout.rows.find((r) => r.items.some((it) => it.i === a.i));
+    if (row && sc) {
+      const y = sc.getBoundingClientRect().top - el.getBoundingClientRect().top;
+      sc.scrollTo(0, sc.scrollTop + row.top - a.by - y);
+    }
     measure();
-  }, [measure]);
+  }, [layout, measure]);
 
   useEffect(() => {
     const sc = scrollerOf(ref.current);
@@ -177,14 +206,17 @@ export function PhotoGrid({ photos, offset = 0, total, density, onOpen, reveal }
     };
   }, [measure]);
 
-  // bring a photo into view (the one last shown in the viewer)
+  // bring a photo into view (the one last shown in the viewer), once: a later
+  // re-layout (a phone turned sideways) must not pull the page back to it
+  const revealed = useRef(null);
   useLayoutEffect(() => {
-    if (!reveal) return;
+    if (!reveal || revealed.current === reveal) return;
     const local = reveal.index - offset;
     const row = layout.rows.find((r) => r.items.some((it) => it.i === local));
     const el = ref.current;
     const sc = scrollerOf(el);
-    if (!row || !el || !sc) return;
+    if (!row || !el || !sc) return; // not in this grid, or not laid out yet
+    revealed.current = reveal;
     const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + row.top;
     const clear = reveal.clear ?? 0; // the sticky bars at the top
     if (top < clear || top + row.h > sc.clientHeight) sc.scrollTo(0, sc.scrollTop + top - Math.max(clear, (sc.clientHeight - row.h) / 2));

@@ -307,16 +307,23 @@ export function PhotoGallery({ open, photos, status = 'ready', onRetry, startInd
 function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
   const tabs = useMemo(() => galleryTabs(photos), [photos]);
   const featured = tabs[0]?.id === 'highlights' ? tabs[0].photos : [];
-  // Forward into a photo's history entry reopens that photo over its tab
+  // Forward into one of this gallery's history entries brings back its tab,
+  // and a photo's entry reopens that photo
   const [entry] = useState(() => {
     const c = currentLayer();
-    return c?.token === token && c.ty === 'photo' ? c : null;
+    return c?.token === token ? c : null;
   });
+  const fromPhoto = entry?.ty === 'photo';
   const [tabId, setTabId] = useState(entry?.tab ?? null);
   const tab = tabs.find((t) => t.id === tabId) || tabs[0] || null;
   const list = tab?.photos ?? [];
-  const [lightbox, setLightbox] = useState(entry ? entry.index ?? 0 : startIndex);
-  const [direct, setDirect] = useState(!entry && startIndex !== null);
+  const ready = status === 'ready' && !!tab;
+  const [lightbox, setLightbox] = useState(fromPhoto ? entry.index ?? 0 : startIndex);
+  const [direct, setDirect] = useState(!fromPhoto && startIndex !== null);
+  // the photo actually on screen: none until the list is here, and none if the
+  // index isn't in it (say the site changed since the entry was made), so the
+  // gallery is never left inert behind a viewer that isn't there
+  const viewing = ready && lightbox !== null && list[lightbox] ? lightbox : null;
   const [playing, setPlaying] = useState(false);
   const [reveal, setReveal] = useState(null);
   const [returnTo] = useState(() => document.activeElement);
@@ -357,11 +364,11 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
   }, [returnTo]);
 
   useEffect(() => {
-    if (lightbox !== null) return undefined;
+    if (viewing !== null) return undefined;
     const onKey = (e) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [lightbox, onClose]);
+  }, [viewing, onClose]);
 
   // Switching tabs starts the new one at its top, under the bars
   const selectTab = useCallback(
@@ -401,6 +408,7 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
   const openPhoto = useCallback(
     (i) => {
       pushLayer({ ty: 'photo', token, depth: 2, index: i, tab: tab?.id ?? null });
+      setDirect(false);
       setReveal(null);
       setLightbox(i);
     },
@@ -429,11 +437,20 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
     const c = currentLayer();
     if (c?.token === token && c.ty === 'gallery') updateLayer({ start: null });
   }, [token, lightbox, backToGrid]);
-  // keep the photo's entry on the photo showing, so Forward returns to it
+  // the gallery's own entry remembers the tab on screen, so Forward from the
+  // card comes back to it
   useEffect(() => {
     const c = currentLayer();
-    if (lightbox !== null && c?.token === token && c.ty === 'photo' && c.index !== lightbox) updateLayer({ index: lightbox });
-  }, [lightbox, token]);
+    if (tab && c?.token === token && c.ty === 'gallery' && c.tab !== tab.id) updateLayer({ tab: tab.id });
+  }, [tab, token, viewing]);
+  // keep the entry on the photo showing, so Forward returns to it (for a
+  // film-strip photo, the gallery's own entry holds it)
+  useEffect(() => {
+    const c = currentLayer();
+    if (viewing === null || c?.token !== token) return;
+    if (c.ty === 'photo' && c.index !== viewing) updateLayer({ index: viewing });
+    else if (c.ty === 'gallery' && direct && c.start !== viewing) updateLayer({ start: viewing });
+  }, [viewing, token, direct]);
   const lightboxRef = useRef(lightbox);
   useEffect(() => {
     lightboxRef.current = lightbox;
@@ -466,7 +483,6 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
     </button>
   );
 
-  const ready = status === 'ready' && tab;
   const chapters = tabs.filter((t) => t.id !== 'highlights');
   const next = tab && tab.id !== 'highlights' ? tabs[tabs.indexOf(tab) + 1] : null;
   const gridProps = { total: list.length, onOpen: openPhoto, reveal };
@@ -486,7 +502,7 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
       aria-modal="true"
       aria-label="Our wedding photos"
     >
-      <div inert={lightbox !== null}>
+      <div inert={viewing !== null}>
         {/* stays at the top while the photos scroll by */}
         <div
           ref={barRef}
@@ -550,7 +566,7 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
           id="ty-tabpanel"
           role={ready && tabs.length > 1 ? 'tabpanel' : undefined}
           aria-labelledby={ready && tabs.length > 1 ? `ty-tab-${tab.id}` : undefined}
-          className="mx-auto max-w-[1180px] px-4 pb-20 md:px-12"
+          className="mx-auto min-h-[100vh] max-w-[1180px] px-4 pb-20 md:px-12"
         >
           {!ready ? (
             <div className="flex min-h-[40vh] flex-col items-center justify-center gap-2 text-center" role="status">
@@ -568,7 +584,7 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
           ) : tab.id === 'highlights' ? (
             <>
               {tab.sections.map((sec) => (
-                <section key={sec.chapter.id} aria-label={sec.chapter.name}>
+                <section key={sec.start} aria-label={sec.chapter.name}>
                   {tab.sections.length > 1 ? <ChapterHeading chapter={sec.chapter} /> : <div className="pt-6" />}
                   <PhotoGrid key={`${tab.id}-${sec.start}`} photos={sec.photos} offset={sec.start} density="roomy" {...gridProps} />
                 </section>
@@ -620,11 +636,11 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
       </div>
 
       <AnimatePresence>
-        {ready && lightbox !== null && list[lightbox] && (
+        {viewing !== null && (
           <Lightbox
             key="lightbox"
             photos={list}
-            index={lightbox}
+            index={viewing}
             setIndex={setLightbox}
             onClose={closeLightbox}
             playing={playing}
