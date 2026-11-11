@@ -197,6 +197,84 @@ html.night ::selection {
   filter: none;
 }
 
+/* Gallery tiles: the photo's own colour until it arrives, then a soft fade */
+.ty-tile img {
+  opacity: 0;
+  transition: opacity 0.5s ease, filter 0.6s ease;
+}
+.ty-tile img[data-loaded] {
+  opacity: 1;
+}
+@media (hover: hover) {
+  .ty-tile:hover img {
+    filter: brightness(1.08);
+  }
+}
+.ty-tile::after,
+.ty-chapter::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ty-tile:focus-visible::after,
+.ty-chapter:focus-visible::after {
+  box-shadow: inset 0 0 0 2px var(--color-foil-light);
+}
+@supports not (aspect-ratio: 1 / 1) {
+  /* iOS 14: the chapter cards' height from padding instead */
+  .ty-chapter {
+    height: 0;
+    padding-bottom: 125%;
+  }
+}
+
+/* Gallery tabs: one line, scrolling sideways on a phone */
+.ty-tabs {
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+}
+.ty-tabs::-webkit-scrollbar {
+  display: none;
+}
+.ty-tab {
+  color: rgba(244, 237, 227, 0.6);
+  transition: color 0.3s ease;
+}
+.ty-tab::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  right: 50%;
+  bottom: 8px;
+  height: 1px;
+  background: var(--color-foil);
+  transition: left 0.35s ease, right 0.35s ease;
+}
+.ty-tab:hover,
+.ty-tab:focus-visible {
+  color: var(--color-ivory);
+  outline: none;
+}
+.ty-tab:focus-visible::after {
+  left: 0;
+  right: 0.18em;
+  background: rgba(244, 237, 227, 0.5);
+}
+.ty-tab[aria-selected='true'] {
+  color: var(--color-foil-light);
+}
+.ty-tab[aria-selected='true']::after {
+  left: 0;
+  right: 0.18em; /* the tracking trails the last letter */
+  background: var(--color-foil);
+}
+.ty-next:focus-visible {
+  outline: 1px solid rgba(241, 223, 176, 0.7);
+  outline-offset: 4px;
+}
+
 /* Engraved stationery controls. In the components layer, so Tailwind
    utilities on the same element (font-semibold, colours) still apply. */
 @layer components {

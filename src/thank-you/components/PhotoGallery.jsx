@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useIsPresent } from 'framer-motion';
 import { THANK_YOU } from '../config';
 import { currentLayer, leaveLayers, pushLayer, updateLayer } from '../layers';
+import { galleryTabs } from '../photos';
+import { PhotoGrid } from './PhotoGrid';
 
 const EASE = [0.4, 0, 0.2, 1];
 const SLIDE_MS = 5200;
@@ -13,45 +15,15 @@ const BACK_ARROW = (
   </svg>
 );
 
-function Thumb({ photo, index, onOpen }) {
-  const [loaded, setLoaded] = useState(false);
-  const landscape = photo.w > photo.h;
-  return (
-    <motion.button
-      type="button"
-      onClick={() => onOpen(index)}
-      className={`group relative block w-full self-start overflow-hidden bg-ink-800 focus:outline-none focus-visible:ring-1 focus-visible:ring-foil-light focus-visible:ring-offset-4 focus-visible:ring-offset-ink-950 ${landscape ? 'col-span-2' : ''}`}
-      style={{ aspectRatio: landscape ? '4 / 3' : '2 / 3' }}
-      initial={{ opacity: 0, y: 14 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '120px' }}
-      transition={{ duration: 0.8, ease: EASE, delay: (index % 4) * 0.05 }}
-      aria-label={photo.alt ? `View photo: ${photo.alt}` : `View photo ${index + 1}`}
-    >
-      <img
-        src={photo.md}
-        alt={photo.alt || ''}
-        loading="lazy"
-        decoding="async"
-        onLoad={() => setLoaded(true)}
-        className="h-full w-full object-cover transition duration-[900ms] ease-out group-hover:brightness-[1.08]"
-        style={{ opacity: loaded ? 1 : 0 }}
-      />
-    </motion.button>
-  );
+// The viewer's image box: the space left by the controls, as in its CSS
+function viewerSizes(photo) {
+  const wide = window.innerWidth >= 768;
+  const maxW = window.innerWidth - (wide ? 200 : 24);
+  const maxH = window.innerHeight - (wide ? 132 : 148);
+  return `${Math.ceil(Math.max(1, Math.min(maxW, (maxH * photo.w) / photo.h)))}px`;
 }
 
-function Grid({ items, photos, onOpen }) {
-  return (
-    <div className="grid grid-cols-2 gap-x-3 gap-y-5 md:grid-cols-3 md:gap-x-8 md:gap-y-10 xl:grid-cols-4">
-      {items.map((p) => (
-        <Thumb key={p.id} photo={p} index={photos.indexOf(p)} onOpen={onOpen} />
-      ))}
-    </div>
-  );
-}
-
-function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direct, onShowAll }) {
+function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direct, onShowAll, showChapter }) {
   const photo = photos[index];
   const count = photos.length;
   const isPresent = useIsPresent(); // false while it fades out: no keys or slideshow ticks then
@@ -61,6 +33,10 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direc
   const [returnTo] = useState(() => document.activeElement);
   const [openedAt] = useState(() => performance.now());
   const [dir, setDir] = useState(1);
+  const shownRef = useRef(index);
+  useEffect(() => {
+    shownRef.current = index;
+  }, [index]);
 
   const go = useCallback(
     (step) => {
@@ -70,11 +46,14 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direc
     [count, setIndex],
   );
 
-  // focus moves into the viewer, and back to the photo it came from on close
+  // focus moves into the viewer, and on close to the last photo shown (its
+  // tile, which the grid has scrolled into view) or else where it came from
   useEffect(() => {
     rootRef.current?.focus({ preventScroll: true });
     return () => {
-      if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
+      const tile = document.querySelector(`[data-photo="${shownRef.current}"]`);
+      const target = tile || returnTo;
+      if (target?.isConnected) target.focus({ preventScroll: true });
     };
   }, [returnTo]);
 
@@ -101,11 +80,14 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direc
     return () => window.clearTimeout(t);
   }, [isPresent, playing, index, go, count]);
 
-  // warm the neighbours
+  // warm the neighbours, at the size the viewer will ask for
   useEffect(() => {
     [index + 1, index - 1].forEach((i) => {
       const p = photos[(i + count) % count];
-      if (p) new Image().src = p.lg;
+      if (!p) return;
+      const img = new Image();
+      img.sizes = viewerSizes(p);
+      img.srcset = p.srcSet;
     });
   }, [index, photos, count]);
 
@@ -167,10 +149,12 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direc
         <motion.img
           key={photo.id}
           src={photo.lg}
+          srcSet={photo.srcSet}
+          sizes={viewerSizes(photo)}
           alt={photo.alt || ''}
           custom={dir}
           className="max-h-[calc(100dvh-148px)] max-w-[calc(100vw-24px)] select-none object-contain shadow-[0_30px_90px_rgba(0,0,0,0.7)] md:max-h-[calc(100dvh-132px)] md:max-w-[calc(100vw-200px)]"
-          style={{ aspectRatio: `${photo.w} / ${photo.h}` }}
+          style={{ aspectRatio: `${photo.w} / ${photo.h}`, backgroundColor: photo.shade }}
           draggable={false}
           variants={{
             enter: (d) => ({ opacity: 0, x: playing ? 0 : d * 60, scale: playing ? 1.04 : 1 }),
@@ -222,6 +206,7 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direc
       <p className="pointer-events-none absolute inset-x-[68px] bottom-[max(12px,env(safe-area-inset-bottom))] flex min-h-12 items-center justify-center text-center font-display text-[15px] italic leading-snug text-ivory/75 md:inset-x-0 md:bottom-5 md:min-h-0">
         <span>
           {photo.alt ? `${photo.alt} · ` : ''}
+          {showChapter && photo.chapter ? `${photo.chapter} · ` : ''}
           {index + 1} of {count} · Photography by {THANK_YOU.photographer}
         </span>
       </p>
@@ -229,46 +214,130 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direc
   );
 }
 
+function ChapterHeading({ chapter, count = null }) {
+  return (
+    <div className="py-12 text-center md:py-16">
+      {chapter.number !== null && (
+        <p className="ty-caps text-[13px] text-foil/80" style={tracked(0.2)}>
+          {ROMAN[chapter.number] || ''}
+        </p>
+      )}
+      <h3 className="foil-text mx-auto w-fit px-[0.2em] font-script text-[40px] leading-[1.25] md:text-[46px]">{chapter.name}</h3>
+      <span className="mx-auto mt-2 block h-px w-16 bg-gradient-to-r from-transparent via-foil/70 to-transparent" aria-hidden="true" />
+      {count !== null && (
+        <p className="ty-caps mt-4 text-[12px] text-ivory/55" style={tracked(0.16)}>
+          {count} photographs
+        </p>
+      )}
+    </div>
+  );
+}
+
+const coverOf = (chapter, featured) => featured.find((p) => p.chapter === chapter.name) || chapter.photos[0];
+
+/** After the highlights: a card for each chapter, opening all of its photos. */
+function ChapterCards({ chapters, featured, onPick }) {
+  return (
+    <section className="pt-20 md:pt-28" aria-labelledby="ty-every">
+      <div className="text-center">
+        <h3 id="ty-every" className="foil-text mx-auto w-fit px-[0.2em] font-script text-[40px] leading-[1.25] md:text-[46px]">
+          Every Photograph
+        </h3>
+        <span className="mx-auto mt-2 block h-px w-16 bg-gradient-to-r from-transparent via-foil/70 to-transparent" aria-hidden="true" />
+      </div>
+      <div className={`mx-auto mt-10 grid gap-3 md:gap-6 ${chapters.length % 2 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'} ${chapters.length === 4 ? 'md:grid-cols-4' : ''}`}>
+        {chapters.map((c) => {
+          const cover = coverOf(c, featured);
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onPick(c.id)}
+              className="ty-chapter group relative block aspect-[4/5] w-full overflow-hidden focus:outline-none"
+              style={{ backgroundColor: cover?.shade }}
+            >
+              {cover && (
+                <img
+                  src={cover.md}
+                  srcSet={cover.srcSet}
+                  sizes="(min-width: 1024px) 270px, (min-width: 768px) 25vw, 50vw"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="absolute inset-0 h-full w-full object-cover opacity-75 transition duration-700 ease-out group-hover:scale-[1.03] group-hover:opacity-95"
+                />
+              )}
+              <span className="absolute inset-0 bg-gradient-to-t from-[#0A0807] via-[#0A0807]/35 to-transparent" aria-hidden="true" />
+              <span className="absolute inset-x-0 bottom-0 flex flex-col items-center px-2 pb-4 text-center md:pb-6">
+                {c.number !== null && (
+                  <span className="ty-caps text-[12px] text-foil/85" style={tracked(0.2)}>
+                    {ROMAN[c.number] || ''}
+                  </span>
+                )}
+                <span className="foil-text px-[0.2em] font-script text-[30px] leading-[1.25] md:text-[36px]">{c.name}</span>
+                <span className="ty-caps mt-1 text-[11px] text-ivory/70" style={tracked(0.16)}>
+                  {c.photos.length} photographs
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 /**
- * Full-screen gallery: the wedding photos in order (by chapter when set), a
- * lightbox and a slideshow. A film-strip frame opens straight into that
- * photo, and closing it goes straight back to the card. The panel mounts
- * fresh on every open.
+ * Full-screen gallery. The first tab holds the highlights (the photos marked
+ * `featured`, also on the film strips), then a tab for each chapter with all
+ * of its photos. A film-strip frame opens straight into that photo, and
+ * closing it goes straight back to the card. The panel mounts fresh on every
+ * open.
  */
-export function PhotoGallery({ open, photos, startIndex = null, token = null, onClose }) {
+export function PhotoGallery({ open, photos, status = 'ready', onRetry, startIndex = null, token = null, onClose }) {
   return (
     <AnimatePresence>
-      {open && <GalleryPanel key={token || 'gallery'} photos={photos} startIndex={startIndex} token={token} onClose={onClose} />}
+      {open && (
+        <GalleryPanel key={token || 'gallery'} photos={photos} status={status} onRetry={onRetry} startIndex={startIndex} token={token} onClose={onClose} />
+      )}
     </AnimatePresence>
   );
 }
 
-function GalleryPanel({ photos, startIndex, token, onClose }) {
-  // Forward into a photo's history entry reopens that photo over the grid
+function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
+  const tabs = useMemo(() => galleryTabs(photos), [photos]);
+  const featured = tabs[0]?.id === 'highlights' ? tabs[0].photos : [];
+  // Forward into a photo's history entry reopens that photo over its tab
   const [entry] = useState(() => {
     const c = currentLayer();
     return c?.token === token && c.ty === 'photo' ? c : null;
   });
+  const [tabId, setTabId] = useState(entry?.tab ?? null);
+  const tab = tabs.find((t) => t.id === tabId) || tabs[0] || null;
+  const list = tab?.photos ?? [];
   const [lightbox, setLightbox] = useState(entry ? entry.index ?? 0 : startIndex);
   const [direct, setDirect] = useState(!entry && startIndex !== null);
   const [playing, setPlaying] = useState(false);
+  const [reveal, setReveal] = useState(null);
   const [returnTo] = useState(() => document.activeElement);
   const panelRef = useRef(null);
+  const barRef = useRef(null);
+  const tabsRef = useRef(null);
+  const anchorRef = useRef(null);
+  const [barH, setBarH] = useState(64);
 
-  const chapters = useMemo(() => {
-    const order = [];
-    const byName = new Map();
-    for (const p of photos) {
-      const name = p.chapter || null;
-      if (!byName.has(name)) {
-        byName.set(name, []);
-        order.push(name);
-      }
-      byName.get(name).push(p);
-    }
-    return order.map((name) => ({ name, items: byName.get(name) }));
-  }, [photos]);
-  const named = chapters.filter((c) => c.name);
+  // the tab bar sticks just under the top bar
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return undefined;
+    const update = () => setBarH(bar.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(bar);
+    return () => ro.disconnect();
+  }, []);
+  const stickAt = barH - 12; // over the top bar's soft lower edge
+  const tabBarH = tabs.length > 1 ? 44 : 0;
 
   // lock page scroll, move focus in, and give it back on close
   useEffect(() => {
@@ -294,13 +363,57 @@ function GalleryPanel({ photos, startIndex, token, onClose }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [lightbox, onClose]);
 
+  // Switching tabs starts the new one at its top, under the bars
+  const selectTab = useCallback(
+    (id, { focusTab = false } = {}) => {
+      setTabId(id);
+      setReveal(null);
+      const panel = panelRef.current;
+      const anchor = anchorRef.current;
+      if (panel && anchor) {
+        const natural = anchor.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop;
+        if (panel.scrollTop > natural - stickAt) panel.scrollTop = natural - stickAt;
+      }
+      if (focusTab) window.requestAnimationFrame(() => document.getElementById(`ty-tab-${id}`)?.focus({ preventScroll: true }));
+    },
+    [stickAt],
+  );
+  // keep the chosen tab in view in the scrolling tab bar
+  useEffect(() => {
+    const bar = tabsRef.current;
+    const el = tab && document.getElementById(`ty-tab-${tab.id}`);
+    if (!bar || !el) return;
+    const b = bar.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    if (r.left < b.left + 24 || r.right > b.right - 24) bar.scrollLeft += r.left - b.left - (b.width - r.width) / 2;
+  }, [tab]);
+  const onTabKey = (e) => {
+    const i = tabs.indexOf(tab);
+    const to = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    const next = tabs[(to + tabs.length) % tabs.length];
+    selectTab(next.id);
+    document.getElementById(`ty-tab-${next.id}`)?.focus({ preventScroll: true });
+  };
+
   // A photo opened from the grid has its own history entry: Back returns to the grid
   const openPhoto = useCallback(
     (i) => {
-      pushLayer({ ty: 'photo', token, depth: 2, index: i });
+      pushLayer({ ty: 'photo', token, depth: 2, index: i, tab: tab?.id ?? null });
+      setReveal(null);
       setLightbox(i);
     },
-    [token],
+    [token, tab],
+  );
+  // back in the grid, the last photo shown is brought into view
+  const backToGrid = useCallback(
+    (last) => {
+      setPlaying(false);
+      setLightbox(null);
+      if (last !== null && last !== undefined) setReveal({ index: last, clear: stickAt + tabBarH });
+    },
+    [stickAt, tabBarH],
   );
   const closeLightbox = useCallback(() => {
     setPlaying(false);
@@ -308,35 +421,38 @@ function GalleryPanel({ photos, startIndex, token, onClose }) {
       onClose(); // opened from the film strip: straight back to the card
       return;
     }
-    if (!leaveLayers(token, 1)) setLightbox(null);
-  }, [direct, onClose, token]);
+    if (!leaveLayers(token, 1)) backToGrid(lightbox);
+  }, [direct, onClose, token, lightbox, backToGrid]);
   const showAll = useCallback(() => {
-    setPlaying(false);
     setDirect(false);
-    setLightbox(null);
+    backToGrid(lightbox);
     const c = currentLayer();
     if (c?.token === token && c.ty === 'gallery') updateLayer({ start: null });
-  }, [token]);
+  }, [token, lightbox, backToGrid]);
   // keep the photo's entry on the photo showing, so Forward returns to it
   useEffect(() => {
     const c = currentLayer();
     if (lightbox !== null && c?.token === token && c.ty === 'photo' && c.index !== lightbox) updateLayer({ index: lightbox });
   }, [lightbox, token]);
+  const lightboxRef = useRef(lightbox);
+  useEffect(() => {
+    lightboxRef.current = lightbox;
+  }, [lightbox]);
   useEffect(() => {
     const onPop = () => {
       const c = currentLayer();
       if (c?.token !== token) return; // the page opens and closes the gallery itself
       if (c.ty === 'photo') {
         setDirect(false);
+        if (c.tab) setTabId(c.tab);
         setLightbox(c.index ?? 0);
       } else if (!direct) {
-        setPlaying(false);
-        setLightbox(null);
+        backToGrid(lightboxRef.current);
       }
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [token, direct]);
+  }, [token, direct, backToGrid]);
 
   const backButton = (extra = '') => (
     <button
@@ -350,10 +466,16 @@ function GalleryPanel({ photos, startIndex, token, onClose }) {
     </button>
   );
 
+  const ready = status === 'ready' && tab;
+  const chapters = tabs.filter((t) => t.id !== 'highlights');
+  const next = tab && tab.id !== 'highlights' ? tabs[tabs.indexOf(tab) + 1] : null;
+  const gridProps = { total: list.length, onOpen: openPhoto, reveal };
+
   return (
     <motion.div
       ref={panelRef}
       tabIndex={-1}
+      data-gallery-scroller=""
       className="fixed inset-0 z-[10000] overflow-y-auto overscroll-contain focus:outline-none"
       style={{ background: 'radial-gradient(90% 55% at 50% 0%, rgba(79,31,85,0.32) 0%, rgba(10,8,7,0) 62%), radial-gradient(60% 40% at 50% 0%, rgba(201,169,97,0.08) 0%, rgba(10,8,7,0) 70%), #0A0807' }}
       initial={{ opacity: 0 }}
@@ -367,11 +489,12 @@ function GalleryPanel({ photos, startIndex, token, onClose }) {
       <div inert={lightbox !== null}>
         {/* stays at the top while the photos scroll by */}
         <div
-          className="pointer-events-none sticky top-0 z-20 flex items-center justify-between gap-4 px-3 pb-7 pt-3 md:px-6 md:pt-5"
-          style={{ background: 'linear-gradient(180deg, #0A0807 0%, rgba(10,8,7,0.9) 58%, rgba(10,8,7,0) 100%)' }}
+          ref={barRef}
+          className="pointer-events-none sticky top-0 z-30 flex items-center justify-between gap-4 px-3 pb-3 pt-3 md:px-6 md:pt-5"
+          style={{ background: 'linear-gradient(180deg, #0A0807 0%, rgba(10,8,7,0.94) 70%, rgba(10,8,7,0) 100%)' }}
         >
           {backButton()}
-          {photos.length > 1 && (
+          {ready && list.length > 1 && (
             <button
               type="button"
               onClick={() => {
@@ -385,7 +508,7 @@ function GalleryPanel({ photos, startIndex, token, onClose }) {
           )}
         </div>
 
-        <header className="px-4 pb-10 pt-1 text-center md:px-12">
+        <header className="px-4 pb-8 pt-1 text-center md:px-12 md:pb-10">
           <p className="ty-caps text-[13px] text-foil/85" style={tracked(0.2)}>
             Barcelona · September 2026
           </p>
@@ -397,21 +520,80 @@ function GalleryPanel({ photos, startIndex, token, onClose }) {
           </div>
         </header>
 
-        <div className="mx-auto max-w-[1180px] px-4 pb-20 md:px-12">
-          {chapters.map((c) => (
-            <section key={c.name || 'all'} className={c.name ? 'pt-6' : ''} aria-label={c.name || undefined}>
-              {c.name && named.length > 1 && (
-                <div className="py-12 text-center md:py-16">
-                  <p className="ty-caps text-[13px] text-foil/80" style={tracked(0.2)}>
-                    {ROMAN[named.indexOf(c)] || ''}
-                  </p>
-                  <h3 className="foil-text mx-auto w-fit px-[0.2em] font-script text-[40px] leading-[1.25] md:text-[46px]">{c.name}</h3>
-                  <span className="mx-auto mt-2 block h-px w-16 bg-gradient-to-r from-transparent via-foil/70 to-transparent" aria-hidden="true" />
+        <div ref={anchorRef} aria-hidden="true" />
+        {ready && tabs.length > 1 && (
+          <div className="sticky z-20" style={{ top: stickAt, background: 'linear-gradient(180deg, rgba(10,8,7,0.94) 0%, rgba(10,8,7,0.94) 78%, rgba(10,8,7,0) 100%)' }}>
+            <div ref={tabsRef} className="ty-tabs overflow-x-auto pb-2">
+              <div role="tablist" aria-label="Chapters" className="mx-auto flex w-max gap-6 px-5 md:gap-10" onKeyDown={onTabKey}>
+                {tabs.map((t) => (
+                  <button
+                    key={t.id}
+                    id={`ty-tab-${t.id}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={t.id === tab.id}
+                    aria-controls="ty-tabpanel"
+                    tabIndex={t.id === tab.id ? 0 : -1}
+                    onClick={() => selectTab(t.id)}
+                    className="ty-tab ty-caps relative inline-flex h-11 shrink-0 items-center whitespace-nowrap text-[12px] md:text-[13px]"
+                    style={tracked(0.16)}
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div
+          id="ty-tabpanel"
+          role={ready && tabs.length > 1 ? 'tabpanel' : undefined}
+          aria-labelledby={ready && tabs.length > 1 ? `ty-tab-${tab.id}` : undefined}
+          className="mx-auto max-w-[1180px] px-4 pb-20 md:px-12"
+        >
+          {!ready ? (
+            <div className="flex min-h-[40vh] flex-col items-center justify-center gap-2 text-center" role="status">
+              {status === 'failed' ? (
+                <>
+                  <p className="font-display text-[17px] italic text-ivory/75">The photographs didn&rsquo;t load.</p>
+                  <button type="button" onClick={onRetry} className="ty-link inline-flex min-h-[44px] items-center px-2 text-[16px]">
+                    Try again
+                  </button>
+                </>
+              ) : (
+                <p className="font-display text-[17px] italic text-ivory/60">Gathering the photographs&hellip;</p>
+              )}
+            </div>
+          ) : tab.id === 'highlights' ? (
+            <>
+              {tab.sections.map((sec) => (
+                <section key={sec.chapter.id} aria-label={sec.chapter.name}>
+                  {tab.sections.length > 1 ? <ChapterHeading chapter={sec.chapter} /> : <div className="pt-6" />}
+                  <PhotoGrid key={`${tab.id}-${sec.start}`} photos={sec.photos} offset={sec.start} density="roomy" {...gridProps} />
+                </section>
+              ))}
+              {chapters.length > 0 && <ChapterCards chapters={chapters} featured={featured} onPick={(id) => selectTab(id, { focusTab: true })} />}
+            </>
+          ) : (
+            <>
+              <ChapterHeading chapter={tab} count={tab.photos.length} />
+              <PhotoGrid key={tab.id} photos={tab.photos} density="dense" {...gridProps} />
+              {next && (
+                <div className="pt-16 text-center md:pt-24">
+                  <button type="button" onClick={() => selectTab(next.id, { focusTab: true })} className="ty-next group inline-flex flex-col items-center px-4 py-2 focus:outline-none">
+                    <span className="ty-caps text-[12px] text-ivory/60" style={tracked(0.2)}>
+                      Next
+                    </span>
+                    <span className="foil-text px-[0.2em] font-script text-[40px] leading-[1.25] md:text-[46px]">{next.name}</span>
+                    <span className="ty-caps text-[11px] text-ivory/55 transition group-hover:text-foil-light" style={tracked(0.16)}>
+                      {next.photos.length} photographs
+                    </span>
+                  </button>
                 </div>
               )}
-              <Grid items={c.items} photos={photos} onOpen={openPhoto} />
-            </section>
-          ))}
+            </>
+          )}
         </div>
 
         <footer className="flex flex-col items-center pb-[max(56px,calc(env(safe-area-inset-bottom)+32px))] text-center">
@@ -438,10 +620,10 @@ function GalleryPanel({ photos, startIndex, token, onClose }) {
       </div>
 
       <AnimatePresence>
-        {lightbox !== null && photos[lightbox] && (
+        {ready && lightbox !== null && list[lightbox] && (
           <Lightbox
             key="lightbox"
-            photos={photos}
+            photos={list}
             index={lightbox}
             setIndex={setLightbox}
             onClose={closeLightbox}
@@ -449,6 +631,7 @@ function GalleryPanel({ photos, startIndex, token, onClose }) {
             setPlaying={setPlaying}
             direct={direct}
             onShowAll={showAll}
+            showChapter={tab.id === 'highlights'}
           />
         )}
       </AnimatePresence>

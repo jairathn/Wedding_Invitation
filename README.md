@@ -18,26 +18,46 @@ device remembers them for 60 days, so a return visit opens straight to their car
 | A guest's letter or salutation | `src/thank-you/data/letters.json` (keep the wording exactly as written) |
 | Who can open a card / alternate names | `src/data/attendees.json` (`aliases` = other names a guest may type, `greet` = the name you call them by) |
 | Vogue article link, song, card video, dates | `src/thank-you/config.js` (`vogueUrl`, `musicSrc`, `cardVimeoId`, …) |
-| The clip inside the envelope | `public/video/thank-you-dance.mp4` (see `source-media/README.md`) |
-| Gallery order, chapters, captions | `src/thank-you/data/photos.json` (`seq`, `chapter`, `alt`) |
+| The clip inside the envelope | `public/video/first-dance.mp4` (see `source-media/README.md`) |
+| Gallery chapters, highlights, order, captions | `src/thank-you/data/photos.json` (`chapter`, `featured`, `seq`, `alt`) |
 
 ## Photos
 
-Photos for the gallery go in `source-media/photos/`: full-size originals, or the
-zip files made by the photo packer. Never put them in `public/`, which is
-published exactly as it is. Then:
+The gallery holds Ruben's full set, 1,127 photos. It opens on the highlights (the
+photos marked `"featured": true`, which also run along the film strips), then has a
+tab for each chapter: Haldi, Sangeet, The Wedding and On Film. Photos load only as
+they come into view.
+
+The full set of full-size photos is not in this repository (it would add over
+500 MB); it is in Google Drive ("Ruben Photos"). `source-media/photos/` keeps the
+originals of the photos first chosen for the site. To add or re-make photos, put
+them in a folder (full-size originals, or zips made by the photo packer) and run:
 
 ```bash
-npm run photos
+node scripts/process-photos.mjs gallery <folder> [more folders or zips]
 ```
 
-This writes web sizes to `public/photos/` (`-sm` for film strips, `-md` for the grid,
-`-lg` for the lightbox) and refreshes `src/thank-you/data/photos.json`. Zips are
-unpacked automatically, and when the same photo is there twice the larger one is used.
-Re-running keeps what's set in `photos.json`: each photo's place (`seq`), its
-`chapter` and caption (`alt`), and the `excluded` list of files to leave out (the
-sneak-peek repeats). New photos without a `seq` go at the end, by capture time where
-the camera recorded it (film scans don't count), otherwise by file name.
+`npm run photos` does the same for `source-media/photos/`. This writes web sizes to
+`public/photos/` (`-sm` for the film strips and small tiles, `-md` for the grid,
+`-lg` for the full-screen viewer) and adds the photos to
+`src/thank-you/data/photos.json`. Zips are unpacked automatically, and when the same
+photo is there twice the larger one is used. Photos already in the gallery stay, so
+you can add a few at a time.
+
+`photos.json` has one photo per line, in gallery order, and is safe to edit by hand;
+re-running keeps the edits:
+
+- `chapter`: the tab a photo sits in. New photos get one from their file name
+  (`haldi`, `sangeet`, `wedding`, or a film scan's date-style name).
+- `featured`: `true` puts a photo in the highlights.
+- `seq`: a number moves a photo ahead within its chapter; the rest follow the
+  photographer's file order (their files are numbered in shooting order).
+- `alt`: a caption.
+- `excluded` (at the top): file names to leave out. Ruben's `preview` files are
+  always left out, since they repeat photos from the wedding set.
+
+To take a photo out, add its file name to `excluded`, delete its line, and delete its
+three files in `public/photos/`.
 `npm run photos:hero` rebuilds the background images from `source-media/photos/shriyaneil_wedding0594.jpg`.
 
 ## Development
