@@ -6,19 +6,30 @@
  *     Builds the night background (landscape bottom-half crop + full portrait),
  *     the social-share image, and prints tiny blur placeholders.
  *
- *   node scripts/process-photos.mjs gallery <folder-or-photo-or-zip> [...]
+ *   node scripts/process-photos.mjs gallery [--set <name>] [--chapter <name>] <folder-or-photo-or-zip> [...]
  *     Turns the photographer's exports into web sizes
- *     (public/photos/<id>-{sm,md,lg}.webp) and writes the gallery manifest
+ *     (public/photos/<id>-{sm,md,lg}.webp) and adds them to the gallery manifest
  *     (src/thank-you/data/photos.json). Zip files (as made by the photo
  *     packer) are unpacked to a temporary folder. When two inputs share a
- *     name, the larger original wins.
+ *     name, the larger original wins. Photos already in the manifest stay
+ *     (as long as their web files are there), so photos can be added a few at
+ *     a time.
+ *
+ *     --set <name> marks photos from another photographer (e.g. --set rps):
+ *     they get their own tab after Ruben's chapters, with the credit given
+ *     for that name in src/thank-you/config.js (PHOTO_SETS), and ids that
+ *     start with the set's name. --chapter <name> puts the new photos in that
+ *     chapter (otherwise it comes from the file name, see CHAPTERS).
  *
  *     The manifest is safe to edit by hand, and re-running keeps the edits:
- *       seq      the photo's place in the gallery (photos without one follow,
- *                by capture time when EXIF has it, else by file sequence)
- *       chapter  the gallery section it sits in
- *       alt      a caption / description
- *       excluded (top level) source file names to leave out, e.g. duplicates
+ *       chapter   the gallery section (tab) a photo sits in; new photos get one
+ *                 from their file name (see CHAPTERS)
+ *       featured  true for the highlights: the film strips and the gallery's
+ *                 first tab
+ *       seq       a number to move a photo ahead within its chapter (photos
+ *                 without one follow, in the photographer's file order)
+ *       alt       a caption / description
+ *       excluded  (top level) source file names to leave out, e.g. duplicates
  */
 import sharp from 'sharp';
 import fs from 'node:fs/promises';
@@ -34,8 +45,28 @@ const HERO_OUT = path.join(ROOT, 'public/images/thank-you');
 const PHOTO_OUT = process.env.PHOTOS_OUT_DIR || path.join(ROOT, 'public/photos');
 const MANIFEST = process.env.PHOTOS_MANIFEST || path.join(ROOT, 'src/thank-you/data/photos.json');
 
-// Long-edge sizes for gallery photos: film strips, grid, lightbox.
-const SIZES = { sm: 480, md: 1024, lg: 2048 };
+// Long-edge sizes for gallery photos: film strips and small grid tiles, grid
+// tiles, the full-screen viewer. Kept modest: there are over a thousand photos.
+const SIZES = { sm: 480, md: 960, lg: 1600 };
+const QUALITY = { sm: 72, md: 72, lg: 76 };
+
+// Gallery chapters in order, and how a file name places a new photo in one
+const CHAPTERS = [
+  ['Barcelona', /barcelona/i],
+  ['Mehndi', /mehndi|mendhi|mehendi/i],
+  ['Haldi', /haldi/i],
+  ['Sangeet', /sangeet/i],
+  ['The Wedding', /wedding/i],
+  ['On Film', /^\d{2}_\d{2}_\d{4}_/], // film scans, named by the lab's scanner
+];
+const chapterFor = (name) => CHAPTERS.find(([, re]) => re.test(name))?.[0] ?? null;
+const chapterRank = (name) => {
+  const i = CHAPTERS.findIndex(([c]) => c === name);
+  return i < 0 ? CHAPTERS.length : i;
+};
+
+// Ruben's "preview" (sneak-peek) set repeats photos from the wedding set
+const SKIP = [/_preview\d/i];
 
 async function hero() {
   await fs.mkdir(HERO_OUT, { recursive: true });
@@ -71,36 +102,6 @@ async function hero() {
   console.log(`hero assets written to ${path.relative(ROOT, HERO_OUT)}`);
 }
 
-// ---- minimal EXIF DateTimeOriginal reader (avoids an extra dependency) ----
-function exifDate(buf) {
-  if (!buf) return null;
-  let o = buf.indexOf('Exif\0\0') === 0 ? 6 : 0;
-  const le = buf.toString('ascii', o, o + 2) === 'II';
-  const u16 = (p) => (le ? buf.readUInt16LE(p) : buf.readUInt16BE(p));
-  const u32 = (p) => (le ? buf.readUInt32LE(p) : buf.readUInt32BE(p));
-  const readIfd = (off) => {
-    const tags = {};
-    const n = u16(o + off);
-    for (let i = 0; i < n; i++) {
-      const e = o + off + 2 + i * 12;
-      tags[u16(e)] = { type: u16(e + 2), count: u32(e + 4), value: u32(e + 8), entry: e };
-    }
-    return tags;
-  };
-  try {
-    const ifd0 = readIfd(u32(o + 4));
-    const ascii = (t) => (t ? buf.toString('ascii', o + t.value, o + t.value + t.count - 1) : null);
-    // A film scanner stamps the scan date, not the day the photo was taken
-    if (/SP-?3000|SP-?500|Frontier|Noritsu|scan/i.test(ascii(ifd0[0x0110]) || '')) return null;
-    // only the capture time counts (0x0132 is just when the file was last saved)
-    const raw = ifd0[0x8769] ? ascii(readIfd(ifd0[0x8769].value)[0x9003]) : null;
-    const m = raw && raw.match(/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
-    return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}` : null;
-  } catch {
-    return null;
-  }
-}
-
 const naturalKey = (s) => s.replace(/\d+/g, (d) => d.padStart(8, '0')).toLowerCase();
 const slugify = (s) => s.toLowerCase().replace(/\.[a-z0-9]+$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -131,16 +132,19 @@ async function unzipToTemp(zip, temps) {
   return imagesIn(dir);
 }
 
+// Photos in the inputs: folders at any depth (as zips are), zips, single photos
 async function listInputs(inputs, temps) {
   const files = [];
-  for (const input of inputs) {
-    const stat = await fs.stat(input);
-    const entries = stat.isDirectory() ? (await fs.readdir(input)).sort().map((f) => path.join(input, f)) : [input];
-    for (const f of entries) {
-      if (IMAGE_RE.test(f)) files.push(f);
-      else if (ZIP_RE.test(f)) files.push(...(await unzipToTemp(f, temps)));
-    }
-  }
+  const add = async (p) => {
+    const stat = await fs.stat(p);
+    const name = path.basename(p);
+    if (stat.isDirectory()) {
+      if (name.startsWith('__MACOSX')) return;
+      for (const f of (await fs.readdir(p)).sort()) await add(path.join(p, f));
+    } else if (IMAGE_RE.test(name) && !name.startsWith('._')) files.push(p);
+    else if (ZIP_RE.test(name)) files.push(...(await unzipToTemp(p, temps)));
+  };
+  for (const input of inputs) await add(input);
   return files;
 }
 
@@ -172,7 +176,7 @@ async function decodeTrimmed(file) {
         .extract({ left: shave, top: shave, width, height })
         .raw()
         .toBuffer({ resolveWithObject: true });
-      return { data: shaved.data, raw: { raw: { width, height, channels: shaved.info.channels } }, width, height };
+      return shaveBrightEdges(shaved.data, width, height, shaved.info.channels);
     }
   } catch {
     /* uniform image or trim unsupported: keep as is */
@@ -180,34 +184,139 @@ async function decodeTrimmed(file) {
   return { data, raw, width: info.width, height: info.height };
 }
 
-async function gallery(inputs) {
-  if (!inputs.length) throw new Error('usage: node scripts/process-photos.mjs gallery <folder-or-photo-or-zip> [...]');
+// After the trim, a scan that sat askew can keep a light sliver of the print
+// margin along an edge, outside the film's dark border. Shave such a sliver:
+// light at the very edge with the dark border just inside it (up to 2% in).
+// Sky running off an edge has no dark band behind it and is left alone.
+async function shaveBrightEdges(data, width, height, channels) {
+  const lum = (x, y) => {
+    const i = (y * width + x) * channels;
+    return 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+  };
+  const rowMean = (y) => {
+    let s = 0;
+    for (let x = 0; x < width; x++) s += lum(x, y);
+    return s / width;
+  };
+  const colMean = (x) => {
+    let s = 0;
+    for (let y = 0; y < height; y++) s += lum(x, y);
+    return s / height;
+  };
+  // how many lines to shave from one side: up to where the dark border starts
+  const sliver = (mean, n) => {
+    const reach = Math.max(2, Math.round(n * 0.02));
+    if (mean(0) < 110) return 0; // the edge is already dark
+    for (let k = 1; k < reach; k++) if (mean(k) < 60) return k;
+    return 0;
+  };
+  const t = sliver((k) => rowMean(k), height);
+  const b = sliver((k) => rowMean(height - 1 - k), height);
+  const l = sliver((k) => colMean(k), width);
+  const r = sliver((k) => colMean(width - 1 - k), width);
+  if (!(t || b || l || r)) return { data, raw: { raw: { width, height, channels } }, width, height };
+  const w = width - l - r;
+  const h = height - t - b;
+  const out = await sharp(data, { raw: { width, height, channels } }).extract({ left: l, top: t, width: w, height: h }).raw().toBuffer();
+  return { data: out, raw: { raw: { width: w, height: h, channels } }, width: w, height: h };
+}
+
+async function gallery(argv) {
+  const opts = { set: null, chapter: null };
+  const inputs = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--set' || argv[i] === '--chapter') {
+      if (!argv[i + 1]) throw new Error(`${argv[i]} needs a name`);
+      opts[argv[i].slice(2)] = argv[++i];
+    } else inputs.push(argv[i]);
+  }
+  if (opts.set && !/^[a-z0-9]+$/.test(opts.set)) throw new Error('--set takes a short name in lower-case letters and digits, e.g. rps');
+  if (!inputs.length) throw new Error('usage: node scripts/process-photos.mjs gallery [--set <name>] [--chapter <name>] <folder-or-photo-or-zip> [...]');
   const temps = [];
   try {
-    await galleryFrom(await listInputs(inputs, temps), inputs);
+    await galleryFrom(await listInputs(inputs, temps), inputs, opts);
   } finally {
     for (const dir of temps) await fs.rm(dir, { recursive: true, force: true });
   }
 }
 
-async function galleryFrom(allFiles, inputs) {
-  let previous = {};
-  let excluded = [];
-  try {
-    const old = JSON.parse(await fs.readFile(MANIFEST, 'utf8'));
-    for (const p of old.photos || []) previous[p.id] = p;
-    excluded = old.excluded || [];
-  } catch {
-    previous = {};
-  }
+const ABOUT =
+  'Generated by scripts/process-photos.mjs; one photo per line, in gallery order. Safe to edit chapter/featured/seq/alt by hand, and the excluded list; re-running keeps them.';
 
-  // One file per photo: skip excluded names; when a name repeats (an original
-  // and a packed copy), keep the one with the most pixels
+const webFiles = (id) => Object.keys(SIZES).map((key) => path.join(PHOTO_OUT, `${id}-${key}.webp`));
+const exists = (f) =>
+  fs.access(f).then(
+    () => true,
+    () => false,
+  );
+const hex = (n) => Math.round(n).toString(16).padStart(2, '0');
+
+// Run `task` over `items`, a few at a time (each WebP encode uses one core)
+async function pool(items, size, task) {
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      await task(items[i], i);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(size, items.length) }, worker));
+}
+
+const idFor = (name, set) => (set ? `${set}-${slugify(name)}` : slugify(name));
+
+async function encode(file, set) {
+  const base = path.basename(file);
+  const id = idFor(base, set);
+  const img = await decodeTrimmed(file);
+  const { width: w0, height: h0 } = img;
+  for (const [key, edge] of Object.entries(SIZES)) {
+    await sharp(img.data, img.raw)
+      .resize({ width: w0 >= h0 ? edge : null, height: h0 > w0 ? edge : null, withoutEnlargement: true })
+      .webp({ quality: QUALITY[key], effort: 5 })
+      .toFile(path.join(PHOTO_OUT, `${id}-${key}.webp`));
+  }
+  // the photo's average colour, shown in its tile while it loads
+  const { channels } = await sharp(img.data, img.raw).stats();
+  const scale = Math.min(1, SIZES.lg / Math.max(w0, h0));
+  return {
+    id,
+    w: Math.round(w0 * scale),
+    h: Math.round(h0 * scale),
+    tone: `#${channels
+      .slice(0, 3)
+      .map((c) => hex(c.mean))
+      .join('')}`,
+    source: base,
+  };
+}
+
+async function galleryFrom(allFiles, inputs, { set, chapter }) {
+  let old = {};
+  let text0 = null;
+  try {
+    text0 = await fs.readFile(MANIFEST, 'utf8');
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err; // no manifest yet: start a new one
+  }
+  if (text0 !== null) {
+    try {
+      old = JSON.parse(text0.replace(/^\uFEFF/, ''));
+    } catch (err) {
+      throw new Error(`${path.relative(ROOT, MANIFEST)} isn't valid JSON (${err.message}). Fix it first; nothing was changed.`);
+    }
+  }
+  const previous = new Map((old.photos || []).map((p) => [p.id, p]));
+  const excluded = old.excluded || [];
+
+  // One file per photo: skip excluded names and repeats; when a name comes
+  // twice (an original and a packed copy), keep the one with the most pixels
   const skip = new Set(excluded.map((n) => n.toLowerCase()));
+  const leftOut = (name) => skip.has(name.toLowerCase()) || SKIP.some((re) => re.test(name));
   const best = new Map();
   for (const file of allFiles) {
-    if (skip.has(path.basename(file).toLowerCase())) continue;
-    const id = slugify(path.basename(file));
+    if (leftOut(path.basename(file))) continue;
+    const id = idFor(path.basename(file), set);
     const { width = 0, height = 0 } = await sharp(file).metadata();
     const have = best.get(id);
     if (!have || width * height > have.pixels) best.set(id, { file, pixels: width * height });
@@ -216,56 +325,70 @@ async function galleryFrom(allFiles, inputs) {
   if (!files.length) throw new Error(`no images found in ${inputs.join(', ')}`);
   await fs.mkdir(PHOTO_OUT, { recursive: true });
 
+  const made = new Map();
+  let done = 0;
+  await pool(files, Math.max(1, Math.min(4, os.cpus().length)), async (file) => {
+    const photo = await encode(file, set);
+    made.set(photo.id, photo);
+    process.stdout.write(`\r${++done}/${files.length} ${photo.source}`.padEnd(70));
+  });
+
+  // New and re-made photos, plus the ones already on the site
   const photos = [];
-  for (const [i, file] of files.entries()) {
-    const base = path.basename(file);
-    const id = slugify(base);
-    const meta = await sharp(file).metadata();
-    const img = await decodeTrimmed(file);
-    const { width: w0, height: h0 } = img;
-    const out = {};
-    for (const [key, edge] of Object.entries(SIZES)) {
-      const name = `${id}-${key}.webp`;
-      await sharp(img.data, img.raw)
-        .resize({ width: w0 >= h0 ? edge : null, height: h0 > w0 ? edge : null, withoutEnlargement: true })
-        .webp({ quality: key === 'lg' ? 80 : 74, effort: 5 })
-        .toFile(path.join(PHOTO_OUT, name));
-      out[key] = `/photos/${name}`;
-    }
-    const scale = Math.min(1, SIZES.lg / Math.max(w0, h0));
-    const prev = previous[id] || {};
+  for (const [id, prev] of previous) {
+    if (made.has(id)) continue;
+    if (leftOut(prev.source || '')) continue;
+    if ((await Promise.all(webFiles(id).map(exists))).every(Boolean)) photos.push(prev);
+    else console.warn(`\nleaving out ${id}: its web files are missing from ${path.relative(ROOT, PHOTO_OUT)}`);
+  }
+  for (const [id, photo] of made) {
+    const prev = previous.get(id) || {};
     photos.push({
       id,
-      ...out,
-      w: Math.round(w0 * scale),
-      h: Math.round(h0 * scale),
-      taken: exifDate(meta.exif),
-      chapter: prev.chapter ?? null,
-      alt: prev.alt ?? '',
-      ...(prev.seq != null ? { seq: prev.seq } : {}),
+      w: photo.w,
+      h: photo.h,
+      tone: photo.tone,
+      ...(set ? { set } : {}),
+      chapter: prev.chapter ?? chapter ?? chapterFor(photo.source),
       ...(prev.featured ? { featured: true } : {}),
-      source: base,
+      ...(prev.alt ? { alt: prev.alt } : {}),
+      ...(Number.isFinite(prev.seq) ? { seq: prev.seq } : {}),
+      source: photo.source,
     });
-    process.stdout.write(`\r${i + 1}/${files.length} ${base}`.padEnd(70));
   }
-  // Hand-set order first (seq); then one key for every other photo: capture
-  // time where the camera recorded it, then the photographer's file order
-  const sortKey = (p) => `${p.taken ?? '9999'}|${naturalKey(p.source)}`;
+
+  // Ruben's photos, then each other photographer's set; chapter by chapter;
+  // within one, hand-set places (seq) first, then the photographer's file
+  // order (their exports are numbered in shooting order)
   const seqOf = (p) => (Number.isFinite(p.seq) ? p.seq : Infinity);
-  photos.sort((a, b) => seqOf(a) - seqOf(b) || sortKey(a).localeCompare(sortKey(b)));
-  const manifest = {
-    _about: 'Generated by scripts/process-photos.mjs. Safe to edit seq/chapter/alt by hand, and the excluded list; re-running keeps them.',
-    ...(excluded.length ? { excluded } : {}),
-    photos,
-  };
-  await fs.writeFile(MANIFEST, JSON.stringify(manifest, null, 2) + '\n');
-  console.log(`\n${photos.length} photos -> ${path.relative(ROOT, PHOTO_OUT)}, manifest -> ${path.relative(ROOT, MANIFEST)}`);
+  photos.sort(
+    (a, b) =>
+      Number(Boolean(a.set)) - Number(Boolean(b.set)) ||
+      String(a.set ?? '').localeCompare(String(b.set ?? '')) ||
+      chapterRank(a.chapter) - chapterRank(b.chapter) ||
+      String(a.chapter ?? '').localeCompare(String(b.chapter ?? '')) ||
+      seqOf(a) - seqOf(b) ||
+      naturalKey(a.source || a.id).localeCompare(naturalKey(b.source || b.id)),
+  );
+  const text = [
+    '{',
+    `  "_about": ${JSON.stringify(ABOUT)},`,
+    `  "excluded": ${JSON.stringify(excluded)},`,
+    '  "photos": [',
+    photos.map((p) => `    ${JSON.stringify(p)}`).join(',\n'),
+    '  ]',
+    '}',
+    '',
+  ].join('\n');
+  await fs.writeFile(MANIFEST, text);
+  const featured = photos.filter((p) => p.featured).length;
+  console.log(`\n${made.size} photos made, ${photos.length} in the gallery (${featured} featured) -> ${path.relative(ROOT, MANIFEST)}`);
 }
 
 const [mode, ...args] = process.argv.slice(2);
 if (mode === 'hero') await hero();
 else if (mode === 'gallery') await gallery(args);
 else {
-  console.error('usage: node scripts/process-photos.mjs hero | gallery <folder-or-photo> [...]');
+  console.error('usage: node scripts/process-photos.mjs hero | gallery [--set <name>] [--chapter <name>] <folder-or-photo> [...]');
   process.exit(1);
 }

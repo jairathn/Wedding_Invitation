@@ -12,12 +12,11 @@ import { greetingName, recallGuest, recallGuestRecord, rememberGuest, resolveGue
 import { skyBurst } from './sky';
 import { currentLayer, leaveLayers, leaveStaleLayers, newLayerToken, pushLayer } from './layers';
 import { THANK_YOU } from './config';
-import photoManifest from './data/photos.json';
+import { loadPhotos } from './photos';
 import lettersUrl from './data/letters.json?url';
 
 const EASE = [0.4, 0, 0.2, 1];
 const PULL = [0.22, 1, 0.36, 1];
-const photos = photoManifest.photos;
 
 // The card slides out of the envelope: rises behind the pocket, pauses
 // part-way out, then settles while the envelope drops away.
@@ -42,6 +41,7 @@ const loadLetters = () =>
     }));
 
 const GALLERY_CLOSED = { open: false, start: null, token: null };
+const NO_PHOTOS = { status: 'idle', all: [], featured: [] };
 
 /** Shared gold gradient referenced by the card's SVG ornaments. */
 function GoldDefs() {
@@ -76,9 +76,11 @@ export default function ThankYouPage() {
   const [letter, setLetter] = useState({ status: returning ? 'loading' : 'idle', value: null });
   const [face, setFace] = useState('front');
   const [gallery, setGallery] = useState(GALLERY_CLOSED);
+  const [photos, setPhotos] = useState(NO_PHOTOS);
   const stageRef = useRef(stage);
   const letterRequest = useRef(0);
   const letterFailures = useRef(0);
+  const photoRetries = useRef(0); // presses of the gallery's Try again
 
   useEffect(() => {
     stageRef.current = stage;
@@ -130,6 +132,27 @@ export default function ThankYouPage() {
     requestLetter(guest.person);
   }, [guest, letter.status, requestLetter]);
 
+  // The photo list comes once the card is out (the photos themselves only as
+  // they are looked at). If it fails, it's asked for again when the gallery
+  // opens or the connection comes back.
+  const requestPhotos = useCallback(() => {
+    loadPhotos().then(
+      (all) => setPhotos({ status: 'ready', all, featured: all.filter((ph) => ph.featured) }),
+      () => setPhotos((p) => ({ ...p, status: 'failed' })),
+    );
+  }, []);
+  // Try again asks once more; pressed a second time it reloads the page (the
+  // site may have been updated since it was opened, so the old list is gone)
+  const retryPhotos = useCallback(() => {
+    photoRetries.current += 1;
+    if (photoRetries.current >= 2) {
+      window.location.reload();
+      return;
+    }
+    setPhotos((p) => ({ ...p, status: 'loading' }));
+    requestPhotos();
+  }, [requestPhotos]);
+
   const onSealClick = () => {
     if (stageRef.current !== 'sealed') return;
     stageRef.current = 'naming';
@@ -168,12 +191,36 @@ export default function ThankYouPage() {
     };
   }, [stage]);
 
-  // The gallery gets a history entry, so Back closes it rather than the site
-  const openGallery = useCallback((start = null) => {
-    const token = newLayerToken();
-    pushLayer({ ty: 'gallery', token, depth: 1, start });
-    setGallery({ open: true, start, token });
-  }, []);
+  // a failed list is asked for again when the connection comes back
+  const photosFailed = photos.status === 'failed';
+  const photosFailedRef = useRef(false);
+  useEffect(() => {
+    photosFailedRef.current = photosFailed;
+    if (!photosFailed) return undefined;
+    const again = () => requestPhotos();
+    window.addEventListener('online', again);
+    return () => window.removeEventListener('online', again);
+  }, [photosFailed, requestPhotos]);
+
+  // The gallery gets a history entry, so Back closes it rather than the site.
+  // If the browser still sits on an old entry, step back to the page's own
+  // first, then open.
+  const pendingOpen = useRef(null);
+  const openGallery = useCallback(
+    (start = null) => {
+      if (currentLayer()) {
+        pendingOpen.current = { start };
+        leaveStaleLayers();
+        return;
+      }
+      const token = newLayerToken();
+      pushLayer({ ty: 'gallery', token, depth: 1, start });
+      setGallery({ open: true, start, token });
+      window.dispatchEvent(new Event('film-pause')); // the card's film doesn't play on behind the photos
+      if (photosFailedRef.current) requestPhotos(); // the list failed earlier: try once more now
+    },
+    [requestPhotos],
+  );
   const closeGallery = useCallback(() => {
     if (!leaveLayers(gallery.token)) setGallery(GALLERY_CLOSED);
   }, [gallery.token]);
@@ -184,14 +231,21 @@ export default function ThankYouPage() {
       const layer = currentLayer();
       if (!layer) {
         setGallery((g) => (g.open ? GALLERY_CLOSED : g));
+        const p = pendingOpen.current;
+        pendingOpen.current = null;
+        if (p) openGallery(p.start);
         return;
       }
-      if (stageRef.current !== 'card') return;
+      // a gallery entry while the envelope is showing: back to the page's own
+      if (stageRef.current !== 'card') {
+        leaveStaleLayers();
+        return;
+      }
       setGallery((g) => (g.open && g.token === layer.token ? g : { open: true, start: layer.ty === 'gallery' ? layer.start : null, token: layer.token }));
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, []);
+  }, [openGallery]);
 
   // A returning guest's card shows before their letter has loaded. The names
   // line remembered from last time stands in; without one, the line is held
@@ -210,6 +264,12 @@ export default function ThankYouPage() {
   const revealing = stage === 'revealing';
   const atCard = stage === 'card';
   const showCard = revealing || atCard;
+  const photosAsked = useRef(false);
+  useEffect(() => {
+    if (!showCard || photosAsked.current) return;
+    photosAsked.current = true;
+    requestPhotos();
+  }, [showCard, requestPhotos]);
   const envelopeOpen = stage === 'opening' || revealing;
   const greet = guest ? greetingName(guest.person, guest.displayName) : '';
   const rememberedNames = returning?.names && guest?.displayName === returning.displayName && letter.status === 'loading' ? returning.names : '';
@@ -267,7 +327,7 @@ export default function ThankYouPage() {
                     letter={letter.value}
                     letterStatus={letter.status}
                     onRetryLetter={retryLetter}
-                    hasPhotos={photos.length > 0}
+                    hasPhotos
                     onOpenGallery={() => openGallery(null)}
                     onFaceChange={setFace}
                   />
@@ -308,7 +368,7 @@ export default function ThankYouPage() {
           </main>
 
           {/* film strips come after the card in reading order; they repeat the gallery */}
-          <FilmStrips show={atCard} quiet={face === 'back' || gallery.open} photos={photos} onOpen={openGallery} />
+          <FilmStrips show={atCard} quiet={face === 'back' || gallery.open} photos={photos.featured} onOpen={openGallery} />
 
           {/* always under the card, so anyone can watch the envelope open again
               (or, on a shared phone, open it under their own name) */}
@@ -330,7 +390,15 @@ export default function ThankYouPage() {
           </AnimatePresence>
         </div>
 
-        <PhotoGallery open={gallery.open} photos={photos} startIndex={gallery.start} token={gallery.token} onClose={closeGallery} />
+        <PhotoGallery
+          open={gallery.open}
+          photos={photos.all}
+          status={photos.status === 'ready' ? 'ready' : photos.status === 'failed' ? 'failed' : 'loading'}
+          onRetry={retryPhotos}
+          startIndex={gallery.start}
+          token={gallery.token}
+          onClose={closeGallery}
+        />
       </div>
     </MotionConfig>
   );

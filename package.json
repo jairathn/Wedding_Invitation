@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/check-photos.mjs && vite build",
+    "check:photos": "node scripts/check-photos.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "photos": "node scripts/process-photos.mjs gallery source-media/photos",

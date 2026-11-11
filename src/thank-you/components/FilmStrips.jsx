@@ -1,10 +1,32 @@
 import { motion } from 'framer-motion';
+import { useImageRetry } from '../retry';
 
 // 35mm perforations: rounded holes every 17px, drawn once and tiled
 const PERFS =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='6'%3E%3Crect x='4.25' y='0.25' width='8.5' height='5.5' rx='1.6' fill='%230B0509' fill-opacity='0.9' stroke='%23F4EDE3' stroke-opacity='0.16' stroke-width='0.5'/%3E%3C/svg%3E\")";
 const FADE = 'linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%)';
 const MIN_FRAMES = 48; // enough to cover a 2560px screen before the loop repeats
+
+// A frame's photo: hidden until it arrives, so a failed one leaves a dark
+// frame rather than a broken-image icon, and tried again later
+function FrameImage({ photo }) {
+  const { failed, key, onError } = useImageRetry();
+  if (failed) return null;
+  return (
+    <img
+      key={key}
+      src={photo.sm}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      onLoad={(e) => {
+        e.currentTarget.dataset.loaded = '';
+      }}
+      onError={onError}
+      className="film-frame h-full w-full object-cover opacity-0 transition duration-700 ease-out group-hover:scale-[1.04] data-[loaded]:opacity-[0.72] group-hover:data-[loaded]:opacity-100 group-focus-visible:data-[loaded]:opacity-100"
+    />
+  );
+}
 
 function Strip({ items, direction, secondsPerFrame, onOpen, numberFrom, quiet }) {
   const reps = Math.max(1, Math.ceil(MIN_FRAMES / items.length));
@@ -39,13 +61,7 @@ function Strip({ items, direction, secondsPerFrame, onOpen, numberFrom, quiet })
               className="group relative h-full flex-shrink-0 px-[3px] focus:outline-none"
             >
               <span className="relative block h-full overflow-hidden bg-black" style={{ aspectRatio: `${photo.w} / ${photo.h}` }}>
-                <img
-                  src={photo.sm}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="film-frame h-full w-full object-cover opacity-[0.72] transition duration-700 ease-out group-hover:scale-[1.04] group-hover:opacity-100 group-focus-visible:opacity-100"
-                />
+                <FrameImage photo={photo} />
                 <span className="pointer-events-none absolute inset-0 shadow-[inset_0_0_12px_rgba(0,0,0,0.6)] group-focus-visible:shadow-[inset_0_0_0_2px_rgba(241,223,176,0.9)]" aria-hidden="true" />
               </span>
               {/* edge print */}
