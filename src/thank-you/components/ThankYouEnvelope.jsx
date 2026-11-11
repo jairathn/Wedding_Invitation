@@ -7,6 +7,7 @@ import { ENVELOPE_CLIP, THANK_YOU } from '../config';
 export const FLAP = 0.3; // flap depth as a fraction of the envelope's height
 export const ENVELOPE_WIDTH = 'var(--env-w, 300px)'; // set per screen shape in index.css
 const EASE = [0.4, 0, 0.2, 1];
+const CLIP_START_MS = 650; // the clip starts once the flap is well open
 const touch = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
 const tracked = (em) => ({ letterSpacing: `${em}em`, textIndent: `${em}em` });
 
@@ -184,7 +185,7 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
   const videoRef = useRef(null);
   const inputRef = useRef(null);
   const helpRef = useRef(null);
-  const nearEndFired = useRef(false);
+  const revealFired = useRef(false);
   const accepted = useRef(false);
   const wantPlaying = useRef(false); // the opening stage has started the clip for real
 
@@ -193,13 +194,15 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
   const playing = stage === 'opening';
   const open = stage === 'opening' || stage === 'revealing' || stage === 'card';
 
-  // Play the clip once the flap is open; tell the page when it is nearly done
+  // Play the clip once the flap is open. It plays through once and holds on
+  // its last frame for a beat; then the page brings the card out.
   useEffect(() => {
     if (stage !== 'opening') return undefined;
     const video = videoRef.current;
+    let holdTimer = 0;
     const fire = () => {
-      if (!nearEndFired.current) {
-        nearEndFired.current = true;
+      if (!revealFired.current) {
+        revealFired.current = true;
         onClipNearEnd?.();
       }
     };
@@ -208,24 +211,26 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
       wantPlaying.current = true;
       if (video.paused && video.currentTime > 0.3) video.currentTime = 0;
       video.play().catch(() => setClipFailed(true));
-    }, 650);
-    const fallback = window.setTimeout(fire, clipFailed ? 4200 : 10500); // never leave a guest waiting
-    const onTime = () => {
-      if (video.duration && video.currentTime >= video.duration - 0.9) fire();
+    }, CLIP_START_MS);
+    // never leave a guest waiting: the clip's length, the hold, and a margin
+    // for a slow start (or a short wait if the clip can't play at all)
+    const seconds = video && Number.isFinite(video.duration) && video.duration > 0 ? video.duration : ENVELOPE_CLIP.seconds;
+    const fallback = window.setTimeout(fire, clipFailed ? 4200 : (CLIP_START_MS / 1000 + seconds + ENVELOPE_CLIP.holdAfterEnd + 2.5) * 1000);
+    const onEnded = () => {
+      holdTimer = window.setTimeout(fire, ENVELOPE_CLIP.holdAfterEnd * 1000);
     };
     // if anything else pauses it before the end (say the tap's warm-up
     // resolving late on a slow connection), carry on playing
     const onPause = () => {
       if (wantPlaying.current && !video.ended && document.visibilityState === 'visible') video.play().catch(() => {});
     };
-    video?.addEventListener('timeupdate', onTime);
-    video?.addEventListener('ended', fire);
+    video?.addEventListener('ended', onEnded);
     video?.addEventListener('pause', onPause);
     return () => {
       window.clearTimeout(startTimer);
       window.clearTimeout(fallback);
-      video?.removeEventListener('timeupdate', onTime);
-      video?.removeEventListener('ended', fire);
+      window.clearTimeout(holdTimer);
+      video?.removeEventListener('ended', onEnded);
       video?.removeEventListener('pause', onPause);
     };
   }, [stage, clipFailed, onClipNearEnd]);
@@ -340,7 +345,7 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
                 poster={ENVELOPE_CLIP.poster}
                 onError={() => setClipFailed(true)}
                 className="h-full w-full object-cover"
-                style={{ objectPosition: '50% 60%' }}
+                style={{ objectPosition: ENVELOPE_CLIP.focus }}
               >
                 <source src={ENVELOPE_CLIP.src} type="video/mp4" />
               </video>
@@ -375,7 +380,7 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
                 exit={{ opacity: 0, transition: { duration: 0.3 } }}
               >
                 <motion.div
-                  className="[grid-area:1/1]"
+                  className="pointer-events-none [grid-area:1/1]"
                   aria-hidden={!sealed}
                   initial={false}
                   animate={{ opacity: sealed ? 1 : 0 }}
@@ -393,7 +398,7 @@ export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealCli
                   onSubmit={handleSubmit}
                   noValidate
                   inert={!naming}
-                  className="flex w-full flex-col items-center [grid-area:1/1]"
+                  className="relative z-10 flex w-full flex-col items-center [grid-area:1/1]"
                   initial={false}
                   animate={{ opacity: naming ? 1 : 0, y: naming ? 0 : 8 }}
                   transition={{ duration: 0.6, delay: naming ? 0.3 : 0, ease: EASE }}
