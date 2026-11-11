@@ -20,18 +20,23 @@ device remembers them for 60 days, so a return visit opens straight to their car
 | Vogue article link, song, card video, dates | `src/thank-you/config.js` (`vogueUrl`, `musicSrc`, `cardVimeoId`, …) |
 | The clip inside the envelope | `public/video/first-dance.mp4` (see `source-media/README.md`) |
 | Gallery chapters, highlights, order, captions | `src/thank-you/data/photos.json` (`chapter`, `featured`, `seq`, `alt`) |
+| RPS Films' tab: name, heading, invitation, preview photos | `src/thank-you/config.js` (`photoSets`) |
 
 ## Photos
 
 The gallery holds Ruben's full set, 1,127 photos. It opens on the highlights (the
 photos marked `"featured": true`, which also run along the film strips), then has a
-tab for each chapter: Haldi, Sangeet, The Wedding and On Film. Photos load only as
-they come into view.
+tab for each chapter: Haldi, Sangeet, The Wedding and On Film. After Ruben's
+chapters comes RPS Films' tab: 715 behind-the-scenes photos from the whole week
+(Barcelona, Mehndi, Haldi, Sangeet, The Wedding), with an invitation to it ("Want
+more photos?") at the end of the highlights and of the last chapter. Photos load
+only where the guest is looking.
 
-The full set of full-size photos is not in this repository (it would add over
-500 MB); it is in Google Drive ("Ruben Photos"). `source-media/photos/` keeps the
-originals of the photos first chosen for the site. To add or re-make photos, put
-them in a folder (full-size originals, or zips made by the photo packer) and run:
+The full-size photos are not in this repository (they would add well over 500 MB).
+Ruben's are in Google Drive ("Ruben Photos"); RPS Films' came as two zips.
+`source-media/photos/` keeps the originals of the photos first chosen for the site.
+To add or re-make photos, put them in a folder (full-size originals, or zips made by
+the photo packer) and run:
 
 ```bash
 node scripts/process-photos.mjs gallery <folder> [more folders or zips]
@@ -40,21 +45,38 @@ node scripts/process-photos.mjs gallery <folder> [more folders or zips]
 `npm run photos` does the same for `source-media/photos/`. This writes web sizes to
 `public/photos/` (`-sm` for the film strips and small tiles, `-md` for the grid,
 `-lg` for the full-screen viewer) and adds the photos to
-`src/thank-you/data/photos.json`. Zips are unpacked automatically, and when the same
-photo is there twice the larger one is used. Photos already in the gallery stay, so
-you can add a few at a time.
+`src/thank-you/data/photos.json`. Folders are read at any depth and zips are unpacked
+automatically; when the same photo is there twice the larger one is used. Photos
+already in the gallery stay, so you can add a few at a time.
+
+Photos by another photographer go in as a set of their own, with the chapter to put
+them in:
+
+```bash
+node scripts/process-photos.mjs gallery --set rps --chapter "Mehndi" <folder>
+```
+
+The set's name in the tab, its heading, the invitation's wording and its preview
+photos are under `photoSets` in `src/thank-you/config.js`.
 
 `photos.json` has one photo per line, in gallery order, and is safe to edit by hand;
 re-running keeps the edits:
 
-- `chapter`: the tab a photo sits in. New photos get one from their file name
-  (`haldi`, `sangeet`, `wedding`, or a film scan's date-style name).
+- `chapter`: the tab (or, in a set, the section) a photo sits in. New photos get one
+  from their file name (`haldi`, `sangeet`, `wedding`, or a film scan's date-style
+  name) unless `--chapter` says otherwise.
 - `featured`: `true` puts a photo in the highlights.
 - `seq`: a number moves a photo ahead within its chapter; the rest follow the
-  photographer's file order (their files are numbered in shooting order).
+  photographer's file order (their files are numbered in shooting order). RPS
+  Films' photos all have one, since their cameras' numbers don't follow the week.
 - `alt`: a caption.
-- `excluded` (at the top): file names to leave out. Ruben's `preview` files are
-  always left out, since they repeat photos from the wedding set.
+- `set`: whose photos these are, when not Ruben's (`rps`).
+- `excluded` (at the top): file names to leave out, such as copies. Ruben's
+  `preview` files are always left out, since they repeat photos from the wedding set.
+
+`npm run build` checks `photos.json` first (`npm run check:photos` on its own): a
+slip such as a missing comma, or a photo whose web files are missing, stops the build
+with a message saying where, and the live site keeps its last good version.
 
 To take a photo out, add its file name to `excluded`, delete its line, and delete its
 three files in `public/photos/`.

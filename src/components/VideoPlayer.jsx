@@ -47,9 +47,14 @@ export function VideoPlayer({ isFlipped = false, videoId = '1149072071', color =
       window.dispatchEvent(new Event('video-ended'));
     });
 
+    // something opened over the film (the photo gallery): pause it
+    const pause = () => player.pause().catch(() => {});
+    window.addEventListener('film-pause', pause);
+
     // Cleanup on unmount. destroy() sends no 'pause', so if the film was
     // playing when it went away (the card turned over), let the music resume.
     return () => {
+      window.removeEventListener('film-pause', pause);
       if (playing) window.dispatchEvent(new Event('video-pause'));
       if (playerRef.current) {
         playerRef.current.destroy();

@@ -6,7 +6,7 @@
  *     Builds the night background (landscape bottom-half crop + full portrait),
  *     the social-share image, and prints tiny blur placeholders.
  *
- *   node scripts/process-photos.mjs gallery <folder-or-photo-or-zip> [...]
+ *   node scripts/process-photos.mjs gallery [--set <name>] [--chapter <name>] <folder-or-photo-or-zip> [...]
  *     Turns the photographer's exports into web sizes
  *     (public/photos/<id>-{sm,md,lg}.webp) and adds them to the gallery manifest
  *     (src/thank-you/data/photos.json). Zip files (as made by the photo
@@ -14,6 +14,12 @@
  *     name, the larger original wins. Photos already in the manifest stay
  *     (as long as their web files are there), so photos can be added a few at
  *     a time.
+ *
+ *     --set <name> marks photos from another photographer (e.g. --set rps):
+ *     they get their own tab after Ruben's chapters, with the credit given
+ *     for that name in src/thank-you/config.js (PHOTO_SETS), and ids that
+ *     start with the set's name. --chapter <name> puts the new photos in that
+ *     chapter (otherwise it comes from the file name, see CHAPTERS).
  *
  *     The manifest is safe to edit by hand, and re-running keeps the edits:
  *       chapter   the gallery section (tab) a photo sits in; new photos get one
@@ -46,6 +52,8 @@ const QUALITY = { sm: 72, md: 72, lg: 76 };
 
 // Gallery chapters in order, and how a file name places a new photo in one
 const CHAPTERS = [
+  ['Barcelona', /barcelona/i],
+  ['Mehndi', /mehndi|mendhi|mehendi/i],
   ['Haldi', /haldi/i],
   ['Sangeet', /sangeet/i],
   ['The Wedding', /wedding/i],
@@ -124,16 +132,19 @@ async function unzipToTemp(zip, temps) {
   return imagesIn(dir);
 }
 
+// Photos in the inputs: folders at any depth (as zips are), zips, single photos
 async function listInputs(inputs, temps) {
   const files = [];
-  for (const input of inputs) {
-    const stat = await fs.stat(input);
-    const entries = stat.isDirectory() ? (await fs.readdir(input)).sort().map((f) => path.join(input, f)) : [input];
-    for (const f of entries) {
-      if (IMAGE_RE.test(f)) files.push(f);
-      else if (ZIP_RE.test(f)) files.push(...(await unzipToTemp(f, temps)));
-    }
-  }
+  const add = async (p) => {
+    const stat = await fs.stat(p);
+    const name = path.basename(p);
+    if (stat.isDirectory()) {
+      if (name.startsWith('__MACOSX')) return;
+      for (const f of (await fs.readdir(p)).sort()) await add(path.join(p, f));
+    } else if (IMAGE_RE.test(name) && !name.startsWith('._')) files.push(p);
+    else if (ZIP_RE.test(name)) files.push(...(await unzipToTemp(p, temps)));
+  };
+  for (const input of inputs) await add(input);
   return files;
 }
 
@@ -165,7 +176,7 @@ async function decodeTrimmed(file) {
         .extract({ left: shave, top: shave, width, height })
         .raw()
         .toBuffer({ resolveWithObject: true });
-      return { data: shaved.data, raw: { raw: { width, height, channels: shaved.info.channels } }, width, height };
+      return shaveBrightEdges(shaved.data, width, height, shaved.info.channels);
     }
   } catch {
     /* uniform image or trim unsupported: keep as is */
@@ -173,11 +184,57 @@ async function decodeTrimmed(file) {
   return { data, raw, width: info.width, height: info.height };
 }
 
-async function gallery(inputs) {
-  if (!inputs.length) throw new Error('usage: node scripts/process-photos.mjs gallery <folder-or-photo-or-zip> [...]');
+// After the trim, a scan that sat askew can keep a light sliver of the print
+// margin along an edge, outside the film's dark border. Shave such a sliver:
+// light at the very edge with the dark border just inside it (up to 2% in).
+// Sky running off an edge has no dark band behind it and is left alone.
+async function shaveBrightEdges(data, width, height, channels) {
+  const lum = (x, y) => {
+    const i = (y * width + x) * channels;
+    return 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+  };
+  const rowMean = (y) => {
+    let s = 0;
+    for (let x = 0; x < width; x++) s += lum(x, y);
+    return s / width;
+  };
+  const colMean = (x) => {
+    let s = 0;
+    for (let y = 0; y < height; y++) s += lum(x, y);
+    return s / height;
+  };
+  // how many lines to shave from one side: up to where the dark border starts
+  const sliver = (mean, n) => {
+    const reach = Math.max(2, Math.round(n * 0.02));
+    if (mean(0) < 110) return 0; // the edge is already dark
+    for (let k = 1; k < reach; k++) if (mean(k) < 60) return k;
+    return 0;
+  };
+  const t = sliver((k) => rowMean(k), height);
+  const b = sliver((k) => rowMean(height - 1 - k), height);
+  const l = sliver((k) => colMean(k), width);
+  const r = sliver((k) => colMean(width - 1 - k), width);
+  if (!(t || b || l || r)) return { data, raw: { raw: { width, height, channels } }, width, height };
+  const w = width - l - r;
+  const h = height - t - b;
+  const out = await sharp(data, { raw: { width, height, channels } }).extract({ left: l, top: t, width: w, height: h }).raw().toBuffer();
+  return { data: out, raw: { raw: { width: w, height: h, channels } }, width: w, height: h };
+}
+
+async function gallery(argv) {
+  const opts = { set: null, chapter: null };
+  const inputs = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--set' || argv[i] === '--chapter') {
+      if (!argv[i + 1]) throw new Error(`${argv[i]} needs a name`);
+      opts[argv[i].slice(2)] = argv[++i];
+    } else inputs.push(argv[i]);
+  }
+  if (opts.set && !/^[a-z0-9]+$/.test(opts.set)) throw new Error('--set takes a short name in lower-case letters and digits, e.g. rps');
+  if (!inputs.length) throw new Error('usage: node scripts/process-photos.mjs gallery [--set <name>] [--chapter <name>] <folder-or-photo-or-zip> [...]');
   const temps = [];
   try {
-    await galleryFrom(await listInputs(inputs, temps), inputs);
+    await galleryFrom(await listInputs(inputs, temps), inputs, opts);
   } finally {
     for (const dir of temps) await fs.rm(dir, { recursive: true, force: true });
   }
@@ -206,9 +263,11 @@ async function pool(items, size, task) {
   await Promise.all(Array.from({ length: Math.min(size, items.length) }, worker));
 }
 
-async function encode(file) {
+const idFor = (name, set) => (set ? `${set}-${slugify(name)}` : slugify(name));
+
+async function encode(file, set) {
   const base = path.basename(file);
-  const id = slugify(base);
+  const id = idFor(base, set);
   const img = await decodeTrimmed(file);
   const { width: w0, height: h0 } = img;
   for (const [key, edge] of Object.entries(SIZES)) {
@@ -232,12 +291,20 @@ async function encode(file) {
   };
 }
 
-async function galleryFrom(allFiles, inputs) {
+async function galleryFrom(allFiles, inputs, { set, chapter }) {
   let old = {};
+  let text0 = null;
   try {
-    old = JSON.parse(await fs.readFile(MANIFEST, 'utf8'));
-  } catch {
-    old = {};
+    text0 = await fs.readFile(MANIFEST, 'utf8');
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err; // no manifest yet: start a new one
+  }
+  if (text0 !== null) {
+    try {
+      old = JSON.parse(text0.replace(/^\uFEFF/, ''));
+    } catch (err) {
+      throw new Error(`${path.relative(ROOT, MANIFEST)} isn't valid JSON (${err.message}). Fix it first; nothing was changed.`);
+    }
   }
   const previous = new Map((old.photos || []).map((p) => [p.id, p]));
   const excluded = old.excluded || [];
@@ -249,7 +316,7 @@ async function galleryFrom(allFiles, inputs) {
   const best = new Map();
   for (const file of allFiles) {
     if (leftOut(path.basename(file))) continue;
-    const id = slugify(path.basename(file));
+    const id = idFor(path.basename(file), set);
     const { width = 0, height = 0 } = await sharp(file).metadata();
     const have = best.get(id);
     if (!have || width * height > have.pixels) best.set(id, { file, pixels: width * height });
@@ -261,7 +328,7 @@ async function galleryFrom(allFiles, inputs) {
   const made = new Map();
   let done = 0;
   await pool(files, Math.max(1, Math.min(4, os.cpus().length)), async (file) => {
-    const photo = await encode(file);
+    const photo = await encode(file, set);
     made.set(photo.id, photo);
     process.stdout.write(`\r${++done}/${files.length} ${photo.source}`.padEnd(70));
   });
@@ -281,7 +348,8 @@ async function galleryFrom(allFiles, inputs) {
       w: photo.w,
       h: photo.h,
       tone: photo.tone,
-      chapter: prev.chapter ?? chapterFor(photo.source),
+      ...(set ? { set } : {}),
+      chapter: prev.chapter ?? chapter ?? chapterFor(photo.source),
       ...(prev.featured ? { featured: true } : {}),
       ...(prev.alt ? { alt: prev.alt } : {}),
       ...(Number.isFinite(prev.seq) ? { seq: prev.seq } : {}),
@@ -289,11 +357,14 @@ async function galleryFrom(allFiles, inputs) {
     });
   }
 
-  // Chapter by chapter; within one, hand-set places (seq) first, then the
-  // photographer's file order (their exports are numbered in shooting order)
+  // Ruben's photos, then each other photographer's set; chapter by chapter;
+  // within one, hand-set places (seq) first, then the photographer's file
+  // order (their exports are numbered in shooting order)
   const seqOf = (p) => (Number.isFinite(p.seq) ? p.seq : Infinity);
   photos.sort(
     (a, b) =>
+      Number(Boolean(a.set)) - Number(Boolean(b.set)) ||
+      String(a.set ?? '').localeCompare(String(b.set ?? '')) ||
       chapterRank(a.chapter) - chapterRank(b.chapter) ||
       String(a.chapter ?? '').localeCompare(String(b.chapter ?? '')) ||
       seqOf(a) - seqOf(b) ||
@@ -318,6 +389,6 @@ const [mode, ...args] = process.argv.slice(2);
 if (mode === 'hero') await hero();
 else if (mode === 'gallery') await gallery(args);
 else {
-  console.error('usage: node scripts/process-photos.mjs hero | gallery <folder-or-photo> [...]');
+  console.error('usage: node scripts/process-photos.mjs hero | gallery [--set <name>] [--chapter <name>] <folder-or-photo> [...]');
   process.exit(1);
 }

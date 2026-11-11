@@ -80,7 +80,7 @@ export default function ThankYouPage() {
   const stageRef = useRef(stage);
   const letterRequest = useRef(0);
   const letterFailures = useRef(0);
-  const photoFailures = useRef(0);
+  const photoRetries = useRef(0); // presses of the gallery's Try again
 
   useEffect(() => {
     stageRef.current = stage;
@@ -133,18 +133,19 @@ export default function ThankYouPage() {
   }, [guest, letter.status, requestLetter]);
 
   // The photo list comes once the card is out (the photos themselves only as
-  // they are looked at). A second failure reloads the page, as for the letter.
+  // they are looked at). If it fails, it's asked for again when the gallery
+  // opens or the connection comes back.
   const requestPhotos = useCallback(() => {
     loadPhotos().then(
       (all) => setPhotos({ status: 'ready', all, featured: all.filter((ph) => ph.featured) }),
-      () => {
-        photoFailures.current += 1;
-        setPhotos((p) => ({ ...p, status: 'failed' }));
-      },
+      () => setPhotos((p) => ({ ...p, status: 'failed' })),
     );
   }, []);
+  // Try again asks once more; pressed a second time it reloads the page (the
+  // site may have been updated since it was opened, so the old list is gone)
   const retryPhotos = useCallback(() => {
-    if (photoFailures.current >= 2) {
+    photoRetries.current += 1;
+    if (photoRetries.current >= 2) {
       window.location.reload();
       return;
     }
@@ -190,12 +191,36 @@ export default function ThankYouPage() {
     };
   }, [stage]);
 
-  // The gallery gets a history entry, so Back closes it rather than the site
-  const openGallery = useCallback((start = null) => {
-    const token = newLayerToken();
-    pushLayer({ ty: 'gallery', token, depth: 1, start });
-    setGallery({ open: true, start, token });
-  }, []);
+  // a failed list is asked for again when the connection comes back
+  const photosFailed = photos.status === 'failed';
+  const photosFailedRef = useRef(false);
+  useEffect(() => {
+    photosFailedRef.current = photosFailed;
+    if (!photosFailed) return undefined;
+    const again = () => requestPhotos();
+    window.addEventListener('online', again);
+    return () => window.removeEventListener('online', again);
+  }, [photosFailed, requestPhotos]);
+
+  // The gallery gets a history entry, so Back closes it rather than the site.
+  // If the browser still sits on an old entry, step back to the page's own
+  // first, then open.
+  const pendingOpen = useRef(null);
+  const openGallery = useCallback(
+    (start = null) => {
+      if (currentLayer()) {
+        pendingOpen.current = { start };
+        leaveStaleLayers();
+        return;
+      }
+      const token = newLayerToken();
+      pushLayer({ ty: 'gallery', token, depth: 1, start });
+      setGallery({ open: true, start, token });
+      window.dispatchEvent(new Event('film-pause')); // the card's film doesn't play on behind the photos
+      if (photosFailedRef.current) requestPhotos(); // the list failed earlier: try once more now
+    },
+    [requestPhotos],
+  );
   const closeGallery = useCallback(() => {
     if (!leaveLayers(gallery.token)) setGallery(GALLERY_CLOSED);
   }, [gallery.token]);
@@ -206,14 +231,21 @@ export default function ThankYouPage() {
       const layer = currentLayer();
       if (!layer) {
         setGallery((g) => (g.open ? GALLERY_CLOSED : g));
+        const p = pendingOpen.current;
+        pendingOpen.current = null;
+        if (p) openGallery(p.start);
         return;
       }
-      if (stageRef.current !== 'card') return;
+      // a gallery entry while the envelope is showing: back to the page's own
+      if (stageRef.current !== 'card') {
+        leaveStaleLayers();
+        return;
+      }
       setGallery((g) => (g.open && g.token === layer.token ? g : { open: true, start: layer.ty === 'gallery' ? layer.start : null, token: layer.token }));
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, []);
+  }, [openGallery]);
 
   // A returning guest's card shows before their letter has loaded. The names
   // line remembered from last time stands in; without one, the line is held

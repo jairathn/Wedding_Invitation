@@ -15,6 +15,16 @@ export const THANK_YOU = {
   vogueUrl: '',
 
   photographer: 'Ruben Larruy',
+  // Other photographers' photos (marked "set" in photos.json): each gets its
+  // own tab after Ruben's chapters, with this credit and an invitation to look.
+  photoSets: {
+    rps: {
+      name: 'RPS Films',
+      title: 'Behind the Scenes',
+      invite: 'See the work of RPS Films, who generously took more behind-the-scenes photos the whole week!',
+      covers: ['rps-aksh9130', 'rps-aksh0022', 'rps-dsc9255'], // shown with the invitation
+    },
+  },
   hashtag: '#JayWalkingToJairath',
   dates: 'September 9 – 11, 2026',
   place: 'Barcelona, Spain',

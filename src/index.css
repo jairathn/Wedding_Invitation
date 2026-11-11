@@ -270,9 +270,40 @@ html.night ::selection {
   right: 0.18em; /* the tracking trails the last letter */
   background: var(--color-foil);
 }
-.ty-next:focus-visible {
+.ty-next:focus-visible,
+.ty-invite:focus-visible {
   outline: 1px solid rgba(241, 223, 176, 0.7);
-  outline-offset: 4px;
+  outline-offset: 6px;
+}
+/* The viewer's photo: its box comes from the photo's shape and the room left
+   by the controls, so it holds its place (showing the small copy) before the
+   photo arrives, or if it doesn't */
+.ty-viewer-img {
+  aspect-ratio: var(--ar);
+  width: min(calc(100vw - 24px), calc((100dvh - 148px) * var(--ar)));
+  height: auto;
+}
+@media (min-width: 768px) {
+  .ty-viewer-img {
+    width: min(calc(100vw - 200px), calc((100dvh - 132px) * var(--ar)));
+  }
+}
+/* the gallery's top bar on the narrowest phones (320px): both labels on one line */
+@media (max-width: 340px) {
+  .ty-bar-label.ty-caps {
+    font-size: 12.5px !important;
+    letter-spacing: 0.12em !important;
+  }
+  .ty-bar-label.ty-link {
+    font-size: 15px;
+  }
+}
+/* sets the other photographers' tabs apart from Ruben's chapters */
+.ty-tab-sep {
+  align-self: center;
+  width: 1px;
+  height: 14px;
+  background: rgba(201, 169, 97, 0.45);
 }
 
 /* Engraved stationery controls. In the components layer, so Tailwind
