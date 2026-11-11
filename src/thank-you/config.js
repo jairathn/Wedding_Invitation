@@ -20,12 +20,19 @@ export const THANK_YOU = {
   place: 'Barcelona, Spain',
 };
 
-// The clip that plays inside the envelope once a guest enters their name.
-// The envelope is coloured to match the clip's letterbox (#0A0A0A) so the
-// footage melts into black velvet. Web version made from
-// source-media/Neil Shriya Dance.mp4 (see source-media/README.md).
+// The clip that plays inside the envelope once a guest enters their name:
+// the first dance under the flowers, fireworks overhead. It plays once, holds
+// on its last frame (the embrace) for `holdAfterEnd` seconds, then the card
+// slides out. `seconds` is its length, used until the file reports its own;
+// `focus` frames it in the envelope's window (the dancers sit low). The
+// velvet is the envelope's darkest tone. Web version made from
+// source-media/Shriya Neil Dance.mp4 (see source-media/README.md); give it a
+// new file name whenever it changes, since browsers cache /video for a day.
 export const ENVELOPE_CLIP = {
-  src: '/video/thank-you-dance.mp4',
-  poster: '/video/thank-you-dance-poster.jpg',
+  src: '/video/first-dance.mp4',
+  poster: '/video/first-dance-poster.jpg',
   velvet: '#0A0A0A',
+  seconds: 4.3,
+  holdAfterEnd: 1.2,
+  focus: '50% 88%',
 };

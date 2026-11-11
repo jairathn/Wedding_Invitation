@@ -7,5 +7,8 @@ folder is served by the website (only `public/` is).
   photos chosen for the site, plus a few full-size originals (the film scans and the
   background photo). `npm run photos` turns them into web sizes; zips are unpacked
   automatically.
-- `Neil Shriya Dance.mp4` — the first-dance clip; the web version is
-  `public/video/thank-you-dance.mp4` (letterbox cropped, 540×810, H.264, no audio).
+- `Shriya Neil Dance.mp4` — the first-dance clip played inside the envelope. Its web
+  version is `public/video/first-dance.mp4`: the black bands cropped off
+  (720×1080), scaled to 540×810, H.264, no sound, with `first-dance-poster.jpg`
+  as its first frame. Give a new version a new file name (browsers cache /video
+  for a day) and update `ENVELOPE_CLIP` in `src/thank-you/config.js`.
