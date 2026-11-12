@@ -21,11 +21,13 @@ device remembers them for 60 days, so a return visit opens straight to their car
 | The clip inside the envelope | `public/video/first-dance.mp4` (see `source-media/README.md`) |
 | Gallery chapters, highlights, order, captions | `src/thank-you/data/photos.json` (`chapter`, `featured`, `seq`, `alt`) |
 | RPS Films' tab: name, heading, invitation, preview photos | `src/thank-you/config.js` (`photoSets`) |
+| Who is in which photo (each guest's Your Photos tab) | `src/thank-you/data/people.json` (see [Your Photos](#your-photos)) |
 
 ## Photos
 
-The gallery holds Ruben's full set, 1,127 photos. It opens on the highlights (the
-photos marked `"featured": true`, which also run along the film strips), then has a
+The gallery holds Ruben's full set, 1,127 photos. It opens on the guest's own photos
+when they have any (see [Your Photos](#your-photos)), then the highlights (the
+photos marked `"featured": true`, which also run along the film strips), then a
 tab for each chapter: Haldi, Sangeet, The Wedding and On Film. After Ruben's
 chapters comes RPS Films' tab: 715 behind-the-scenes photos from the whole week
 (Barcelona, Mehndi, Haldi, Sangeet, The Wedding), with an invitation to it ("Want
@@ -82,6 +84,36 @@ To take a photo out, add its file name to `excluded`, delete its line, and delet
 three files in `public/photos/`.
 `npm run photos:hero` rebuilds the background images from `source-media/photos/shriyaneil_wedding0594.jpg`.
 
+## Your Photos
+
+A guest whose household is in `src/thank-you/data/people.json` gets a Your Photos tab,
+first in the gallery: the photos they are in, from both photographers, by event. A
+film-strip frame still opens among the highlights. Until `people.json` lists anyone,
+no one sees the tab.
+
+Nothing is matched automatically. Faces in the web photos were found and grouped by
+likeness (InsightFace's `buffalo_l` models, with strict grouping), giving 293 groups of
+faces seen in two or more photos. On a private page on claude.ai ("Who's Who"), the
+couple names each group: a guest, Shriya or Neil, not a guest, or not sure. Groups
+marked not sure, or not a guest, are left out. Then:
+
+```bash
+node scripts/people.mjs <faces.json> <tags.json> [--extra <extra.json>]
+```
+
+- `faces.json`: the groups, published with the Who's Who page.
+- `tags.json`: the names given (the page's saved `tags`).
+- `extra.json`: photos added by hand, as `{ "<letter>": ["photo-id", ...] }`.
+
+A name typed on the page that isn't on the guest list is looked up among the aliases
+in `src/data/attendees.json`. If it still matches no one, the script reports it and
+leaves it out.
+
+`people.json` maps each household (its `letter` in `attendees.json`) to photo ids, one
+household per line. It is safe to edit by hand; to take a photo out of someone's tab,
+delete its id. `npm run build` checks that every id is in `photos.json` and every
+household is on the guest list.
+
 ## Development
 
 ```bash
@@ -102,5 +134,6 @@ npm run build
 - `src/lib/guests.js` — name matching shared by both cards (aliases, typos, maiden names)
 - `src/wedding-app/` — guest portal app (`/app`)
 - `scripts/process-photos.mjs` — image pipeline
+- `scripts/people.mjs` — each household's Your Photos, from the couple's naming of face groups
 - `source-media/` — full-size originals (kept for re-processing, never deployed)
 - `api/` — Vercel serverless API routes for the guest app

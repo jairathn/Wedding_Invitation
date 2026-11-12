@@ -1,6 +1,7 @@
 // The gallery's photo list. It is a separate file, fetched only once the card
 // is out; the photos themselves load as they come into view.
 import manifestUrl from './data/photos.json?url';
+import peopleUrl from './data/people.json?url';
 
 // Long edges of the web sizes scripts/process-photos.mjs makes
 const SIZES = { sm: 480, md: 960, lg: 1600 };
@@ -49,16 +50,51 @@ export function loadPhotos() {
     }));
 }
 
+// Which photos each household is in, for its Your Photos tab: a small file,
+// fetched with the photo list. If it fails the gallery goes without the tab,
+// and the next attempt really tries again.
+let people;
+export function loadPeople() {
+  return (people ||= fetch(peopleUrl)
+    .then((r) => {
+      if (!r.ok) throw new Error(`people: HTTP ${r.status}`);
+      return r.json();
+    })
+    .then((m) => (m && typeof m.households === 'object' && m.households) || {})
+    .catch(() => {
+      people = undefined;
+      return {};
+    }));
+}
+
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'more';
 const chapterOf = (p) => p.chapter || 'More photographs';
 
+// The week in order, for the tab that gathers a guest's photos from every photographer
+const EVENTS = ['Barcelona', 'Mehndi', 'Haldi', 'Sangeet', 'The Wedding', 'On Film'];
+const eventRank = (p) => {
+  const i = EVENTS.indexOf(chapterOf(p));
+  return i < 0 ? EVENTS.length : i;
+};
+
+/** A guest's own tab: the photos they're in (`ids`), by event, every photographer's together */
+function yourTab(photos, ids) {
+  if (!Array.isArray(ids) || !ids.length) return null;
+  const want = new Set(ids);
+  const list = photos.filter((p) => want.has(p.id)).sort((a, b) => eventRank(a) - eventRank(b)); // stable: photographer order kept within an event
+  if (!list.length) return null;
+  const sections = sectionsOf(list, groupBy(list, (name) => ({ id: `you-${slug(name)}`, name, number: null })));
+  return { id: 'you', name: 'Your Photos', number: null, mine: true, photos: sections.flatMap((s) => s.photos), sections };
+}
+
 /**
- * The gallery's tabs: the highlights (Ruben's photos marked `featured`), then
- * one per chapter of Ruben's, then one for each other photographer's set
- * (photos with a `set`), split into its own chapters. Tab ids come from the
- * names, so a history entry still finds its chapter after the photos change.
+ * The gallery's tabs: the guest's own photos when there are any (`mine`, a
+ * list of photo ids), the highlights (Ruben's photos marked `featured`), one
+ * per chapter of Ruben's, then one for each other photographer's set (photos
+ * with a `set`), split into its own chapters. Tab ids come from the names, so
+ * a history entry still finds its chapter after the photos change.
  */
-export function galleryTabs(photos, sets = {}) {
+export function galleryTabs(photos, sets = {}, mine = null) {
   const own = photos.filter((p) => !p.set);
   const chapters = groupBy(own, (name, i) => ({ id: `ch-${slug(name)}`, name, number: i }));
   const tabs = [];
@@ -87,7 +123,8 @@ export function galleryTabs(photos, sets = {}) {
       sections,
     });
   }
-  return tabs;
+  const yours = yourTab(photos, mine);
+  return yours ? [yours, ...tabs] : tabs;
 }
 
 // Chapters in the order they first appear, each with its photos
