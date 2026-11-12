@@ -895,7 +895,8 @@ function GalleryPanel({ photos, mine, status, onRetry, startIndex, token, onClos
               {tab.sections.map((sec) => (
                 <section key={sec.start} aria-label={sec.chapter.name}>
                   {tab.sections.length > 1 && <SectionHeading name={sec.chapter.name} />}
-                  <PhotoGrid key={`${tab.id}-${sec.start}`} photos={sec.photos} offset={sec.start} density="roomy" {...gridProps} />
+                  {/* a very long list (the couple's own) in the chapters' smaller rows */}
+                  <PhotoGrid key={`${tab.id}-${sec.start}`} photos={sec.photos} offset={sec.start} density={tab.photos.length > 250 ? 'dense' : 'roomy'} {...gridProps} />
                 </section>
               ))}
               {next && <NextLink to={next} onPick={pickTab} />}
