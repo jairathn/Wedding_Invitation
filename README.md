@@ -109,6 +109,13 @@ A name typed on the page that isn't on the guest list is looked up among the ali
 in `src/data/attendees.json`. If it still matches no one, the script reports it and
 leaves it out.
 
+Faces too small or too turned away to be grouped were then matched to the named
+rows. A face counts only when it is clearly closer to one household's rows than to
+anyone else's (similarity 0.5 or more, at least 0.1 ahead). Every one of those matches
+was checked by eye, by two reviewers working separately and then once more, before
+its photo was added. These photos are in `extra.json`, kept with the Who's Who page
+like `faces.json`; pass it with `--extra` when re-running, or they drop out.
+
 `people.json` maps each household (its `letter` in `attendees.json`) to photo ids, one
 household per line. It is safe to edit by hand; to take a photo out of someone's tab,
 delete its id. `npm run build` checks that every id is in `photos.json` and every
