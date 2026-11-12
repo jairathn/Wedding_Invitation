@@ -112,7 +112,8 @@ leaves it out.
 `people.json` maps each household (its `letter` in `attendees.json`) to photo ids, one
 household per line. It is safe to edit by hand; to take a photo out of someone's tab,
 delete its id. `npm run build` checks that every id is in `photos.json` and every
-household is on the guest list.
+household is on the guest list. The couple's own card (`couple`) has their photos
+too, shown in the chapters' smaller rows since there are so many.
 
 ## Development
 
