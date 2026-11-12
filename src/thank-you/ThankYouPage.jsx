@@ -12,7 +12,7 @@ import { greetingName, recallGuest, recallGuestRecord, rememberGuest, resolveGue
 import { skyBurst } from './sky';
 import { currentLayer, leaveLayers, leaveStaleLayers, newLayerToken, pushLayer } from './layers';
 import { THANK_YOU } from './config';
-import { loadPhotos } from './photos';
+import { loadPeople, loadPhotos } from './photos';
 import lettersUrl from './data/letters.json?url';
 
 const EASE = [0.4, 0, 0.2, 1];
@@ -41,7 +41,7 @@ const loadLetters = () =>
     }));
 
 const GALLERY_CLOSED = { open: false, start: null, token: null };
-const NO_PHOTOS = { status: 'idle', all: [], featured: [] };
+const NO_PHOTOS = { status: 'idle', all: [], featured: [], households: {} };
 
 /** Shared gold gradient referenced by the card's SVG ornaments. */
 function GoldDefs() {
@@ -133,11 +133,11 @@ export default function ThankYouPage() {
   }, [guest, letter.status, requestLetter]);
 
   // The photo list comes once the card is out (the photos themselves only as
-  // they are looked at). If it fails, it's asked for again when the gallery
-  // opens or the connection comes back.
+  // they are looked at), with the list of who is in which. If it fails, it's
+  // asked for again when the gallery opens or the connection comes back.
   const requestPhotos = useCallback(() => {
-    loadPhotos().then(
-      (all) => setPhotos({ status: 'ready', all, featured: all.filter((ph) => ph.featured) }),
+    Promise.all([loadPhotos(), loadPeople()]).then(
+      ([all, households]) => setPhotos({ status: 'ready', all, featured: all.filter((ph) => ph.featured), households }),
       () => setPhotos((p) => ({ ...p, status: 'failed' })),
     );
   }, []);
@@ -271,6 +271,8 @@ export default function ThankYouPage() {
     requestPhotos();
   }, [showCard, requestPhotos]);
   const envelopeOpen = stage === 'opening' || revealing;
+  // the photos this guest's household is in, for the gallery's Your Photos tab
+  const mine = (guest && Object.prototype.hasOwnProperty.call(photos.households, guest.person.letter) && photos.households[guest.person.letter]) || null;
   const greet = guest ? greetingName(guest.person, guest.displayName) : '';
   const rememberedNames = returning?.names && guest?.displayName === returning.displayName && letter.status === 'loading' ? returning.names : '';
   const recipient = letter.value?.salutation ? stripDear(letter.value.salutation) : rememberedNames || greet;
@@ -393,6 +395,7 @@ export default function ThankYouPage() {
         <PhotoGallery
           open={gallery.open}
           photos={photos.all}
+          mine={mine}
           status={photos.status === 'ready' ? 'ready' : photos.status === 'failed' ? 'failed' : 'loading'}
           onRetry={retryPhotos}
           startIndex={gallery.start}

@@ -34,10 +34,16 @@ function lockPageScroll() {
   };
 }
 
+// Who took a photo: Ruben, or the photographer of its set
+const creditFor = (photo) => (photo?.set ? THANK_YOU.photoSets?.[photo.set]?.name || photo.set : THANK_YOU.photographer);
+const andList = (names) => (names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
+const photographs = (n) => `${n} photograph${n === 1 ? '' : 's'}`;
+
 // The photo a history entry stands for, by its id (the photos may have
-// changed since the entry was made); null when it isn't there any more
+// changed since the entry was made); null when it isn't there any more. An
+// entry without a tab comes from before there were tabs: the highlights.
 function indexFromEntry(c, tabs) {
-  const t = tabs.find((x) => x.id === c.tab) || (c.tab ? null : tabs[0]);
+  const t = tabs.find((x) => x.id === c.tab) || (c.tab ? null : tabs.find((x) => x.id === 'highlights') || tabs[0]);
   if (!t) return tabs.length ? null : c.index ?? 0; // list not here yet: the stored place
   if (c.photo) {
     const i = t.photos.findIndex((p) => p.id === c.photo);
@@ -91,7 +97,7 @@ function ViewerImage({ ref, photo, dir, playing, onLoaded, onFailed }) {
   );
 }
 
-function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direct, onShowAll, showChapter, credit, active = true }) {
+function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direct, onShowAll, showChapter, active = true }) {
   const photo = photos[index];
   const count = photos.length;
   // false while it (or the whole gallery) fades out: no keys or slideshow ticks then
@@ -282,7 +288,7 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direc
           <span>
             {photo.alt ? `${photo.alt} · ` : ''}
             {showChapter && photo.chapter ? `${photo.chapter} · ` : ''}
-            {index + 1} of {count} · Photography by {credit}
+            {index + 1} of {count} · Photography by {creditFor(photo)}
           </span>
         )}
       </p>
@@ -290,7 +296,7 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direc
   );
 }
 
-function ChapterHeading({ chapter, count = null, by = null }) {
+function ChapterHeading({ chapter, count = null, by = null, note = null }) {
   return (
     <div data-landmark="" className="py-12 text-center md:py-16">
       {chapter.number !== null && (
@@ -302,12 +308,30 @@ function ChapterHeading({ chapter, count = null, by = null }) {
         {chapter.title || chapter.name}
       </h3>
       <span className="mx-auto mt-2 block h-px w-16 bg-gradient-to-r from-transparent via-foil/70 to-transparent" aria-hidden="true" />
+      {note && <p className="mx-auto mt-5 max-w-[30em] font-display text-[18px] italic leading-relaxed text-ivory/80 md:text-[20px]">{note}</p>}
       {count !== null && (
         <p className="ty-caps mt-4 text-[12px] text-ivory/55" style={tracked(0.16)}>
           {by ? `By ${by} · ` : ''}
-          {count} photographs
+          {photographs(count)}
         </p>
       )}
+    </div>
+  );
+}
+
+/** The way on from a tab: the next tab's name, as a link */
+function NextLink({ to, onPick }) {
+  return (
+    <div data-landmark="" className="pt-16 text-center md:pt-24">
+      <button type="button" onClick={() => onPick(to.id)} className="ty-next group inline-flex flex-col items-center px-4 py-2 focus:outline-none">
+        <span className="ty-caps text-[12px] text-ivory/60" style={tracked(0.2)}>
+          Next
+        </span>
+        <span className="foil-text px-[0.2em] font-script text-[40px] leading-[1.25] md:text-[46px]">{to.name}</span>
+        <span className="ty-caps text-[11px] text-ivory/55 transition group-hover:text-foil-light" style={tracked(0.16)}>
+          {photographs(to.photos.length)}
+        </span>
+      </button>
     </div>
   );
 }
@@ -421,25 +445,35 @@ function ChapterCards({ chapters, featured, onPick }) {
 }
 
 /**
- * Full-screen gallery. The first tab holds the highlights (the photos marked
- * `featured`, also on the film strips), then a tab for each chapter with all
- * of its photos. A film-strip frame opens straight into that photo, and
- * closing it goes straight back to the card. The panel mounts fresh on every
- * open.
+ * Full-screen gallery. It opens on the guest's own photos when there are any
+ * (`mine`: the ids of the photos their household is in), then the highlights
+ * (the photos marked `featured`, also on the film strips), then a tab for each
+ * chapter with all of its photos. A film-strip frame opens straight into that
+ * photo among the highlights, and closing it goes straight back to the card.
+ * The panel mounts fresh on every open.
  */
-export function PhotoGallery({ open, photos, status = 'ready', onRetry, startIndex = null, token = null, onClose }) {
+export function PhotoGallery({ open, photos, mine = null, status = 'ready', onRetry, startIndex = null, token = null, onClose }) {
   return (
     <AnimatePresence>
       {open && (
-        <GalleryPanel key={token || 'gallery'} photos={photos} status={status} onRetry={onRetry} startIndex={startIndex} token={token} onClose={onClose} />
+        <GalleryPanel
+          key={token || 'gallery'}
+          photos={photos}
+          mine={mine}
+          status={status}
+          onRetry={onRetry}
+          startIndex={startIndex}
+          token={token}
+          onClose={onClose}
+        />
       )}
     </AnimatePresence>
   );
 }
 
-function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
-  const tabs = useMemo(() => galleryTabs(photos, THANK_YOU.photoSets), [photos]);
-  const featured = tabs[0]?.id === 'highlights' ? tabs[0].photos : [];
+function GalleryPanel({ photos, mine, status, onRetry, startIndex, token, onClose }) {
+  const tabs = useMemo(() => galleryTabs(photos, THANK_YOU.photoSets, mine), [photos, mine]);
+  const featured = tabs.find((t) => t.id === 'highlights')?.photos ?? NO_PHOTOS;
   const present = useIsPresent(); // false while the gallery fades out: it takes no taps or keys then
   const presentRef = useRef(present);
   useEffect(() => {
@@ -454,7 +488,8 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
   // history is in use (the gallery's own entry is there), so photos get entries too
   const [usesHistory] = useState(() => !!entry);
   const fromPhoto = entry?.ty === 'photo';
-  const [tabId, setTabId] = useState(entry?.tab ?? null);
+  // a film-strip frame's photo is one of the highlights; otherwise the first tab
+  const [tabId, setTabId] = useState(entry?.tab ?? (startIndex !== null && !fromPhoto ? 'highlights' : null));
   const tab = tabs.find((t) => t.id === tabId) || tabs[0] || null;
   const list = tab?.photos ?? NO_PHOTOS;
   const ready = status === 'ready' && !!tab;
@@ -670,11 +705,15 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
     </button>
   );
 
-  const chapters = tabs.filter((t) => t.id !== 'highlights' && !t.guest);
+  const chapters = tabs.filter((t) => t.id !== 'highlights' && !t.guest && !t.mine);
   const guests = tabs.filter((t) => t.guest);
   const next = tab && tab.id !== 'highlights' && !tab.guest ? tabs[tabs.indexOf(tab) + 1] : null;
   const pickTab = (id) => selectTab(id, { focusTab: true });
-  const credit = tab?.guest ? tab.by : THANK_YOU.photographer;
+  // the tab's photographers, Ruben first
+  const credit = useMemo(() => {
+    const names = [...new Set(list.map(creditFor))].sort((a, b) => (b === THANK_YOU.photographer) - (a === THANK_YOU.photographer));
+    return andList(names) || THANK_YOU.photographer;
+  }, [list]);
   const clear = stickAt + tabBarH;
   const gridProps = { total: list.length, onOpen: openPhoto, reveal, clear };
   const clearRef = useRef(clear);
@@ -788,7 +827,9 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
             <div ref={tabsRef} className="ty-tabs overflow-x-auto pb-2">
               <div role="tablist" aria-label="Chapters" className="mx-auto flex w-max gap-6 px-5 md:gap-10" onKeyDown={onTabKey}>
                 {tabs.map((t, i) => [
-                  t.guest && !tabs[i - 1]?.guest && <span key={`sep-${t.id}`} className="ty-tab-sep" aria-hidden="true" />,
+                  i > 0 && ((t.guest && !tabs[i - 1].guest) || (tabs[i - 1].mine && !t.mine)) && (
+                    <span key={`sep-${t.id}`} className="ty-tab-sep" aria-hidden="true" />
+                  ),
                   <button
                     key={t.id}
                     id={`ty-tab-${t.id}`}
@@ -848,6 +889,17 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
                 <SetInvite key={g.id} set={g} onPick={pickTab} />
               ))}
             </>
+          ) : tab.mine ? (
+            <>
+              <ChapterHeading chapter={tab} count={tab.photos.length} note="The photographs we found you in, all week long." />
+              {tab.sections.map((sec) => (
+                <section key={sec.start} aria-label={sec.chapter.name}>
+                  {tab.sections.length > 1 && <SectionHeading name={sec.chapter.name} />}
+                  <PhotoGrid key={`${tab.id}-${sec.start}`} photos={sec.photos} offset={sec.start} density="roomy" {...gridProps} />
+                </section>
+              ))}
+              {next && <NextLink to={next} onPick={pickTab} />}
+            </>
           ) : tab.guest ? (
             <>
               <ChapterHeading chapter={tab} count={tab.photos.length} by={tab.by} />
@@ -862,21 +914,7 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
             <>
               <ChapterHeading chapter={tab} count={tab.photos.length} />
               <PhotoGrid key={tab.id} photos={tab.photos} density="dense" {...gridProps} />
-              {next?.guest ? (
-                <SetInvite set={next} onPick={pickTab} />
-              ) : next && (
-                <div data-landmark="" className="pt-16 text-center md:pt-24">
-                  <button type="button" onClick={() => pickTab(next.id)} className="ty-next group inline-flex flex-col items-center px-4 py-2 focus:outline-none">
-                    <span className="ty-caps text-[12px] text-ivory/60" style={tracked(0.2)}>
-                      Next
-                    </span>
-                    <span className="foil-text px-[0.2em] font-script text-[40px] leading-[1.25] md:text-[46px]">{next.name}</span>
-                    <span className="ty-caps text-[11px] text-ivory/55 transition group-hover:text-foil-light" style={tracked(0.16)}>
-                      {next.photos.length} photographs
-                    </span>
-                  </button>
-                </div>
-              )}
+              {next?.guest ? <SetInvite set={next} onPick={pickTab} /> : next && <NextLink to={next} onPick={pickTab} />}
             </>
           )}
         </div>
@@ -921,7 +959,6 @@ function GalleryPanel({ photos, status, onRetry, startIndex, token, onClose }) {
             direct={direct}
             onShowAll={showAll}
             showChapter={tab.sections?.length > 1}
-            credit={credit}
             active={present}
           />
         )}

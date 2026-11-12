@@ -3,6 +3,8 @@
  * Checks the gallery's photo list before a build, so a slip while editing
  * src/thank-you/data/photos.json by hand stops the build (and the site keeps
  * its last good version) instead of breaking the gallery for every guest.
+ * Also checks src/thank-you/data/people.json (who is in which photo, for the
+ * Your Photos tab) against the photo list and the guest list.
  *
  *   node scripts/check-photos.mjs      (runs as part of `npm run build`)
  */
@@ -51,12 +53,43 @@ for (const [n, p] of (photos || []).entries()) {
   }
 }
 
-if (problems.length) {
-  console.error(`\n${where} has ${problems.length} problem${problems.length > 1 ? 's' : ''}:`);
-  for (const line of problems.slice(0, 30)) console.error(`  - ${line}`);
-  if (problems.length > 30) console.error(`  ... and ${problems.length - 30} more`);
+// people.json: which photos each household is in (the gallery's Your Photos tab)
+const PEOPLE = path.join(ROOT, 'src/thank-you/data/people.json');
+const ATTENDEES = path.join(ROOT, 'src/data/attendees.json');
+const peopleWhere = path.relative(ROOT, PEOPLE);
+const peopleProblems = [];
+let households = {};
+try {
+  const people = JSON.parse(fs.readFileSync(PEOPLE, 'utf8').replace(/^\uFEFF/, ''));
+  if (!people || typeof people.households !== 'object' || people.households === null || Array.isArray(people.households)) {
+    peopleProblems.push('it should have a "households" object (it can be empty: {})');
+  } else households = people.households;
+} catch (err) {
+  peopleProblems.push(`it can't be read: ${err.message}`);
+}
+const letters = new Set(JSON.parse(fs.readFileSync(ATTENDEES, 'utf8')).people.map((p) => p.letter));
+for (const [letter, ids] of Object.entries(households)) {
+  if (!letters.has(letter)) peopleProblems.push(`"${letter}" isn't a letter key in src/data/attendees.json`);
+  if (!Array.isArray(ids) || !ids.every((id) => typeof id === 'string')) {
+    peopleProblems.push(`"${letter}" should be a list of photo ids`);
+    continue;
+  }
+  const unknown = ids.filter((id) => !seen.has(id));
+  if (unknown.length) peopleProblems.push(`"${letter}" lists photos that aren't in photos.json: ${unknown.slice(0, 5).join(', ')}${unknown.length > 5 ? ', ...' : ''}`);
+  if (new Set(ids).size !== ids.length) peopleProblems.push(`"${letter}" lists a photo twice`);
+}
+
+for (const [file, list] of [[where, problems], [peopleWhere, peopleProblems]]) {
+  if (!list.length) continue;
+  console.error(`\n${file} has ${list.length} problem${list.length > 1 ? 's' : ''}:`);
+  for (const line of list.slice(0, 30)) console.error(`  - ${line}`);
+  if (list.length > 30) console.error(`  ... and ${list.length - 30} more`);
+}
+if (problems.length || peopleProblems.length) {
   console.error('');
   process.exit(1);
 }
 const featured = photos.filter((p) => p.featured).length;
 console.log(`photos.json: ${photos.length} photos, ${featured} featured — ok`);
+const tagged = Object.values(households);
+console.log(`people.json: ${tagged.length} households, ${new Set(tagged.flat()).size} photos with a guest named — ok`);

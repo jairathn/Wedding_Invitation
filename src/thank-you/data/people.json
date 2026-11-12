@@ -1,0 +1,4 @@
+{
+  "_about": "The photos each household is in, for the gallery's Your Photos tab: households maps a letter key from src/data/attendees.json to photo ids from photos.json. Made by scripts/people.mjs from the couple's naming of face groups; see README.md. Empty until that is done, and the tab only appears for a household listed here.",
+  "households": {}
+}
