@@ -51,8 +51,9 @@ export function loadPhotos() {
 }
 
 // Who is in which photo, for the Your Photos tab: a small file, fetched with
-// the photo list. If it fails the gallery goes without the tab, and the next
-// attempt really tries again.
+// the photo list. If it fails, the gallery goes without the tab until the page
+// is loaded again (it isn't asked for once more on its own, so the tab can't
+// appear while someone is browsing); a later call does fetch it afresh.
 export const NO_PEOPLE = { households: {}, people: new Set() };
 let people;
 export function loadPeople() {

@@ -93,6 +93,11 @@ if (peopleJson && peopleJson.people !== undefined) {
       else if (!households[letterOf.get(n)]?.length) peopleProblems.push(`"${n}" is in "people", but their household has no photos`);
     }
     if (new Set(tabbed).size !== tabbed.length) peopleProblems.push('"people" lists someone twice');
+    // photos no one can see: a household with photos but no one in it in "people"
+    const listed = new Set(tabbed.map((n) => letterOf.get(n)));
+    for (const letter of Object.keys(households)) {
+      if (households[letter]?.length && !listed.has(letter)) peopleProblems.push(`"${letter}" has photos, but no one in it is in "people", so no one sees them`);
+    }
   }
 }
 
