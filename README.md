@@ -86,10 +86,10 @@ three files in `public/photos/`.
 
 ## Your Photos
 
-A guest whose household is in `src/thank-you/data/people.json` gets a Your Photos tab,
-first in the gallery: the photos they are in, from both photographers, by event. A
-film-strip frame still opens among the highlights. Until `people.json` lists anyone,
-no one sees the tab.
+A guest who is in at least one photo gets a Your Photos tab, first in the gallery:
+the photos their household is in (theirs and their family's), from both
+photographers, by event. A guest who is in none gets no tab, even when their
+family has photos. A film-strip frame still opens among the highlights.
 
 Nothing is matched automatically. Faces in the web photos were found and grouped by
 likeness (InsightFace's `buffalo_l` models, with strict grouping), giving 293 groups of
@@ -103,7 +103,9 @@ node scripts/people.mjs <faces.json> <tags.json> [--extra <extra.json>]
 
 - `faces.json`: the groups, published with the Who's Who page.
 - `tags.json`: the names given (the page's saved `tags`).
-- `extra.json`: photos added by hand, as `{ "<letter>": ["photo-id", ...] }`.
+- `extra.json`: photos added by hand, under a household's letter (they join its tab)
+  or a guest's name exactly as in `attendees.json` (they join that household's tab,
+  and the guest gets the tab): `{ "<letter or guest name>": ["photo-id", ...] }`.
 
 A name typed on the page that isn't on the guest list is looked up among the aliases
 in `src/data/attendees.json`. If it still matches no one, the script reports it and
@@ -116,11 +118,19 @@ was checked by eye, by two reviewers working separately and then once more, befo
 its photo was added. These photos are in `extra.json`, kept with the Who's Who page
 like `faces.json`; pass it with `--extra` when re-running, or they drop out.
 
-`people.json` maps each household (its `letter` in `attendees.json`) to photo ids, one
-household per line. It is safe to edit by hand; to take a photo out of someone's tab,
-delete its id. `npm run build` checks that every id is in `photos.json` and every
-household is on the guest list. The couple's own card (`couple`) has their photos
-too, shown in the chapters' smaller rows since there are so many.
+`people.json` has two parts. `households` maps each household (its `letter` in
+`attendees.json`) to photo ids, one household per line. `people` lists the guests
+who are in at least one of those photos themselves; only they get the tab. Both are
+safe to edit by hand: to take a photo out of a household's tab, delete its id (and
+if those were the only photos someone is in, take their name out of `people`); to
+give a guest the tab, add their name exactly as in `attendees.json`. Re-running
+`scripts/people.mjs` rewrites both parts, so for a change that lasts, put the photos
+in `extra.json` under the guest's name. `npm run build` checks that every id is in
+`photos.json`, every household is on the guest list, everyone in `people` is a guest
+whose household has photos, and every household with photos has someone in
+`people`. The couple's own card
+(`couple`) has their photos too, shown in the chapters' smaller rows since there
+are so many.
 
 ## Development
 

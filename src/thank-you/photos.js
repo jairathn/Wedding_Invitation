@@ -50,9 +50,11 @@ export function loadPhotos() {
     }));
 }
 
-// Which photos each household is in, for its Your Photos tab: a small file,
-// fetched with the photo list. If it fails the gallery goes without the tab,
-// and the next attempt really tries again.
+// Who is in which photo, for the Your Photos tab: a small file, fetched with
+// the photo list. If it fails, the gallery goes without the tab until the page
+// is loaded again (it isn't asked for once more on its own, so the tab can't
+// appear while someone is browsing); a later call does fetch it afresh.
+export const NO_PEOPLE = { households: {}, people: new Set() };
 let people;
 export function loadPeople() {
   return (people ||= fetch(peopleUrl)
@@ -60,11 +62,25 @@ export function loadPeople() {
       if (!r.ok) throw new Error(`people: HTTP ${r.status}`);
       return r.json();
     })
-    .then((m) => (m && typeof m.households === 'object' && m.households) || {})
+    .then((m) => ({
+      households: (m && typeof m.households === 'object' && m.households) || {},
+      // a list without "people" (an older one) leaves the tab to every household member
+      people: Array.isArray(m?.people) ? new Set(m.people) : null,
+    }))
     .catch(() => {
       people = undefined;
-      return {};
+      return NO_PEOPLE;
     }));
+}
+
+/**
+ * The ids for a guest's Your Photos tab: their household's photos, but only
+ * when they are in at least one of them themselves. Null for no tab.
+ */
+export function yourPhotos(list, person) {
+  if (!person || !Object.prototype.hasOwnProperty.call(list.households, person.letter)) return null;
+  if (list.people && !list.people.has(person.name)) return null;
+  return list.households[person.letter] || null;
 }
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'more';
