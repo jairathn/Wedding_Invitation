@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Makes src/thank-you/data/people.json, the photos each household is in (the
- * gallery's Your Photos tab), from the couple's naming of face groups on the
- * private "Who's Who" page.
+ * Makes src/thank-you/data/people.json from the couple's naming of face groups
+ * on the private "Who's Who" page: the photos each household is in (the
+ * gallery's Your Photos tab), and which guests are in at least one of them
+ * themselves (only they get the tab; it still shows their household's photos).
  *
  *   node scripts/people.mjs <faces.json> <tags.json> [--extra <extra.json>]
  *
@@ -45,14 +46,16 @@ const people = read(path.join(ROOT, 'src/data/attendees.json')).people;
 const letters = new Set(people.map((p) => p.letter));
 
 const fold = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-const byName = new Map();
-for (const p of people) for (const n of [p.name, ...(p.aliases || [])]) byName.set(fold(n), p.letter);
+const byName = new Map(); // a name or alias, folded -> the guest
+for (const p of people) for (const n of [p.name, ...(p.aliases || [])]) byName.set(fold(n), p);
+const couple = people.filter((p) => p.letter === 'couple').map((p) => p.name);
 
 const households = new Map();
 const add = (letter, ids) => {
   if (!households.has(letter)) households.set(letter, new Set());
   for (const id of ids) if (order.has(id)) households.get(letter).add(id);
 };
+const named = new Set(); // guests seen in at least one photo
 const unmatched = [];
 const unknownGroups = [];
 let used = 0;
@@ -63,12 +66,16 @@ for (const [gid, tag] of Object.entries(tags)) {
     unknownGroups.push(gid);
     continue;
   }
-  const letter = tag.kind === 'couple' ? 'couple' : letters.has(tag.letter) ? tag.letter : byName.get(fold(tag.name || ''));
+  // the guest picked from the list, or else a typed name looked up by name and alias
+  const who = tag.kind === 'guest' ? people.find((p) => p.name === tag.name && p.letter === tag.letter) || byName.get(fold(tag.name || '')) : null;
+  const letter = tag.kind === 'couple' ? 'couple' : who?.letter;
   if (!letter) {
     unmatched.push(`${tag.name} (${gid}, ${group.photos.length} photos)`);
     continue;
   }
   add(letter, group.photos);
+  if (who) named.add(who.name);
+  else couple.forEach((n) => named.add(n)); // "Shriya or Neil": one of the two
   used++;
 }
 if (extraFile) {
@@ -85,9 +92,18 @@ if (extraFile) {
 const keys = [...households.keys()].filter((k) => households.get(k).size).sort();
 const lines = keys.map((k) => `    ${JSON.stringify(k)}: ${JSON.stringify([...households.get(k)].sort((a, b) => order.get(a) - order.get(b)))}`);
 const about = read(OUT)._about;
-fs.writeFileSync(OUT, `{\n  "_about": ${JSON.stringify(about)},\n  "households": {${lines.length ? `\n${lines.join(',\n')}\n  ` : ''}}\n}\n`);
+// only guests whose household has photos (a named row always gives it some)
+const letterOf = new Map(people.map((p) => [p.name, p.letter]));
+const names = [...named].filter((n) => households.get(letterOf.get(n))?.size).sort((a, b) => a.localeCompare(b));
+fs.writeFileSync(
+  OUT,
+  `{\n  "_about": ${JSON.stringify(about)},\n  "people": [${names.length ? `\n${names.map((n) => `    ${JSON.stringify(n)}`).join(',\n')}\n  ` : ''}],\n` +
+    `  "households": {${lines.length ? `\n${lines.join(',\n')}\n  ` : ''}}\n}\n`,
+);
 
 const sizes = keys.map((k) => households.get(k).size).sort((a, b) => a - b);
 console.log(`people.json: ${keys.length} households from ${used} named groups` + (sizes.length ? `; photos each: ${sizes[0]}–${sizes[sizes.length - 1]}, median ${sizes[sizes.length >> 1]}` : ''));
+const left = people.filter((p) => households.has(p.letter) && !named.has(p.name)).map((p) => p.name);
+console.log(`${names.length} guests are in a photo themselves and get the tab; ${left.length} more in those households are in none, so they don't`);
 if (unmatched.length) console.log(`Not on the guest list, left out (${unmatched.length}):\n  ${unmatched.join('\n  ')}`);
 if (unknownGroups.length) console.log(`Named groups not in faces.json, left out: ${unknownGroups.join(', ')}`);

@@ -59,15 +59,17 @@ const ATTENDEES = path.join(ROOT, 'src/data/attendees.json');
 const peopleWhere = path.relative(ROOT, PEOPLE);
 const peopleProblems = [];
 let households = {};
+let peopleJson = null;
 try {
-  const people = JSON.parse(fs.readFileSync(PEOPLE, 'utf8').replace(/^\uFEFF/, ''));
-  if (!people || typeof people.households !== 'object' || people.households === null || Array.isArray(people.households)) {
+  peopleJson = JSON.parse(fs.readFileSync(PEOPLE, 'utf8').replace(/^\uFEFF/, ''));
+  if (!peopleJson || typeof peopleJson.households !== 'object' || peopleJson.households === null || Array.isArray(peopleJson.households)) {
     peopleProblems.push('it should have a "households" object (it can be empty: {})');
-  } else households = people.households;
+  } else households = peopleJson.households;
 } catch (err) {
   peopleProblems.push(`it can't be read: ${err.message}`);
 }
-const letters = new Set(JSON.parse(fs.readFileSync(ATTENDEES, 'utf8')).people.map((p) => p.letter));
+const guests = JSON.parse(fs.readFileSync(ATTENDEES, 'utf8')).people;
+const letters = new Set(guests.map((p) => p.letter));
 for (const [letter, ids] of Object.entries(households)) {
   if (!letters.has(letter)) peopleProblems.push(`"${letter}" isn't a letter key in src/data/attendees.json`);
   if (!Array.isArray(ids) || !ids.every((id) => typeof id === 'string')) {
@@ -77,6 +79,21 @@ for (const [letter, ids] of Object.entries(households)) {
   const unknown = ids.filter((id) => !seen.has(id));
   if (unknown.length) peopleProblems.push(`"${letter}" lists photos that aren't in photos.json: ${unknown.slice(0, 5).join(', ')}${unknown.length > 5 ? ', ...' : ''}`);
   if (new Set(ids).size !== ids.length) peopleProblems.push(`"${letter}" lists a photo twice`);
+}
+
+// people: the guests who get the tab (each must be on the guest list, with photos in their household)
+let tabbed = null;
+if (peopleJson && peopleJson.people !== undefined) {
+  if (!Array.isArray(peopleJson.people) || !peopleJson.people.every((n) => typeof n === 'string')) peopleProblems.push('"people" should be a list of guest names');
+  else {
+    tabbed = peopleJson.people;
+    const letterOf = new Map(guests.map((p) => [p.name, p.letter]));
+    for (const n of tabbed) {
+      if (!letterOf.has(n)) peopleProblems.push(`"${n}" (in "people") isn't a name in src/data/attendees.json`);
+      else if (!households[letterOf.get(n)]?.length) peopleProblems.push(`"${n}" is in "people", but their household has no photos`);
+    }
+    if (new Set(tabbed).size !== tabbed.length) peopleProblems.push('"people" lists someone twice');
+  }
 }
 
 for (const [file, list] of [[where, problems], [peopleWhere, peopleProblems]]) {
@@ -92,4 +109,4 @@ if (problems.length || peopleProblems.length) {
 const featured = photos.filter((p) => p.featured).length;
 console.log(`photos.json: ${photos.length} photos, ${featured} featured — ok`);
 const tagged = Object.values(households);
-console.log(`people.json: ${tagged.length} households, ${new Set(tagged.flat()).size} photos with a guest named — ok`);
+console.log(`people.json: ${tagged.length} households, ${new Set(tagged.flat()).size} photos with a guest named${tabbed ? `, ${tabbed.length} guests with the tab` : ''} — ok`);

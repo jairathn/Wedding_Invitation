@@ -12,7 +12,7 @@ import { greetingName, recallGuest, recallGuestRecord, rememberGuest, resolveGue
 import { skyBurst } from './sky';
 import { currentLayer, leaveLayers, leaveStaleLayers, newLayerToken, pushLayer } from './layers';
 import { THANK_YOU } from './config';
-import { loadPeople, loadPhotos } from './photos';
+import { NO_PEOPLE, loadPeople, loadPhotos, yourPhotos } from './photos';
 import lettersUrl from './data/letters.json?url';
 
 const EASE = [0.4, 0, 0.2, 1];
@@ -41,7 +41,7 @@ const loadLetters = () =>
     }));
 
 const GALLERY_CLOSED = { open: false, start: null, token: null };
-const NO_PHOTOS = { status: 'idle', all: [], featured: [], households: {} };
+const NO_PHOTOS = { status: 'idle', all: [], featured: [], people: NO_PEOPLE };
 
 /** Shared gold gradient referenced by the card's SVG ornaments. */
 function GoldDefs() {
@@ -137,7 +137,7 @@ export default function ThankYouPage() {
   // asked for again when the gallery opens or the connection comes back.
   const requestPhotos = useCallback(() => {
     Promise.all([loadPhotos(), loadPeople()]).then(
-      ([all, households]) => setPhotos({ status: 'ready', all, featured: all.filter((ph) => ph.featured), households }),
+      ([all, people]) => setPhotos({ status: 'ready', all, featured: all.filter((ph) => ph.featured), people }),
       () => setPhotos((p) => ({ ...p, status: 'failed' })),
     );
   }, []);
@@ -271,8 +271,8 @@ export default function ThankYouPage() {
     requestPhotos();
   }, [showCard, requestPhotos]);
   const envelopeOpen = stage === 'opening' || revealing;
-  // the photos this guest's household is in, for the gallery's Your Photos tab
-  const mine = (guest && Object.prototype.hasOwnProperty.call(photos.households, guest.person.letter) && photos.households[guest.person.letter]) || null;
+  // the gallery's Your Photos tab: their household's photos, if they are in one
+  const mine = guest ? yourPhotos(photos.people, guest.person) : null;
   const greet = guest ? greetingName(guest.person, guest.displayName) : '';
   const rememberedNames = returning?.names && guest?.displayName === returning.displayName && letter.status === 'loading' ? returning.names : '';
   const recipient = letter.value?.salutation ? stripDear(letter.value.salutation) : rememberedNames || greet;
