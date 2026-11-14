@@ -118,6 +118,11 @@ was checked by eye, by two reviewers working separately and then once more, befo
 its photo was added. These photos are in `extra.json`, kept with the Who's Who page
 like `faces.json`; pass it with `--extra` when re-running, or they drop out.
 
+A second private page, "Who's Missing", shows the faces no one has been named for,
+so the couple can find guests who are in none of the named rows. Its faces are
+grouped by the families they stand beside, and include look-alike leads drawn from
+the faces already named. Faces named there go into `extra.json` under the guest's name.
+
 `people.json` has two parts. `households` maps each household (its `letter` in
 `attendees.json`) to photo ids, one household per line. `people` lists the guests
 who are in at least one of those photos themselves; only they get the tab. Both are
