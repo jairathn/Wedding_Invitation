@@ -121,7 +121,9 @@ like `faces.json`; pass it with `--extra` when re-running, or they drop out.
 A second private page, "Who's Missing", shows the faces no one has been named for,
 so the couple can find guests who are in none of the named rows. Its faces are
 grouped by the families they stand beside, and include look-alike leads drawn from
-the faces already named. Faces named there go into `extra.json` under the guest's name.
+the faces already named. Later rounds added faces like photos of the missing guests
+that the couple sent, and the small background faces (16 to 40 pixels across) that
+the grouping skipped. Faces named there go into `extra.json` under the guest's name.
 
 `people.json` has two parts. `households` maps each household (its `letter` in
 `attendees.json`) to photo ids, one household per line. `people` lists the guests
