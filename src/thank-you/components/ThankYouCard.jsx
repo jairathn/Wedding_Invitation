@@ -254,7 +254,9 @@ function Back({ letter, status, onRetry, onFront, onPhotos, hasPhotos, firstReve
               role="region"
               aria-label="Your letter"
             >
-              <div ref={contentRef} className="pb-[22px]">
+              {/* a one-line note sits in the middle of the card, like an
+                  inscription; anything longer starts at the top and scrolls */}
+              <div ref={contentRef} className={`pb-[22px] ${paragraphs.length === 1 && !letter.salutation ? 'flex min-h-full flex-col justify-center' : ''}`}>
                 {letter.salutation && (
                   <p className="mb-[0.7em] font-display italic text-foil-light" style={{ fontSize: 'clamp(20px, 5.9cqw, 25px)', lineHeight: 1.25, fontWeight: 500, textWrap: 'balance' }}>
                     {letter.salutation}
