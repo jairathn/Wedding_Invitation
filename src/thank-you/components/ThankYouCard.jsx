@@ -76,7 +76,7 @@ function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
   return (
     <Stock>
       {/* scrolls only as a last resort, when a very short screen can't fit it all */}
-      <div className="thin-scroll relative flex h-full flex-col items-center overflow-y-auto overscroll-contain px-[10%] pb-[9.5cqw] pt-[10.5cqw] text-center">
+      <div className="thin-scroll relative flex h-full flex-col items-center overflow-y-auto overscroll-contain px-[10%] pb-[9.5cqw] pt-[9.6cqw] text-center">
         <div className="flex flex-col items-center">
           {recipient && (
             <p
@@ -94,16 +94,17 @@ function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
           </h1>
         </div>
 
-        <span aria-hidden="true" className="flex-[1_0_4cqw]" />
+        <span aria-hidden="true" className="flex-[1_0_1.6cqw]" />
 
-        {/* the film, matted like a framed print, captioned with the sign-off */}
+        {/* the film, matted like a framed print, captioned with the sign-off
+            (smaller on the narrowest phones, so the three actions below still fit) */}
         <div className="flex w-full flex-col items-center">
-          <div className="relative w-[84%]" style={{ padding: '2.4cqw', background: '#070506', boxShadow: '0 0 0 0.75px rgba(201,169,97,0.6), 0 18px 40px rgba(0,0,0,0.6)' }}>
+          <div className="relative w-[80%] @max-[300px]:w-[60%]" style={{ padding: '2.4cqw', background: '#070506', boxShadow: '0 0 0 0.75px rgba(201,169,97,0.6), 0 18px 40px rgba(0,0,0,0.6)' }}>
             <div className="overflow-hidden" style={{ boxShadow: '0 0 0 0.5px rgba(201,169,97,0.35)' }}>
               <VideoPlayer videoId={THANK_YOU.cardVimeoId} color="c9a961" showFullscreenButton={false} />
             </div>
           </div>
-          <p className="ty-caps mt-[4.4cqw] text-foil" style={{ fontSize: 'clamp(13px, 3.6cqw, 15px)', ...tracked(0.2) }}>
+          <p className="ty-caps mt-[3.8cqw] text-foil" style={{ fontSize: 'clamp(13px, 3.6cqw, 15px)', ...tracked(0.2) }}>
             Shriya &amp; Neil
           </p>
           <p className="mt-[0.6cqw] font-display italic text-ivory/70" style={{ fontSize: 'clamp(14px, 3.8cqw, 16px)' }}>
@@ -111,14 +112,19 @@ function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
           </p>
         </div>
 
-        <span aria-hidden="true" className="flex-[1_0_4cqw]" />
+        <span aria-hidden="true" className="flex-[1_0_1.6cqw]" />
 
-        <div className="flex flex-col items-center gap-[2.4cqw]">
+        {/* Three things to do. On a phone the two quiet links sit close: each
+            keeps a 44px box, the second tucked 12px under the first (which
+            stays on top, so a tap between the lines opens the photographs
+            rather than leaving for another site). Wider cards have room for
+            both in full. */}
+        <div className="flex flex-col items-center">
           <button type="button" data-read onClick={onRead} className={ctaClass} style={ctaStyle}>
             Read your letter
           </button>
           {hasPhotos && (
-            <button type="button" onClick={onPhotos} className="ty-link inline-flex min-h-[44px] items-center px-3" style={{ fontSize: 'clamp(16px, 4.3cqw, 18px)' }}>
+            <button type="button" onClick={onPhotos} className="ty-link relative z-[1] mt-[0.4cqw] inline-flex min-h-[44px] items-center px-3" style={{ fontSize: 'clamp(16px, 4.3cqw, 18px)' }}>
               Our photographs
             </button>
           )}
@@ -127,7 +133,7 @@ function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
               href={THANK_YOU.vogueUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="ty-link inline-flex min-h-[44px] items-center px-3"
+              className="ty-link -mt-[12px] inline-flex min-h-[44px] items-center px-3 @min-[350px]:mt-0"
               style={{ fontSize: 'clamp(16px, 4.3cqw, 18px)' }}
             >
               Read our story in <span className="not-italic">&nbsp;Vogue</span>

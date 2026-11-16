@@ -118,6 +118,16 @@ was checked by eye, by two reviewers working separately and then once more, befo
 its photo was added. These photos are in `extra.json`, kept with the Who's Who page
 like `faces.json`; pass it with `--extra` when re-running, or they drop out.
 
+A final pass looked for named guests in the faces still unnamed, including the
+small background ones (16 to 40 pixels) and faces only a more sensitive detector
+found. Each guest is scored by their three closest named faces; a match needs 0.5
+or more and to be 0.1 clear of every other household and of the faces marked "not
+a guest". Tested on 1,386 named faces with their own rows hidden, and on 617 named
+faces shrunk to background size, the rule made no wrong match. Larger faces were
+still each confirmed by eye (68 of 129 kept). Of the 450 small ones, 80 were checked
+by eye: 79 held up and one, which couldn't be confirmed, was left out. These are in
+`extra.json` under each guest's name.
+
 A second private page, "Who's Missing", shows the faces no one has been named for,
 so the couple can find guests who are in none of the named rows. Its faces are
 grouped by the families they stand beside, and include look-alike leads drawn from
