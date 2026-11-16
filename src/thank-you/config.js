@@ -10,9 +10,9 @@ export const THANK_YOU = {
   // the invitation. Swap in the videographer's teaser's Vimeo id when ready.
   cardVimeoId: '1149072071',
 
-  // Paste the Vogue article link here once it is published; until then the
-  // card shows a quiet "coming soon" line in its place.
-  vogueUrl: '',
+  // The Vogue India story about the wedding. Linked from the front of the
+  // card and from the end of the photographs; leave empty to hide both links.
+  vogueUrl: 'https://www.vogue.in/gallery/this-couple-turned-the-wine-cellar-of-an-11th-century-spanish-castle-into-a-nightclub-for-their-wedding-after-party',
 
   photographer: 'Ruben Larruy',
   // Other photographers' photos (marked "set" in photos.json): each gets its
