@@ -125,7 +125,7 @@ function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
           </button>
           {hasPhotos && (
             <button type="button" onClick={onPhotos} className="ty-link relative z-[1] mt-[0.4cqw] inline-flex min-h-[44px] items-center px-3" style={{ fontSize: 'clamp(16px, 4.3cqw, 18px)' }}>
-              Our photographs
+              Your photographs
             </button>
           )}
           {THANK_YOU.vogueUrl && (
