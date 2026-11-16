@@ -83,7 +83,7 @@ function Strip({ items, direction, secondsPerFrame, onOpen, numberFrom, quiet })
 /**
  * Film strips of wedding photos laid under the card, above and below it.
  * They are a pointer shortcut into the gallery; keyboard and screen-reader
- * guests reach the same photos through the card's "Our photographs".
+ * guests reach the same photos through the card's "Your photographs".
  */
 export function FilmStrips({ show, quiet = false, photos, onOpen }) {
   if (!show || !photos.length) return null; // mount (and load thumbnails) only once the card is open

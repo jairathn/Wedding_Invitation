@@ -296,7 +296,8 @@ function Lightbox({ photos, index, setIndex, onClose, playing, setPlaying, direc
   );
 }
 
-function ChapterHeading({ chapter, count = null, by = null, note = null }) {
+// `note` says what the tab holds; `aside` is a lighter line under it
+function ChapterHeading({ chapter, count = null, by = null, note = null, aside = null }) {
   return (
     <div data-landmark="" className="py-12 text-center md:py-16">
       {chapter.number !== null && (
@@ -308,7 +309,8 @@ function ChapterHeading({ chapter, count = null, by = null, note = null }) {
         {chapter.title || chapter.name}
       </h3>
       <span className="mx-auto mt-2 block h-px w-16 bg-gradient-to-r from-transparent via-foil/70 to-transparent" aria-hidden="true" />
-      {note && <p className="mx-auto mt-5 max-w-[30em] font-display text-[18px] italic leading-relaxed text-ivory/80 md:text-[20px]">{note}</p>}
+      {note && <p className="mx-auto mt-5 max-w-[30em] text-balance font-display text-[18px] italic leading-relaxed text-ivory/80 md:text-[20px]">{note}</p>}
+      {aside && <p className="mx-auto mt-3 max-w-[30em] text-balance font-display text-[16px] italic leading-relaxed text-foil-light/85 md:text-[17px]">{aside}</p>}
       {count !== null && (
         <p className="ty-caps mt-4 text-[12px] text-ivory/55" style={tracked(0.16)}>
           {by ? `By ${by} · ` : ''}
@@ -891,7 +893,14 @@ function GalleryPanel({ photos, mine, status, onRetry, startIndex, token, onClos
             </>
           ) : tab.mine ? (
             <>
-              <ChapterHeading chapter={tab} count={tab.photos.length} note="The photographs we found you in, all week long." />
+              {/* their household's photos, so "you and your loved ones"; many are
+                  of someone else, with the guest somewhere behind */}
+              <ChapterHeading
+                chapter={tab}
+                count={tab.photos.length}
+                note="The photographs we found you and your loved ones in, all week long."
+                aside="Look closely… even if you’re not in the foreground of the photos, we might’ve still caught you!"
+              />
               {tab.sections.map((sec) => (
                 <section key={sec.start} aria-label={sec.chapter.name}>
                   {tab.sections.length > 1 && <SectionHeading name={sec.chapter.name} />}
