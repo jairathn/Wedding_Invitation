@@ -142,7 +142,7 @@ function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
             (smaller, and set closer, on the narrowest phones; and smaller
             still wherever the front would otherwise not fit, see above) */}
         <div className="flex w-full flex-col items-center">
-          <div ref={filmRef} className="relative w-[80%] @max-[300px]:w-[60%]" style={{ padding: '2.4cqw', background: '#070506', boxShadow: '0 0 0 0.75px rgba(201,169,97,0.6), 0 18px 40px rgba(0,0,0,0.6)' }}>
+          <div ref={filmRef} className="relative w-[90%] @max-[300px]:w-[66%]" style={{ padding: '2.4cqw', background: '#070506', boxShadow: '0 0 0 0.75px rgba(201,169,97,0.6), 0 18px 40px rgba(0,0,0,0.6)' }}>
             <div className="overflow-hidden" style={{ boxShadow: '0 0 0 0.5px rgba(201,169,97,0.35)' }}>
               <VideoPlayer videoId={THANK_YOU.cardVimeoId} color="c9a961" showFullscreenButton={false} />
             </div>
