@@ -6,9 +6,9 @@ export const THANK_YOU = {
   // Start the song this many seconds in (e.g. to begin at the chorus).
   musicStartAt: 0,
 
-  // Video on the front of the card. Placeholder: the engagement film used on
-  // the invitation. Swap in the videographer's teaser's Vimeo id when ready.
-  cardVimeoId: '1149072071',
+  // Video on the front of the card: the wedding teaser by RPS Films
+  // (https://vimeo.com/1249319814). The invitation keeps the engagement film.
+  cardVimeoId: '1249319814',
 
   // The Vogue India story about the wedding. Linked from the front of the
   // card and from the end of the photographs; leave empty to hide both links.
@@ -31,18 +31,20 @@ export const THANK_YOU = {
 };
 
 // The clip that plays inside the envelope once a guest enters their name:
-// the first dance under the flowers, fireworks overhead. It plays once, holds
-// on its last frame (the embrace) for `holdAfterEnd` seconds, then the card
-// slides out. `seconds` is its length, used until the file reports its own;
-// `focus` frames it in the envelope's window (the dancers sit low). The
-// velvet is the envelope's darkest tone. Web version made from
-// source-media/Shriya Neil Dance.mp4 (see source-media/README.md); give it a
-// new file name whenever it changes, since browsers cache /video for a day.
+// RPS Films' shot of the couple dancing, sparklers behind, fading to
+// their logo. It plays once, holds on its last frame for `holdAfterEnd`
+// seconds, then the card slides out. `seconds` is its length, used until the
+// file reports its own; `focus` frames it in the envelope's window (the clip
+// is wide and the window tall, so the window shows the middle of the frame,
+// where the dancers and the logo are). The velvet is the envelope's darkest
+// tone. Web version made from source-media/envelope-dance.gif (see
+// source-media/README.md); give it a new file name whenever it changes, since
+// browsers cache /video for a day.
 export const ENVELOPE_CLIP = {
-  src: '/video/first-dance.mp4',
-  poster: '/video/first-dance-poster.jpg',
+  src: '/video/envelope-dance.mp4',
+  poster: '/video/envelope-dance-poster.jpg',
   velvet: '#0A0A0A',
-  seconds: 4.3,
+  seconds: 5,
   holdAfterEnd: 1.2,
-  focus: '50% 88%',
+  focus: '50% 50%',
 };

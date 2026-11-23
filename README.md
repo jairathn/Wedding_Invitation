@@ -2,8 +2,8 @@
 
 React + Vite site for Shriya & Neil's wedding (Barcelona, September 9–11, 2026).
 
-- **`/`** — the thank-you card. Guests tap the wax seal, enter their name, watch the
-  first-dance clip inside the envelope, then read their personal letter and browse the photos.
+- **`/`** — the thank-you card. Guests tap the wax seal, enter their name, watch a clip
+  of the two of them dancing inside the envelope, then read their personal letter and browse the photos.
 - **`/invitation`** — the original invitation, unchanged, for guests who want to see it again.
 - **`/app`**, **`/admin`** — the wedding-weekend guest app and its dashboard.
 - **`/public`**, **`/privacy`**, **`/sms-terms`** — SMS opt-in and policy pages.
@@ -18,7 +18,7 @@ device remembers them for 60 days, so a return visit opens straight to their car
 | A guest's letter or salutation | `src/thank-you/data/letters.json` (keep the wording exactly as written) |
 | Who can open a card / alternate names | `src/data/attendees.json` (`aliases` = other names a guest may type, `greet` = the name you call them by) |
 | Vogue article link, song, card video, dates | `src/thank-you/config.js` (`vogueUrl`, `musicSrc`, `cardVimeoId`, …) |
-| The clip inside the envelope | `public/video/first-dance.mp4` (see `source-media/README.md`) |
+| The clip inside the envelope | `public/video/envelope-dance.mp4` (see `source-media/README.md`) |
 | Gallery chapters, highlights, order, captions | `src/thank-you/data/photos.json` (`chapter`, `featured`, `seq`, `alt`) |
 | RPS Films' tab: name, heading, invitation, preview photos | `src/thank-you/config.js` (`photoSets`) |
 | Who is in which photo (each guest's Your Photos tab) | `src/thank-you/data/people.json` (see [Your Photos](#your-photos)) |
