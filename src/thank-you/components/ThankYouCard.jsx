@@ -71,6 +71,24 @@ const capsLink = 'ty-caps inline-flex min-h-[44px] items-center px-2 text-foil-l
 const ctaClass =
   'ty-caps min-h-[46px] border border-foil/55 bg-foil/[0.06] px-[2em] font-semibold text-foil-light transition hover:border-foil hover:bg-foil/[0.14] focus-visible:border-foil focus-visible:bg-foil/[0.14] focus-visible:outline-none';
 const ctaStyle = { fontSize: 'clamp(14px, 4.1cqw, 16px)', ...tracked(0.16) };
+// the two invitations under "Read your letter" (gold, a fine rule under the words)
+const featureStyle = { fontSize: 'clamp(17px, 4.6cqw, 19.5px)' };
+const iconProps = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+// two prints, one on the other
+const PhotosIcon = () => (
+  <svg {...iconProps} width="1.05em" height="1.05em" strokeWidth="1.35">
+    <rect x="2.75" y="7" width="14.5" height="11.5" rx="1.25" />
+    <path d="M7 4.25h12.75a1.5 1.5 0 0 1 1.5 1.5V15" />
+    <circle cx="7.5" cy="11" r="1.35" />
+    <path d="M3.25 16.75l4.25-4 3 2.75 2.5-2.25 3.75 3.5" />
+  </svg>
+);
+// leaves for another site
+const OutIcon = () => (
+  <svg {...iconProps} width="0.72em" height="0.72em" strokeWidth="1.8">
+    <path d="M7 17L17 7M9 7h8v8" />
+  </svg>
+);
 
 function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
   return (
@@ -124,8 +142,9 @@ function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
             Read your letter
           </button>
           {hasPhotos && (
-            <button type="button" onClick={onPhotos} className="ty-link relative z-[1] mt-[0.4cqw] inline-flex min-h-[44px] items-center px-3" style={{ fontSize: 'clamp(16px, 4.3cqw, 18px)' }}>
-              Your photographs
+            <button type="button" onClick={onPhotos} className="ty-feature relative z-[1] mt-[0.8cqw] inline-flex min-h-[44px] items-center gap-[0.5em] px-3" style={featureStyle}>
+              <PhotosIcon />
+              <span className="ty-feature-text">Your photographs</span>
             </button>
           )}
           {THANK_YOU.vogueUrl && (
@@ -133,10 +152,13 @@ function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
               href={THANK_YOU.vogueUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="ty-link -mt-[12px] inline-flex min-h-[44px] items-center px-3 @min-[350px]:mt-0"
-              style={{ fontSize: 'clamp(16px, 4.3cqw, 18px)' }}
+              className="ty-feature -mt-[12px] inline-flex min-h-[44px] items-center gap-[0.4em] px-3 @min-[350px]:mt-0"
+              style={featureStyle}
             >
-              Read our story in <span className="not-italic">&nbsp;Vogue</span>
+              <span className="ty-feature-text">
+                Read our story in <span className="ty-vogue">Vogue</span>
+              </span>
+              <OutIcon />
             </a>
           )}
         </div>
