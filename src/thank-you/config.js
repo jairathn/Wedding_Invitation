@@ -6,9 +6,9 @@ export const THANK_YOU = {
   // Start the song this many seconds in (e.g. to begin at the chorus).
   musicStartAt: 0,
 
-  // Video on the front of the card. Placeholder: the engagement film used on
-  // the invitation. Swap in the videographer's teaser's Vimeo id when ready.
-  cardVimeoId: '1149072071',
+  // Video on the front of the card: the wedding teaser by RPS Films
+  // (https://vimeo.com/1249319814). The invitation keeps the engagement film.
+  cardVimeoId: '1249319814',
 
   // The Vogue India story about the wedding. Linked from the front of the
   // card and from the end of the photographs; leave empty to hide both links.
