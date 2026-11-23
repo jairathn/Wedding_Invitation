@@ -348,6 +348,38 @@ html.night ::selection {
     outline: none;
   }
 
+  /* the card's two invitations under "Read your letter": gold, with a fine
+     rule under the words that brightens on hover; "Vogue" set like a masthead */
+  .ty-feature {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--color-foil-light);
+    transition: color 0.3s ease;
+  }
+  .ty-feature-text {
+    padding-bottom: 3px;
+    background: linear-gradient(90deg, rgba(201, 169, 97, 0), rgba(201, 169, 97, 0.8) 14%, rgba(201, 169, 97, 0.8) 86%, rgba(201, 169, 97, 0)) 50% 100% / 100% 1px no-repeat;
+  }
+  .ty-feature:hover,
+  .ty-feature:focus-visible {
+    color: #fff8e6;
+    outline: none;
+  }
+  .ty-feature:hover .ty-feature-text,
+  .ty-feature:focus-visible .ty-feature-text {
+    background-image: linear-gradient(90deg, rgba(241, 223, 176, 0.95), rgba(241, 223, 176, 0.95));
+  }
+  .ty-feature svg {
+    flex-shrink: 0;
+  }
+  .ty-vogue {
+    margin-left: 0.12em;
+    font-style: normal;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
   .ty-caps {
     font-family: var(--font-caps);
     font-weight: 500;
