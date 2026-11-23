@@ -89,6 +89,10 @@ html.night ::selection {
 }
 
 /* Gold-foil text: one slow sweep of light, then it rests */
+/* a shimmer that waits for the card to come out (the Vogue plate) */
+.foil-text.foil-late {
+  animation-delay: 2.6s;
+}
 .foil-text {
   background: linear-gradient(100deg, #8C6A2F 0%, #C9A961 20%, #F1DFB0 36%, #FFF8E6 44%, #E2C788 54%, #A9823F 72%, #D9BD7E 88%, #8C6A2F 100%);
   background-size: 260% auto;
@@ -378,6 +382,58 @@ html.night ::selection {
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
+  }
+
+  /* The Vogue story on the card's front: a small plate framed like the card
+     itself (a gold rule with a finer one inside), the magazine's name set like
+     its masthead. Its name catches the light once, after the card has come
+     out (not at all with reduced motion). */
+  .ty-press {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    min-height: 44px;
+    padding: 0 1.1em;
+    border: 1px solid rgba(201, 169, 97, 0.62);
+    background: linear-gradient(180deg, rgba(201, 169, 97, 0.08), rgba(201, 169, 97, 0.025));
+    font-family: var(--font-display);
+    color: var(--color-foil-light);
+    transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
+  }
+  .ty-press::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid rgba(201, 169, 97, 0.26);
+    pointer-events: none;
+    transition: border-color 0.3s ease;
+  }
+  .ty-press:hover,
+  .ty-press:focus-visible {
+    border-color: rgba(241, 223, 176, 0.95);
+    background: linear-gradient(180deg, rgba(201, 169, 97, 0.18), rgba(201, 169, 97, 0.07));
+    color: #fff8e6;
+    outline: none;
+  }
+  .ty-press:hover::before,
+  .ty-press:focus-visible::before {
+    border-color: rgba(241, 223, 176, 0.45);
+  }
+  .ty-press-lead {
+    font-style: italic;
+    color: rgba(244, 237, 227, 0.88);
+  }
+  .ty-press-name {
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    margin-right: -0.16em; /* the tracking after the last letter */
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .ty-press svg {
+    flex-shrink: 0;
   }
 
   .ty-caps {

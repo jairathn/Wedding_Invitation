@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useAnimationControls } from 'framer-motion';
 import { VideoPlayer } from '../../components/VideoPlayer';
 import { GoldGanesha } from './ThankYouEnvelope';
@@ -91,13 +91,37 @@ const OutIcon = () => (
 );
 
 function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
+  const scrollRef = useRef(null);
+  const filmRef = useRef(null);
+  const greetRef = useRef(null);
+  // If the front doesn't fit (a long greeting on a small phone), the film gives
+  // way: it is the one thing that can be a little smaller. Measured with layout
+  // sizes, so the card's turning doesn't throw it off.
+  useLayoutEffect(() => {
+    const sc = scrollRef.current;
+    const film = filmRef.current;
+    if (!sc || !film) return undefined;
+    const fit = () => {
+      film.style.width = '';
+      const over = sc.scrollHeight - sc.clientHeight;
+      if (over > 0.5) film.style.width = `${Math.max(film.offsetWidth - over * (16 / 9) - 1, sc.clientWidth * 0.4)}px`;
+    };
+    fit();
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit);
+    ro?.observe(sc);
+    if (greetRef.current) ro?.observe(greetRef.current);
+    document.fonts?.ready.then(fit).catch(() => {});
+    return () => ro?.disconnect();
+  }, [!!recipient]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <Stock>
       {/* scrolls only as a last resort, when a very short screen can't fit it all */}
-      <div className="thin-scroll relative flex h-full flex-col items-center overflow-y-auto overscroll-contain px-[10%] pb-[9.5cqw] pt-[9.6cqw] text-center">
+      <div ref={scrollRef} className="thin-scroll relative flex h-full flex-col items-center overflow-y-auto overscroll-contain px-[10%] pb-[9.5cqw] pt-[9.6cqw] text-center @max-[300px]:pt-[8.4cqw]">
         <div className="flex flex-col items-center">
           {recipient && (
             <p
+              ref={greetRef}
               className="font-display italic text-ivory/85"
               style={{ fontSize: 'clamp(16px, 4.6cqw, 20px)', lineHeight: 1.2, textWrap: 'balance', opacity: recipientPending ? 0 : 1, transition: 'opacity 0.7s ease' }}
             >
@@ -115,14 +139,15 @@ function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
         <span aria-hidden="true" className="flex-[1_0_1.6cqw]" />
 
         {/* the film, matted like a framed print, captioned with the sign-off
-            (smaller on the narrowest phones, so the three actions below still fit) */}
+            (smaller, and set closer, on the narrowest phones; and smaller
+            still wherever the front would otherwise not fit, see above) */}
         <div className="flex w-full flex-col items-center">
-          <div className="relative w-[80%] @max-[300px]:w-[60%]" style={{ padding: '2.4cqw', background: '#070506', boxShadow: '0 0 0 0.75px rgba(201,169,97,0.6), 0 18px 40px rgba(0,0,0,0.6)' }}>
+          <div ref={filmRef} className="relative w-[80%] @max-[300px]:w-[60%]" style={{ padding: '2.4cqw', background: '#070506', boxShadow: '0 0 0 0.75px rgba(201,169,97,0.6), 0 18px 40px rgba(0,0,0,0.6)' }}>
             <div className="overflow-hidden" style={{ boxShadow: '0 0 0 0.5px rgba(201,169,97,0.35)' }}>
               <VideoPlayer videoId={THANK_YOU.cardVimeoId} color="c9a961" showFullscreenButton={false} />
             </div>
           </div>
-          <p className="ty-caps mt-[3.8cqw] text-foil" style={{ fontSize: 'clamp(13px, 3.6cqw, 15px)', ...tracked(0.2) }}>
+          <p className="ty-caps mt-[3.8cqw] text-foil @max-[300px]:mt-[2.4cqw]" style={{ fontSize: 'clamp(13px, 3.6cqw, 15px)', ...tracked(0.2) }}>
             Shriya &amp; Neil
           </p>
           <p className="mt-[0.6cqw] font-display italic text-ivory/70" style={{ fontSize: 'clamp(14px, 3.8cqw, 16px)' }}>
@@ -132,31 +157,23 @@ function Front({ recipient, recipientPending, onRead, onPhotos, hasPhotos }) {
 
         <span aria-hidden="true" className="flex-[1_0_1.6cqw]" />
 
-        {/* Three things to do. On a phone the two quiet links sit close: each
-            keeps a 44px box, the second tucked 12px under the first (which
-            stays on top, so a tap between the lines opens the photographs
-            rather than leaving for another site). Wider cards have room for
-            both in full. */}
+        {/* Three things to do: the letter, the photographs, and the Vogue
+            story on its own small plate so no one misses it. */}
         <div className="flex flex-col items-center">
           <button type="button" data-read onClick={onRead} className={ctaClass} style={ctaStyle}>
             Read your letter
           </button>
           {hasPhotos && (
-            <button type="button" onClick={onPhotos} className="ty-feature relative z-[1] mt-[0.8cqw] inline-flex min-h-[44px] items-center gap-[0.5em] px-3" style={featureStyle}>
+            <button type="button" onClick={onPhotos} className="ty-feature mt-[0.4cqw] inline-flex min-h-[44px] items-center gap-[0.5em] px-3" style={featureStyle}>
               <PhotosIcon />
               <span className="ty-feature-text">Your photographs</span>
             </button>
           )}
           {THANK_YOU.vogueUrl && (
-            <a
-              href={THANK_YOU.vogueUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ty-feature -mt-[12px] inline-flex min-h-[44px] items-center gap-[0.4em] px-3 @min-[350px]:mt-0"
-              style={featureStyle}
-            >
-              <span className="ty-feature-text">
-                Read our story in <span className="ty-vogue">Vogue</span>
+            <a href={THANK_YOU.vogueUrl} target="_blank" rel="noopener noreferrer" className="ty-press mt-[1.2cqw] @max-[300px]:mt-0" style={{ fontSize: 'clamp(14px, 4.2cqw, 17px)' }}>
+              <span className="ty-press-lead">Our story in</span>{' '}
+              <span className="ty-press-name foil-text foil-late" style={{ fontSize: '1.32em' }}>
+                Vogue
               </span>
               <OutIcon />
             </a>
@@ -307,6 +324,18 @@ function Back({ letter, status, onRetry, onFront, onPhotos, hasPhotos, firstReve
                     </p>
                   )}
                   <Signature text={letter.signature} afterClosing={!!letter.closing} />
+                  {/* after the letter (not part of it), the Vogue story once more */}
+                  {THANK_YOU.vogueUrl && (
+                    <div className="mt-[1.4em] flex flex-col items-start">
+                      <span aria-hidden="true" className="mb-[0.3em] block h-px w-14 bg-gradient-to-r from-foil/70 to-transparent" />
+                      <a href={THANK_YOU.vogueUrl} target="_blank" rel="noopener noreferrer" className="ty-feature inline-flex min-h-[44px] items-center gap-[0.4em]" style={{ fontSize: 'clamp(16px, 4.4cqw, 18px)' }}>
+                        <span className="ty-feature-text">
+                          Read our story in <span className="ty-vogue">Vogue</span>
+                        </span>
+                        <OutIcon />
+                      </a>
+                    </div>
+                  )}
                 </motion.div>
               </div>
             </div>
