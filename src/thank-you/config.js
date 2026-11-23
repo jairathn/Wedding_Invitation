@@ -34,17 +34,17 @@ export const THANK_YOU = {
 // RPS Films' shot of the couple dancing, sparklers behind, fading to
 // their logo. It plays once, holds on its last frame for `holdAfterEnd`
 // seconds, then the card slides out. `seconds` is its length, used until the
-// file reports its own; `focus` frames it in the envelope's window (the clip
-// is wide and the window tall, so the window shows the middle of the frame,
-// where the dancers and the logo are). The velvet is the envelope's darkest
-// tone. Web version made from source-media/envelope-dance.gif (see
+// file reports its own; `focus` frames it in the envelope's window. The
+// velvet is the envelope's darkest tone. Web version made from
+// source-media/envelope-dance.mp4, cropped to the middle of the frame, where
+// the dancers and the logo are, since the window is tall (see
 // source-media/README.md); give it a new file name whenever it changes, since
 // browsers cache /video for a day.
 export const ENVELOPE_CLIP = {
-  src: '/video/envelope-dance.mp4',
-  poster: '/video/envelope-dance-poster.jpg',
+  src: '/video/envelope-dance-hd.mp4',
+  poster: '/video/envelope-dance-hd-poster.jpg',
   velvet: '#0A0A0A',
-  seconds: 5,
+  seconds: 4.9,
   holdAfterEnd: 1.2,
   focus: '50% 50%',
 };

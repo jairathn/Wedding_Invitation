@@ -18,7 +18,7 @@ device remembers them for 60 days, so a return visit opens straight to their car
 | A guest's letter or salutation | `src/thank-you/data/letters.json` (keep the wording exactly as written) |
 | Who can open a card / alternate names | `src/data/attendees.json` (`aliases` = other names a guest may type, `greet` = the name you call them by) |
 | Vogue article link, song, card video, dates | `src/thank-you/config.js` (`vogueUrl`, `musicSrc`, `cardVimeoId`, …) |
-| The clip inside the envelope | `public/video/envelope-dance.mp4` (see `source-media/README.md`) |
+| The clip inside the envelope | `public/video/envelope-dance-hd.mp4` (see `source-media/README.md`) |
 | Gallery chapters, highlights, order, captions | `src/thank-you/data/photos.json` (`chapter`, `featured`, `seq`, `alt`) |
 | RPS Films' tab: name, heading, invitation, preview photos | `src/thank-you/config.js` (`photoSets`) |
 | Who is in which photo (each guest's Your Photos tab) | `src/thank-you/data/people.json` (see [Your Photos](#your-photos)) |
