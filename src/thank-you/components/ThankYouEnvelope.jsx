@@ -174,8 +174,8 @@ export function EnvelopePocket() {
 
 /**
  * Black-velvet portrait envelope. The guest touches the wax seal, writes
- * their name, the flap opens on a gold-foil "Dear …," and the first-dance
- * clip plays inside.
+ * their name, the flap opens on a gold-foil "Dear …," and a clip of the
+ * couple dancing plays inside.
  */
 export function ThankYouEnvelope({ stage, guestName, prefillName = '', onSealClick, onGuestMatched, onClipNearEnd }) {
   const [name, setName] = useState(prefillName);
